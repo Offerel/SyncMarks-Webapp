@@ -4,6 +4,7 @@ ChangeLog
 -------------------------
 - Rework generate Chromium ID
 - Fixed processing timestamp
+- Set lastseen date only for startup sync
 
 
 1.6.1 (2020-10-23)

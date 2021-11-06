@@ -137,6 +137,7 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
 				$response = json_encode(addBookmark($userData, $bookmark));
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
@@ -163,6 +164,7 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$ctime = round(microtime(true) * 1000);
 			$response = json_encode(moveBookmark($userData, $bookmark));
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
 			die($response);
 			break;
@@ -195,7 +197,7 @@ if(isset($_POST['caction'])) {
 		case "startup":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-			$ctime = round(microtime(true) * 1000);
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:round(microtime(true) * 1000);
 			$changes = getChanges($client, $ctype, $userData, $ctime);
 
 			if($cexpjson == true && $loglevel == 9) {
@@ -254,6 +256,7 @@ if(isset($_POST['caction'])) {
 			$ctime = round(microtime(true) * 1000);
 			delUsermarks($userData['userID']);
 			$armarks = parseJSON($jmarks);
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			updateClient($client, $ctype, $userData, $ctime, true);
 			die(json_encode(importMarks($armarks,$userData['userID'])));
 			break;
@@ -337,6 +340,7 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			die(updateClient($client, $type, $userData, $time));
 			break;
 		case "gname":
@@ -690,6 +694,7 @@ if(isset($_POST['caction'])) {
 					}
 					$bcount = count(json_decode($bookmarks));
 					e_log(8,"Send now $bcount bookmarks to the client");
+					$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $userData, $ctime, true);
 					die($bookmarks);
 					break;
