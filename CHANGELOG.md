@@ -3,6 +3,7 @@ ChangeLog
 1.6.2 (2020-11-01)
 -------------------------
 - Rework generate Chromium ID
+- Fixed processing timestamp
 
 
 1.6.1 (2020-10-23)

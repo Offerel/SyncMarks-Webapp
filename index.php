@@ -130,20 +130,19 @@ if(isset($_POST['caction'])) {
 	switch($_POST['caction']) {
 		case "addmark":
 			$bookmark = json_decode($_POST['bookmark'], true);
-			e_log(9,print_r($bookmark, true));
 			e_log(8,"Try to add entry '".$bookmark['title']."'");
+			$ctime = round(microtime(true) * 1000);
+			$bookmark['added'] = $ctime;
 			e_log(9,print_r($bookmark, true));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
 			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
 				$response = json_encode(addBookmark($userData, $bookmark));
-				$ctime = round(microtime(true) * 1000);
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
 				die($response);
 			} else if($bookmark['type'] == 'folder') {
 				$response = addFolder($userData, $bookmark);
-				$ctime = round(microtime(true) * 1000);
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
 				die($response);
 			} else {
@@ -1169,6 +1168,7 @@ function addBookmark($ud, $bm) {
 }
 
 function getChanges($cl, $ct, $ud, $time) {
+	global $cexpjson, $loglevel;
 	$uid = $ud["userID"];
 	e_log(8,"Browser startup sync started, get client data");
 	$query = "SELECT `lastseen` FROM `clients` WHERE `cid` = '".$cl."' AND `uid` = $uid AND `ctype` = '".$ct."';";
@@ -1177,7 +1177,7 @@ function getChanges($cl, $ct, $ud, $time) {
 	if($clientData) {
 		$lastseen = $clientData["lastseen"];
 		e_log(8,"Get changed bookmarks for client $cl");
-		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded >= $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded >= $lastseen AND userID = $uid);";
+		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
 		$bookmarkData = db_query($query);
 		foreach($bookmarkData as $key => $entry) {
 			$bookmarkData[$key]['bmTitle'] = html_entity_decode($entry['bmTitle'], ENT_QUOTES, 'UTF-8'); 
