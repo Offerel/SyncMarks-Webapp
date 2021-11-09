@@ -186,6 +186,7 @@ if(isset($_POST['caction'])) {
 			}
 
 			$bData = db_query($query);
+			header("Content-Type: application/json");
 			if(count($bData) == 1) {
 				die(json_encode(delMark($bData[0]['bmID'])));
 			} else {
@@ -206,7 +207,7 @@ if(isset($_POST['caction'])) {
 				e_log(8,"Write startup json to $filename");
 				file_put_contents($filename,json_encode($changes),true);
 			}
-
+			header("Content-Type: application/json");
 			die(json_encode($changes,JSON_UNESCAPED_SLASHES));
 			break;
 		case "cfolder":
@@ -248,6 +249,7 @@ if(isset($_POST['caction'])) {
 				if(is_dir($logfile)) $filename = $logfile.'/'.$filename;
 				e_log(8,"JSON file written as $filename");
 				file_put_contents($filename,urldecode($_POST['bookmark']),true);
+				header("Content-Type: application/json");
 				die(json_encode($jerrmsg));
 			}
 
@@ -258,13 +260,13 @@ if(isset($_POST['caction'])) {
 			$armarks = parseJSON($jmarks);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			updateClient($client, $ctype, $userData, $ctime, true);
+			header("Content-Type: application/json");
 			die(json_encode(importMarks($armarks,$userData['userID'])));
 			break;
 		case "getpurl":
 			$url = validate_url($_POST['url']);
 			e_log(8,"Received new pushed URL: ".$url);
 			$target = (isset($_POST['tg'])) ? filter_var($_POST['tg'], FILTER_SANITIZE_STRING) : '0';
-			
 			if(newNotification($url, $target) !== 0) die("URL successfully pushed.");
 			break;
 		case "lsnc":
@@ -293,6 +295,7 @@ if(isset($_POST['caction'])) {
 			$oOptionsA = json_decode($userData['uOptions'],true);
 			$oOptionsA[$option] = $value;
 			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$userData['userID'].";";
+			header("Content-Type: application/json");
 			if(db_query($query) !== false) {
 				e_log(8,"Option saved");
 				die(json_encode(true));
@@ -333,6 +336,7 @@ if(isset($_POST['caction'])) {
 				e_log(8,"Write clientlist to $filename");
 				file_put_contents($filename,json_encode($myObj),true);
 			}
+			header("Content-Type: application/json");
 			die(json_encode($myObj));
 			break;
 		case "tl":
@@ -349,6 +353,7 @@ if(isset($_POST['caction'])) {
 			$query = "SELECT cname, ctype FROM clients WHERE cid = '$client' and uid = ".$userData['userID'].";";
 			$clientData = db_query($query)[0];
 			e_log(8,"Send name '".$clientData['cname']."' back to client");
+			header("Content-Type: application/json");
 			die(json_encode($clientData));
 			break;
 		case "gurls":
@@ -365,9 +370,11 @@ if(isset($_POST['caction'])) {
 					$myObj[$key]['nkey'] = $notification['id'];
 					$myObj[$key]['nOption'] = $uOptions['notifications'];
 				}
+				header("Content-Type: application/json");
 				die(json_encode($myObj));
 			} else {
 				e_log(8,"No pushed sites found");
+				header("Content-Type: application/json");
 				die(json_encode("0"));
 			}
 			break;
@@ -414,6 +421,7 @@ if(isset($_POST['caction'])) {
 		case "cmail":
 			e_log(8,"Change e-mail for ".$userData['userName']);
 			$nmail = filter_var($_POST['mail'],FILTER_SANITIZE_EMAIL);
+			header("Content-Type: application/json");
 			if(filter_var($nmail, FILTER_VALIDATE_EMAIL)) {
 				$query = "UPDATE `users` SET `userMail` = '$nmail' WHERE `userID` = ".$userData['userID'].";";
 				die(json_encode(db_query($query)));
@@ -462,6 +470,7 @@ if(isset($_POST['caction'])) {
 					} else {
 						$response = "User creation failed";
 					}
+					header("Content-Type: application/json");
 					die(json_encode($response));
 					break;
 				case 2:
@@ -479,6 +488,7 @@ if(isset($_POST['caction'])) {
 					} else {
 						$response = "User change failed";
 					}
+					header("Content-Type: application/json");
 					die(json_encode($response));
 					break;
 				case 3:
@@ -496,6 +506,7 @@ if(isset($_POST['caction'])) {
 					} else {
 						$response = "Delete user failed";
 					}
+					header("Content-Type: application/json");
 					die(json_encode($response));
 					break;
 				default:
@@ -696,6 +707,7 @@ if(isset($_POST['caction'])) {
 					e_log(8,"Send now $bcount bookmarks to the client");
 					$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $userData, $ctime, true);
+					header("Content-Type: application/json");
 					die($bookmarks);
 					break;
 				default:
@@ -715,6 +727,7 @@ if(isset($_POST['caction'])) {
 				}
 				$dubData[$key]['subs'] = $subData;
 			}
+			header("Content-Type: application/json");
 			die(json_encode($dubData));
 			break;
 		case "logout":
@@ -737,9 +750,11 @@ if(isset($_POST['caction'])) {
 		case "maddon":
 			$rResponse['bookmarks'] = showBookmarks($userData, 1);
 			$rResponse['folders'] = getUserFolders($userData['userID']);
+			header("Content-Type: application/json");
 			die(json_encode($rResponse));
 			break;
 		case "getUsers":
+			header("Content-Type: application/json");
 			if($userData['userType'] == 2) {
 				$query = "SELECT `userID`, `userName`, `userType` FROM `users` ORDER BY `userName`;";
 				$uData = db_query($query);
@@ -749,6 +764,7 @@ if(isset($_POST['caction'])) {
 			}
 			break;
 		default:
+			header("Content-Type: application/json");
 			die(json_encode("Unknown Action"));
 	}
 	exit;
