@@ -937,6 +937,7 @@ function getClientType($uas) {
 	elseif(strpos($uas, "Brave")) return "Brave";
 	elseif(strpos($uas, "SamsungBrowser")) return "SamsungBrowser";
 	elseif(strpos($uas, "Chrome")) return "Chrome";
+	else return "Unknown";
 }
 
 function validate_url($url) {
