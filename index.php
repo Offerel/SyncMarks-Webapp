@@ -349,7 +349,7 @@ if(isset($_POST['caction'])) {
 			break;
 		case "gname":
 			e_log(8,"Request clientname");
-			$client = filter_var($_POST['cl'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$query = "SELECT cname, ctype FROM clients WHERE cid = '$client' and uid = ".$userData['userID'].";";
 			$clientData = db_query($query)[0];
 			e_log(8,"Send name '".$clientData['cname']."' back to client");
@@ -404,7 +404,7 @@ if(isset($_POST['caction'])) {
 			($count > 0) ? die(true) : die(false);
 			break;
 		case "arename":
-			$client = filter_var($_POST['cido'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$name = filter_var($_POST['nname'], FILTER_SANITIZE_STRING);
 			e_log(8,"Rename client $client to $name");
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `uid` = ".$userData['userID']." AND `cid` = '".$client."';";
@@ -412,7 +412,7 @@ if(isset($_POST['caction'])) {
 			($count > 0) ? die(bClientlist($userData['userID'])) : die(false);
 			break;
 		case "adel":
-			$client = filter_var($_POST['cido'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			e_log(8,"Delete client $client");
 			$query = "DELETE FROM `clients` WHERE `uid` = ".$userData['userID']." AND `cid` = '$client';";
 			$count = db_query($query);
@@ -791,7 +791,7 @@ if(isset($_GET['link'])) {
 	$so = false;
 
 	foreach($uas as $ua) {
-		if(strpos($_SERVER['HTTP_USER_AGENT'], $ua) !== false) {
+		if(strpos($_SERVER['HTTP_USER_AGENT'], $ua) !== false || isset($_GET["client"])) {
 			$so = true;
 			break;
 		}

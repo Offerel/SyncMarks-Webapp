@@ -1,10 +1,11 @@
 ChangeLog
 =========
-1.6.2 (2020-11-01)
+1.6.2 (2020-11-24)
 -------------------------
 - Rework generate Chromium ID
 - Fixed processing timestamp
 - Set lastseen date only for startup sync
+- Changed some requests
 
 
 1.6.1 (2020-10-23)
