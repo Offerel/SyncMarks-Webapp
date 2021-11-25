@@ -1,5 +1,10 @@
 ChangeLog
 =========
+1.6.3 (2020-11-25)
+-------------------------
+- Add Logfile reload
+
+
 1.6.2 (2020-11-24)
 -------------------------
 - Rework generate Chromium ID

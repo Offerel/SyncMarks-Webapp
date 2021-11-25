@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.1
+ * @version 1.6.3
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -708,6 +708,11 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 		});
 		
+		//if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', function() {
+		//	logReresh();
+		//});
+		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logReresh);
+		
 		if(document.getElementById('mclose')) document.getElementById('mclose').addEventListener('click', function() {
 			if(document.getElementById('logfile').style.visibility === 'visible') {
 				document.getElementById('logfile').style.visibility = 'hidden';
@@ -806,6 +811,32 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 }, false);
 
+function logReresh() {
+	let arefresh = document.getElementById('arefresh').checked;
+	let logfile = document.getElementById('logfile');
+	if(logfile.style.visibility === 'visible') {
+		let xhr = new XMLHttpRequest();
+		let data = "caction=mrefresh";
+		xhr.onreadystatechange = function () {
+			if (this.readyState == 4) {
+				if(this.status == 200) {
+					document.getElementById('lfiletext').innerText = this.responseText;
+					moveEnd();
+				} else {
+					let message = "Error couldnt reload logfile.";
+					console.error(message);
+					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+				}
+			}
+		};
+		xhr.open("POST", document.location.href, true);
+		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		xhr.send(data);
+	}
+
+	if(arefresh === true) setTimeout(logReresh, 30*1000);
+}
+
 function mngUform(uData, userSelect) {
 	userSelect.options.length = 1;
 	uData.forEach(function(user){
@@ -883,7 +914,7 @@ function resize(e){
 	document.getElementById("logfile").style.width = wdt + "px";
 }
 
-function moveEnd () {
+function moveEnd() {
 	let lfiletext = document.getElementById("lfiletext");
 	lfiletext.scrollTop = lfiletext.scrollHeight;
 }

@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.1
+ * @version 1.6.3
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -516,7 +516,18 @@ if(isset($_POST['caction'])) {
 			}
 			break;
 		case "mlog":
-			e_log(8,"Try to show logfile");
+			//e_log(8,"Try to show logfile");
+			if($userData['userType'] > 1) {
+			    $lfile = is_dir($logfile) ? $logfile.'/syncmarks.log':$logfile;
+				die(file_get_contents($lfile));
+			} else {
+				$message = "Not allowed to read server logfile.";
+				e_log(2,$message);
+				die($message);
+			}
+			break;
+		case "mrefresh":
+			//e_log(8,"Reload logfile");
 			if($userData['userType'] > 1) {
 			    $lfile = is_dir($logfile) ? $logfile.'/syncmarks.log':$logfile;
 				die(file_get_contents($lfile));
@@ -1405,7 +1416,7 @@ function htmlForms($userData) {
 	$userID = $userData['userID'];
 	$userOldLogin = date("d.m.y H:i",$userData['userOldLogin']);
 	$admenu = ($userData['userType'] == 2) ? "<hr><li class='menuitem' id='mlog'>Logfile</li><li class='menuitem' id='mngusers'>Users</li>":"";
-	$logform = ($userData['userType'] == 2) ? "<div id=\"logfile\"><div id=\"close\"><button id='mclear'>clear</button> <button id='mclose'>&times;</button></div><div id='lfiletext'></div></div>":"";
+	$logform = ($userData['userType'] == 2) ? "<div id=\"logfile\"><div id=\"close\"><button id='mrefresh'>refresh</button><label for='arefresh'><input type='checkbox' id='arefresh' name='arefresh'>Auto Refresh</label> <button id='mclear'>clear</button> <button id='mclose'>&times;</button></div><div id='lfiletext'></div></div>":"";
 
 	$uOptions = json_decode($userData['uOptions'],true);
 	$oswitch = ($uOptions['notifications'] == 1) ? " checked":"";
