@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function() {
 							cename.appendChild(ceinput);
 							let cels = document.createElement('div');
 							cels.classList = 'lastseen';
-							cels.innerText = new Date(parseInt(client.date)).toLocaleString(
+							cels.innerText = client.date != "0" ? 'Sync: ' + new Date(parseInt(client.date)).toLocaleString(
 								navigator.language, 
 								{
 									year: "numeric",
@@ -493,7 +493,7 @@ document.addEventListener("DOMContentLoaded", function() {
 									day: "2-digit",
 									hour: '2-digit',
 									minute: '2-digit'
-								});
+								}):'Sync: -- -- ---- -- --';
 							cename.appendChild(cels);
 							let cedit = document.createElement('div');
 							cedit.classList = 'fa-edit rename';
@@ -708,10 +708,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 		});
 		
-		//if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', function() {
-		//	logReresh();
-		//});
-		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logReresh);
+		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logRefresh);
 		
 		if(document.getElementById('mclose')) document.getElementById('mclose').addEventListener('click', function() {
 			if(document.getElementById('logfile').style.visibility === 'visible') {
@@ -811,7 +808,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 }, false);
 
-function logReresh() {
+function logRefresh() {
 	let arefresh = document.getElementById('arefresh').checked;
 	let logfile = document.getElementById('logfile');
 	if(logfile.style.visibility === 'visible') {
@@ -834,7 +831,7 @@ function logReresh() {
 		xhr.send(data);
 	}
 
-	if(arefresh === true) setTimeout(logReresh, 30*1000);
+	if(arefresh === true) setTimeout(logRefresh, 30*1000);
 }
 
 function mngUform(uData, userSelect) {
@@ -875,7 +872,7 @@ function movBookmark(folderID, bookmarkID) {
 
 function delClient(element) {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=adel&cido=' + element.target.parentElement.id;
+	let data = 'caction=adel&client=' + element.target.parentElement.id;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			document.getElementById('mngcform').innerHTML = xhr.responseText;
@@ -895,7 +892,7 @@ function mvClient(element) {
 	document.querySelector('body').appendChild(loader);
 	
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=arename&cido=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
+	let data = 'caction=arename&client=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			document.getElementById('mngcform').innerHTML = xhr.responseText;

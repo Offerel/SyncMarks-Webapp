@@ -12,7 +12,7 @@ include_once "config.inc.php.dist";
 include_once "config.inc.php";
 set_error_handler("e_log");
 
-e_log(9,$_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
+if($loglevel == 9 && $cexpjson) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
 if(!isset($_SESSION['sauth'])) checkDB($database,$suser,$spwd);
 
@@ -310,11 +310,11 @@ if(isset($_POST['caction'])) {
 			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = ".$userData['userID']." AND NOT `cid` = '$client';";
 			$clientList = db_query($query);
 			e_log(8,"Found ".count($clientList)." clients. Send list to requesting client.");
-
+			
 			uasort($clientList, function($a, $b) {
 				return strnatcasecmp($a['cname'], $b['cname']);
 			});
-
+			
 			if (!empty($clientList)) {
 				foreach($clientList as $key => $clients) {
 					$myObj[$key]['id'] =	$clients['cid'];
@@ -330,12 +330,14 @@ if(isset($_POST['caction'])) {
 				$myObj[0]['type'] =	'';
 				$myObj[0]['date'] =	'';
 			}
+			
 			if($cexpjson == true && $loglevel == 9) {
 				$filename = "clist_".substr($client,0,8)."_".time().".json";
 				if(is_dir($logfile)) $filename = $logfile."/$filename";	
 				e_log(8,"Write clientlist to $filename");
 				file_put_contents($filename,json_encode($myObj),true);
 			}
+			
 			header("Content-Type: application/json");
 			die(json_encode($myObj));
 			break;
@@ -516,7 +518,6 @@ if(isset($_POST['caction'])) {
 			}
 			break;
 		case "mlog":
-			//e_log(8,"Try to show logfile");
 			if($userData['userType'] > 1) {
 			    $lfile = is_dir($logfile) ? $logfile.'/syncmarks.log':$logfile;
 				die(file_get_contents($lfile));
@@ -527,7 +528,6 @@ if(isset($_POST['caction'])) {
 			}
 			break;
 		case "mrefresh":
-			//e_log(8,"Reload logfile");
 			if($userData['userType'] > 1) {
 			    $lfile = is_dir($logfile) ? $logfile.'/syncmarks.log':$logfile;
 				die(file_get_contents($lfile));
@@ -1259,6 +1259,9 @@ function getChanges($cl, $ct, $ud, $time) {
 }
 
 function updateClient($cl, $ct, $ud, $time, $sync = false) {
+	$fclients = array("bookmarkTab", "Android");
+	if(in_array($cl, $fclients)) exit(0);
+
 	$uid = $ud["userID"];
 	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND uid = ".$uid.";";
 	$clientData = db_query($query);
@@ -1383,7 +1386,7 @@ function htmlHeader() {
 		<html lang='en'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				<script src='js/bookmarks.min.js'></script>
+				<script src='js/bookmarks.js'></script>
 				<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
@@ -1599,14 +1602,20 @@ function showBookmarks($userData, $mode) {
 }
 
 function bClientlist($uid) {
-	$query = "SELECT * FROM `clients` WHERE `uid` = $uid ORDER BY `lastseen` DESC;";
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = $uid;";
 	$clientData = db_query($query);
+	
+	uasort($clientData, function($a, $b) {
+		return strnatcasecmp($a['cname'], $b['cname']);
+	});
+	
 	$clientList = "<ul>";
 	foreach($clientData as $key => $client) {
 		$cname = $client['cid'];
 		if(isset($client['cname'])) $cname = $client['cname'];
 		$timestamp = $client['lastseen'] / 1000;
-		$lastseen = (date('D, d. M. Y H:i', $timestamp));
+		$lastseen = ($timestamp != '0') ? date('D, d. M. Y H:i', $timestamp):'Sync: -- -- ---- -- --';
+		//$lastseen = (date('D, d. M. Y H:i', $timestamp));
 		$clientList.= "<li title='".$client['cid']."' data-type='".strtolower($client['ctype'])."' id='".$client['cid']."' class='client'><div class='clientname'>$cname<input type='text' name='cname' value='$cname'><div class='lastseen'>$lastseen</div></div><div class='fa-edit rename'></div><div class='fa-trash remove'></div></li>";
 	}
 	$clientList.= "</ul>";
