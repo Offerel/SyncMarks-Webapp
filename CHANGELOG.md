@@ -4,6 +4,7 @@ ChangeLog
 -------------------------
 - Add Logfile reload
 - Fix client sort order
+- Add bookmark client timestamp
 
 
 1.6.2 (2020-11-24)

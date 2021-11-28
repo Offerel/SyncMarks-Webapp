@@ -131,20 +131,22 @@ if(isset($_POST['caction'])) {
 		case "addmark":
 			$bookmark = json_decode($_POST['bookmark'], true);
 			e_log(8,"Try to add entry '".$bookmark['title']."'");
-			$ctime = round(microtime(true) * 1000);
-			$bookmark['added'] = $ctime;
+			$stime = round(microtime(true) * 1000);
+			$ctime = $bookmark['added'];
+			$bookmark['ctime'] = $ctime;
+			$bookmark['added'] = $stime;
 			e_log(9,print_r($bookmark, true));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
-			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
+			$stime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$stime;
 			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
 				$response = json_encode(addBookmark($userData, $bookmark));
-				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
+				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $stime, true);
 				die($response);
 			} else if($bookmark['type'] == 'folder') {
 				$response = addFolder($userData, $bookmark);
-				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $ctime, true);
+				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $userData, $stime, true);
 				die($response);
 			} else {
 				e_log(1,"This bookmark is not added, some parameters are missing");
@@ -465,9 +467,9 @@ if(isset($_POST['caction'])) {
 							$response = $nuid;
 						}
 						$bmAdded = round(microtime(true) * 1000);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", $nuid)";
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", ".$bmAdded.", $nuid)";
 						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", $nuid)";
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", ".$bmAdded.", $nuid)";
 						db_query($query);
 					} else {
 						$response = "User creation failed";
@@ -562,6 +564,7 @@ if(isset($_POST['caction'])) {
 			$bookmark['id'] = unique_code(12);
 			$bookmark['type'] = 'bookmark';
 			$bookmark['added'] = round(microtime(true) * 1000);
+			$bookmark['ctime'] = $bookmark['added'];
 			
 			$res = addBookmark($userData, $bookmark);
 			
@@ -793,6 +796,7 @@ if(isset($_GET['link'])) {
 	$bookmark['id'] = unique_code(12);
 	$bookmark['type'] = 'bookmark';
 	$bookmark['added'] = round(microtime(true) * 1000);
+	$bookmark['ctime'] = $bookmark['added'];
 
 	$uas = array(
 		"HttpShortcuts",
@@ -925,7 +929,7 @@ function cfolder($ctime,$fname,$fbid,$ud) {
 
 		if(count($idata) == 1) {
 			e_log(8,"Add new folder to database");
-			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', '$parentid', ".$idata[0]['nIndex'].", '$fname', 'folder', $ctime, ".$ud["userID"].")";
+			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`bmCtime`,`userID`) VALUES ('".unique_code(12)."', '$parentid', ".$idata[0]['nIndex'].", '$fname', 'folder', $ctime, $ctime, ".$ud["userID"].")";
 			if(db_query($query) === false)
 				$res = "Adding folder failed.";
 			else {
@@ -1111,7 +1115,7 @@ function moveBookmark($ud, $bm) {
 				$query = "DELETE FROM `bookmarks` WHERE `bmID` = '".$oldData["bmID"]."'";
 				db_query($query);
 				e_log(8,"Re-Add bookmark on new position");
-				$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmAction`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".$ud["userID"].",2)";
+				$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`,`bmAction`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".$oldData['bmCtime'].", ".$ud["userID"].",2)";
 				db_query($query);
 				return true;
 			}
@@ -1190,7 +1194,7 @@ function addBookmark($ud, $bm) {
 	
 	$title = htmlentities($bm['title'], ENT_QUOTES);
 	e_log(8,"Add bookmark '$title'");
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '$title', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$ud["userID"].");";
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '$title', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$bm['ctime'].", ".$ud["userID"].");";
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
 		e_log(1,$message);
@@ -1210,7 +1214,9 @@ function getChanges($cl, $ct, $ud, $time) {
 	if($clientData) {
 		$lastseen = $clientData["lastseen"];
 		e_log(8,"Get changed bookmarks for client $cl");
-		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
+		//$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
+		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, ifnull(`bmCtime`, `bmAdded`) as bmAdded, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
+		
 		$bookmarkData = db_query($query);
 		foreach($bookmarkData as $key => $entry) {
 			$bookmarkData[$key]['bmTitle'] = html_entity_decode($entry['bmTitle'], ENT_QUOTES, 'UTF-8'); 
@@ -1773,10 +1779,11 @@ function importMarks($bookmarks,$uid) {
 			$bookmark[6],
 			$bookmark[7],
 			$bookmark[8],
+			$bookmark[6],
 		);
 	}
 	
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`) VALUES (?,?,?,?,?,?,?,?,?)";
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmCtime`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query($query,$data2);
 
 	if($response)
@@ -2176,9 +2183,9 @@ function checkDB($database,$suser,$spwd) {
 		$userPWD = password_hash($spwd,PASSWORD_DEFAULT);
 		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('$suser',2,'$userPWD');";
 		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", ".$bmAdded.", 1)";
 		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", 1)";
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmCtime`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", ".$bmAdded.", 1)";
 		db_query($query);
 	}
 }
