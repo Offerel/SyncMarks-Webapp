@@ -686,29 +686,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if(document.getElementById('mclear')) document.getElementById('mclear').addEventListener('click', function() {
 			let logfile = document.getElementById('logfile');
-			if(logfile.style.visibility === 'visible') {
-				logfile.style.visibility = 'hidden';
-				document.getElementById('close').style.visibility = 'hidden';
-				let xhr = new XMLHttpRequest();
-				let data = "caction=mclear";
-				xhr.onreadystatechange = function () {
-					if (this.readyState == 4) {
-						if(this.status == 200) {
-							console.info("Logfile should now be empty.");
-						} else {
-							let message = "Error couldnt clear logfile.";
-							console.error(message);
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-						}
+			let xhr = new XMLHttpRequest();
+			let data = "caction=mclear";
+			xhr.onreadystatechange = function () {
+				if (this.readyState == 4) {
+					if(this.status == 200) {
+						document.getElementById('lfiletext').innerText = this.responseText;
+						moveEnd();
+						console.info("Logfile should now be empty.");
+					} else {
+						let message = "Error couldnt clear logfile.";
+						console.error(message);
+						show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 					}
-				};
-				xhr.open("POST", document.location.href, true);
-				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send(data);
-			}
+				}
+			};
+			xhr.open("POST", document.location.href, true);
+			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			xhr.send(data);
 		});
 		
 		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logRefresh);
+		
+		if(document.getElementById('arefresh')) document.getElementById('arefresh').addEventListener('change', logRefresh);
 		
 		if(document.getElementById('mclose')) document.getElementById('mclose').addEventListener('click', function() {
 			if(document.getElementById('logfile').style.visibility === 'visible') {

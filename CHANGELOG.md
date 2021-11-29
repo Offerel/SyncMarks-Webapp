@@ -4,8 +4,7 @@ ChangeLog
 -------------------------
 - Add Logfile reload
 - Fix client sort order
-- Add bookmark client timestamp
-
+- Fix constants
 
 1.6.2 (2020-11-24)
 -------------------------
