@@ -150,7 +150,8 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
-			$stime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$stime;
+			$stime = (!isset($_POST['s'])) ? 0:$stime;
+			header("Content-Type: application/json");
 			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
 				$response = json_encode(addBookmark($bookmark));
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
@@ -971,7 +972,7 @@ function pushlink($title,$url) {
 	$pddata = json_decode(USERDATA['uOptions'],true);
 	$token = edcrpt('de', $pddata['pAPI']);
 	$device = edcrpt('de', $pddata['pDevice']);
-	e_log(8,"Send Push Notification to device: $device");
+	e_log(8,"Send Pushbullet notification to device: $device");
 	$encTitle = html_entity_decode($title, ENT_QUOTES | ENT_XML1, 'UTF-8');
 	
 	$data = json_encode(array(
@@ -1263,7 +1264,7 @@ function getChanges($cl, $ct, $time) {
 
 function updateClient($cl, $ct, $time, $sync = false) {
 	$fclients = array("bookmarkTab", "Android");
-	if(in_array($cl, $fclients)) exit(0);
+	if(in_array($cl, $fclients)) return 0;
 
 	$uid = USERDATA["userID"];
 	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND uid = ".$uid.";";

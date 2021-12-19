@@ -3,6 +3,7 @@ ChangeLog
 1.6.3 (2020-11-25)
 -------------------------
 - Add Logfile reload
+- Add JSON header
 - Fix client sort order
 - Fix constants
 
