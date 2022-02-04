@@ -189,7 +189,8 @@ if(isset($_POST['caction'])) {
 			$bookmark = json_decode(rawurldecode($_POST['bookmark']),true);
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$ctime = round(microtime(true) * 1000);
-			$index = (isset($bookmark['index'])) ? "AND `bmIndex` = ".$bookmark['index']:"";
+			//$index = (isset($bookmark['index'])) ? "AND `bmIndex` = ".$bookmark['index']:"";
+			$index = "";
 			e_log(8,"Try to identify bookmark");
 			if(isset($bookmark['url'])) {
 				$url = prepare_url($bookmark['url']);
@@ -268,6 +269,7 @@ if(isset($_POST['caction'])) {
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = round(microtime(true) * 1000);
 			delUsermarks(USERDATA['userID']);
+			markOtherClients($client);
 			$armarks = parseJSON($jmarks);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			updateClient($client, $ctype, $ctime, true);
@@ -356,7 +358,7 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
-			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
+			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
 			die(updateClient($client, $type, $time));
 			break;
 		case "gname":
@@ -728,6 +730,11 @@ if(isset($_POST['caction'])) {
 					e_log(8,"Send now $bcount bookmarks to the client");
 					$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $ctime, true);
+
+					e_log(8, "Set client FullSync marker to 0");
+					$query = "UPDATE `clients` SET `fs`= 0 WHERE `cid` = '$client';";
+					db_query($query);
+
 					header("Content-Type: application/json");
 					die($bookmarks);
 					break;
@@ -783,6 +790,13 @@ if(isset($_POST['caction'])) {
 			} else {
 				die(json_encode('Editing users not allowed'));
 			}
+			break;
+		case "cfsync":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `fs` FROM `clients` WHERE `cid` = '$client';";
+			$fsdata = db_query($query)['0'];
+			header("Content-Type: application/json");
+			die(json_encode($fsdata));
 			break;
 		default:
 			header("Content-Type: application/json");
@@ -849,6 +863,11 @@ echo htmlHeader();
 echo htmlForms();
 echo showBookmarks(2);
 echo htmlFooter();
+
+function markOtherClients($client) {
+	e_log(8, "Set other sync clients to fullsync = true");
+	$query = "UPDATE `clients` SET `fs` = 1 WHERE `lastseen` > 0 AND `uid` = ".USERDATA['userID']." AND `cid` <> '$client';";
+}
 
 function newNotification($url, $target) {
 	$erg = 0;

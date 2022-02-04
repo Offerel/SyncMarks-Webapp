@@ -4,8 +4,10 @@ ChangeLog
 -------------------------
 - Add Logfile reload
 - Add JSON header
+- Add startup pre-request (in case other client made export)
 - Fix client sort order
 - Fix constants
+
 
 1.6.2 (2020-11-24)
 -------------------------
