@@ -815,6 +815,7 @@ span.rdesc {
 	bottom: 0;
 	top: 51px;
 	font-size: 0.9em;
+	font-family: system-ui;
 }
 #bookmarks ol.tree {
     padding: 0 0 0 20px;

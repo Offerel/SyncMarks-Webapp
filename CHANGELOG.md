@@ -1,5 +1,14 @@
 ChangeLog
 =========
+1.6.3 (2020-11-25)
+-------------------------
+- Add Logfile reload
+- Add JSON header
+- Add startup pre-request (in case other client made export)
+- Fix client sort order
+- Fix constants
+
+
 1.6.2 (2020-11-24)
 -------------------------
 - Rework generate Chromium ID

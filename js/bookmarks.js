@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.1
+ * @version 1.6.3
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function() {
 							cename.appendChild(ceinput);
 							let cels = document.createElement('div');
 							cels.classList = 'lastseen';
-							cels.innerText = new Date(parseInt(client.date)).toLocaleString(
+							cels.innerText = client.date != "0" ? 'Sync: ' + new Date(parseInt(client.date)).toLocaleString(
 								navigator.language, 
 								{
 									year: "numeric",
@@ -493,7 +493,7 @@ document.addEventListener("DOMContentLoaded", function() {
 									day: "2-digit",
 									hour: '2-digit',
 									minute: '2-digit'
-								});
+								}):'Sync: -- -- ---- -- --';
 							cename.appendChild(cels);
 							let cedit = document.createElement('div');
 							cedit.classList = 'fa-edit rename';
@@ -686,27 +686,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if(document.getElementById('mclear')) document.getElementById('mclear').addEventListener('click', function() {
 			let logfile = document.getElementById('logfile');
-			if(logfile.style.visibility === 'visible') {
-				logfile.style.visibility = 'hidden';
-				document.getElementById('close').style.visibility = 'hidden';
-				let xhr = new XMLHttpRequest();
-				let data = "caction=mclear";
-				xhr.onreadystatechange = function () {
-					if (this.readyState == 4) {
-						if(this.status == 200) {
-							console.info("Logfile should now be empty.");
-						} else {
-							let message = "Error couldnt clear logfile.";
-							console.error(message);
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-						}
+			let xhr = new XMLHttpRequest();
+			let data = "caction=mclear";
+			xhr.onreadystatechange = function () {
+				if (this.readyState == 4) {
+					if(this.status == 200) {
+						document.getElementById('lfiletext').innerText = this.responseText;
+						moveEnd();
+						console.info("Logfile should now be empty.");
+					} else {
+						let message = "Error couldnt clear logfile.";
+						console.error(message);
+						show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 					}
-				};
-				xhr.open("POST", document.location.href, true);
-				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send(data);
-			}
+				}
+			};
+			xhr.open("POST", document.location.href, true);
+			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			xhr.send(data);
 		});
+		
+		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logRefresh);
+		
+		if(document.getElementById('arefresh')) document.getElementById('arefresh').addEventListener('change', logRefresh);
 		
 		if(document.getElementById('mclose')) document.getElementById('mclose').addEventListener('click', function() {
 			if(document.getElementById('logfile').style.visibility === 'visible') {
@@ -806,6 +808,32 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 }, false);
 
+function logRefresh() {
+	let arefresh = document.getElementById('arefresh').checked;
+	let logfile = document.getElementById('logfile');
+	if(logfile.style.visibility === 'visible') {
+		let xhr = new XMLHttpRequest();
+		let data = "caction=mrefresh";
+		xhr.onreadystatechange = function () {
+			if (this.readyState == 4) {
+				if(this.status == 200) {
+					document.getElementById('lfiletext').innerText = this.responseText;
+					moveEnd();
+				} else {
+					let message = "Error couldnt reload logfile.";
+					console.error(message);
+					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+				}
+			}
+		};
+		xhr.open("POST", document.location.href, true);
+		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		xhr.send(data);
+	}
+
+	if(arefresh === true) setTimeout(logRefresh, 30*1000);
+}
+
 function mngUform(uData, userSelect) {
 	userSelect.options.length = 1;
 	uData.forEach(function(user){
@@ -844,7 +872,7 @@ function movBookmark(folderID, bookmarkID) {
 
 function delClient(element) {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=adel&cido=' + element.target.parentElement.id;
+	let data = 'caction=adel&client=' + element.target.parentElement.id;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			document.getElementById('mngcform').innerHTML = xhr.responseText;
@@ -864,7 +892,7 @@ function mvClient(element) {
 	document.querySelector('body').appendChild(loader);
 	
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=arename&cido=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
+	let data = 'caction=arename&client=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			document.getElementById('mngcform').innerHTML = xhr.responseText;
@@ -883,7 +911,7 @@ function resize(e){
 	document.getElementById("logfile").style.width = wdt + "px";
 }
 
-function moveEnd () {
+function moveEnd() {
 	let lfiletext = document.getElementById("lfiletext");
 	lfiletext.scrollTop = lfiletext.scrollHeight;
 }
