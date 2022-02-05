@@ -478,7 +478,7 @@ if(isset($_POST['caction'])) {
 						$bmAdded = round(microtime(true) * 1000);
 						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", $nuid)";
 						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", $nuid)";
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', ".$bmAdded.", $nuid)";
 						db_query($query);
 					} else {
 						$response = "User creation failed";
@@ -1528,7 +1528,7 @@ function htmlForms() {
 	$mainmenu = "
 	<div id='mainmenu' class='mmenu'>
 		<ul>
-			<li id='meheader'><span class='appv'><a href='https://github.com/Offerel/SyncMarks-Webapp'>SyncMarks $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>Last login: $userOldLogin</span></li>
+			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>SyncMarks $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>Last login: $userOldLogin</span></li>
 			<li class='menuitem' id='nmessages'>Notifications</li>
 			<li class='menuitem' id='bexport'>Export</li>
 			<li class='menuitem' id='duplicates'>Duplicates</li>
@@ -2153,7 +2153,7 @@ function checkDB() {
 	
 	$olddate = $vInfo['updated'];
 	$newdate = filemtime(__FILE__);
-	$dbv = 5;
+	$dbv = 6;
 
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
 		e_log(8,"Database update needed. Starting DB update...");
@@ -2196,7 +2196,7 @@ function checkDB() {
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
 		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://github.com/Offerel', ".$bmAdded.", 1)";
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
 	}
 }
