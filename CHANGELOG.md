@@ -1,6 +1,6 @@
 ChangeLog
 =========
-1.6.3 (2020-11-25)
+1.6.3 (2022-11-25)
 -------------------------
 - Add Logfile reload
 - Add JSON header
@@ -9,7 +9,7 @@ ChangeLog
 - Fix constants
 
 
-1.6.2 (2020-11-24)
+1.6.2 (2021-11-24)
 -------------------------
 - Rework generate Chromium ID
 - Fixed processing timestamp
@@ -17,14 +17,14 @@ ChangeLog
 - Changed some requests
 
 
-1.6.1 (2020-10-23)
+1.6.1 (2021-10-23)
 -------------------------
 - Fix notification not opening in new tab
 - Fix adding bookmark
 - Fix moving bookmark
 
 
-1.6.0 (2020-07-29)
+1.6.0 (2021-07-29)
 -------------------------
 - Added option to stay logged in
 - Added Load on demand for clients
@@ -39,7 +39,7 @@ ChangeLog
 - Moved assets
 
 
-1.5.2 (2020-05-10)
+1.5.2 (2021-05-10)
 -------------------------
 - Write clientlist to disk, for debugging
 - Rebuilding clientlist serverside
@@ -47,7 +47,7 @@ ChangeLog
 - Fixed encoding issue
 
 
-1.5.1 (2020-03-31)
+1.5.1 (2021-03-31)
 -------------------------
 - Fix for listing clients
 - Fix for bookmark add response
@@ -55,19 +55,19 @@ ChangeLog
 - Fix get personal options
 
 
-1.5.0 (2020-03-24)
+1.5.0 (2021-03-24)
 -------------------------
 - Added support for MySQL
 - Re-Added back optional manual password
 
 
-1.4.2 (2020-03-22)
+1.4.2 (2021-03-22)
 -------------------------
 - Changed feedback to client, when cant be registered
 - Filter IP address for logfile
 
 
-1.4.1 (2020-03-20)
+1.4.1 (2021-03-20)
 -------------------------
 - Fixed bug for user creation
 - Fixed bug user delete
@@ -75,7 +75,7 @@ ChangeLog
 - Changed Export behavior
 
 
-1.4.0 (2020-03-17)
+1.4.0 (2021-03-17)
 -------------------------
 - Fixed #61
 - Removed manual enter password
@@ -85,7 +85,7 @@ ChangeLog
 - Updated DB
 
 
-1.3.7 (2020-03-05)
+1.3.7 (2021-03-05)
 -------------------------
 - Added drag&drop for bookmarks move
 - Added function for Extension
@@ -95,23 +95,23 @@ ChangeLog
 - Replaced alerts with notifications
 
 
-1.3.6 (2020-02-25)
+1.3.6 (2021-02-25)
 -------------------------
 - Added duplicates checker
 - Fix contextmenu when manually adding bookmark
 
 
-1.3.5 (2020-02-21)
+1.3.5 (2021-02-21)
 -------------------------
 - Fix for startup sync
 
 
-1.3.4 (2020-02-11)
+1.3.4 (2021-02-11)
 -------------------------
 - Fix for js error
 
 
-1.3.3 (2020-01-15)
+1.3.3 (2021-01-15)
 -------------------------
 - Removed hidden forms
 - Cleanup functions
@@ -119,12 +119,12 @@ ChangeLog
 - Fix for import from Chromium
 
 
-1.3.2 (2020-01-11)
+1.3.2 (2021-01-11)
 -------------------------
 - Added login/logout form
 
 
-1.3.1 (2020-01-06)
+1.3.1 (2021-01-06)
 -------------------------
 - Added index/trigger/foreign key to DB
 - Added DB init/update script
@@ -136,7 +136,7 @@ ChangeLog
 - Reworked logout
 
 
-1.3.0 (2020-01-02)
+1.3.0 (2021-01-02)
 -------------------------
 - Regenerate index at bookmark removal
 - Add context menu for non-system-folders
