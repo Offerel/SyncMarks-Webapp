@@ -1,6 +1,11 @@
 ChangeLog
 =========
-1.6.3 (2022-11-25)
+1.6.4 (2022-02-13)
+-------------------------
+- Send lastseen with pre-request
+
+
+1.6.3 (2022-01-25)
 -------------------------
 - Add Logfile reload
 - Add JSON header

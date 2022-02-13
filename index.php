@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.3
+ * @version 1.6.4
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -792,7 +792,7 @@ if(isset($_POST['caction'])) {
 			break;
 		case "cfsync":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `fs` FROM `clients` WHERE `cid` = '$client';";
+			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
 			$fsdata = db_query($query)['0'];
 			header("Content-Type: application/json");
 			die(json_encode($fsdata));
