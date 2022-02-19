@@ -1,5 +1,10 @@
 ChangeLog
 =========
+1.6.5 (2022-02-19)
+-------------------------
+- Streamlined client info
+
+
 1.6.4 (2022-02-13)
 -------------------------
 - Send lastseen with pre-request

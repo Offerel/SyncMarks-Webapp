@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.4
+ * @version 1.6.5
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -281,12 +281,6 @@ if(isset($_POST['caction'])) {
 			$target = (isset($_POST['tg'])) ? filter_var($_POST['tg'], FILTER_SANITIZE_STRING) : '0';
 			if(newNotification($url, $target) !== 0) die("URL successfully pushed.");
 			break;
-		case "lsnc":
-			e_log(8,"Get clients lastseen date.");
-			$query = "SELECT MAX(`lastseen`) as lastseen FROM `clients` WHERE `uid` = ".USERDATA['userID'].";";
-			$lastSeen = db_query($query)[0]['lastseen'];
-			die($lastSeen);
-			break;
 		case "rmessage":
 			$message = isset($_POST['message']) ? filter_var($_POST['message'], FILTER_VALIDATE_INT):0;
 			$loop = filter_var($_POST['lp'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1 : 0;
@@ -360,12 +354,12 @@ if(isset($_POST['caction'])) {
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
 			die(updateClient($client, $type, $time));
 			break;
-		case "gname":
-			e_log(8,"Request clientname");
+		case "cinfo":
+			e_log(8,"Request clientinfo");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT cname, ctype FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
+			$query = "SELECT `cname`, `ctype` ,`fs`, `lastseen` FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
 			$clientData = db_query($query)[0];
-			e_log(8,"Send name '".$clientData['cname']."' back to client");
+			e_log(8,"Send clientinfo to client '".$clientData['cname']."'");
 			header("Content-Type: application/json");
 			die(json_encode($clientData));
 			break;
@@ -731,7 +725,7 @@ if(isset($_POST['caction'])) {
 					updateClient($client, $ctype, $ctime, true);
 
 					e_log(8, "Set client FullSync marker to 0");
-					$query = "UPDATE `clients` SET `fs`= 0 WHERE `cid` = '$client';";
+					$query = "UPDATE `clients` SET `fs` = 0 WHERE `cid` = '$client';";
 					db_query($query);
 
 					header("Content-Type: application/json");
@@ -789,13 +783,6 @@ if(isset($_POST['caction'])) {
 			} else {
 				die(json_encode('Editing users not allowed'));
 			}
-			break;
-		case "cfsync":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
-			$fsdata = db_query($query)['0'];
-			header("Content-Type: application/json");
-			die(json_encode($fsdata));
 			break;
 		default:
 			header("Content-Type: application/json");
