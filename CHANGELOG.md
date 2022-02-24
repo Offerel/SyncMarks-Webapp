@@ -1,8 +1,10 @@
 ChangeLog
 =========
-1.6.5 (2022-02-19)
+1.6.5 (2022-02-24)
 -------------------------
 - Streamlined client info
+- Fix encoding coming from browser
+- Fix updateclient
 
 
 1.6.4 (2022-02-13)

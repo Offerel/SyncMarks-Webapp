@@ -568,19 +568,20 @@
 }
 #menu button {
 	border: 0;
-	width: 37px;
-	height: 38px;
+	width: 1.4em;
+	height: 1.2em;
 	background-color: transparent;
 	color: #fff;
-	font-size: 28px;
+	font-size: 2em;
 	font-weight: 700;
 	border-top-right-radius: 6px;
 	border-bottom-right-radius: 6px;
 	position: absolute;
-	top: 7px;
-	right: 10px;
+	top: .21em;
+	right: .1em;
 	outline: 0;
 	cursor: pointer;
+	line-height: 1.2em;
 }
 #menu button:active {
 	padding: 0;
@@ -593,9 +594,8 @@
 	display: none;
 }
 #menu button.asform {
-	background-color: #05589D;
-	color: white;
-	width: 40px;
+	background-color: #05589d;
+	width: 1.4em;
 }
 #bmarkadd {
 	bottom: 38px;
