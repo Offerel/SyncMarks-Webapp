@@ -5,6 +5,7 @@ ChangeLog
 - Streamlined client info
 - Fix encoding coming from browser
 - Fix updateclient
+- Minor Fixes
 
 
 1.6.4 (2022-02-13)

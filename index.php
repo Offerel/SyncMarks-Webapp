@@ -215,7 +215,6 @@ if(isset($_POST['caction'])) {
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:round(microtime(true) * 1000);
 			$changes = getChanges($client, $ctype, $ctime);
-			$partial = filter_var($_POST['p'], FILTER_VALIDATE_INT);
 
 			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {	
 				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/startup_".time().".json":"startup_".time().".json";
@@ -235,6 +234,7 @@ if(isset($_POST['caction'])) {
 			$jmarks = json_decode($_POST['bookmark'],true);
 			$jerrmsg = "";
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$partial = (isset($_POST['p'])) ? filter_var($_POST['p'], FILTER_VALIDATE_INT):0;
 			switch (json_last_error()) {
 				case JSON_ERROR_NONE:
 					$jerrmsg = '';
@@ -365,10 +365,20 @@ if(isset($_POST['caction'])) {
 			e_log(8,"Request clientinfo");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `cname`, `ctype` ,`fs`, `lastseen` FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
-			$clientData = db_query($query)[0];
-			e_log(8,"Send clientinfo to client '".$clientData['cname']."'");
+			$clientData = db_query($query);
+			if(count($clientData) > 0) {
+				e_log(8,"Send clientinfo to client '".$clientData[0]['cname']."'");
+				//e_log(8, );
+			} else {
+				e_log(8,"Client not found.");
+				$clientData[0]['fs'] = 0;
+				$clientData[0]['lastseen'] = 0;
+				$clientData[0]['cname'] = null;
+				$clientData[0]['ctype'] = null;
+			}
+			
 			header("Content-Type: application/json");
-			die(json_encode($clientData));
+			die(json_encode($clientData[0]));
 			break;
 		case "gname":
 			e_log(8,"Request clientname");
@@ -806,6 +816,49 @@ if(isset($_POST['caction'])) {
 			} else {
 				die(json_encode('Editing users not allowed'));
 			}
+			break;
+		case "hvisited":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$message = "History element received from '$client'";
+			e_log(8, $message);
+			$hElement = json_decode($_POST["hel"], true);
+			$hElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($hElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+
+			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
+			$hData = db_query($query);
+			
+			if(count($hData) > 0) {
+				$query = "UPDATE `history` SET `hID` = '".$hElement['id']."', `lastVisitTime` = ".$hElement['lastVisitTime'].", `title` = '".$hElement['title']."', `typedCount` = ".$hElement['typedCount'].", `visitCount` = ".$hElement['visitCount']." WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
+			} else {
+				$query = "INSERT INTO `history` (`hID`,`lastVisitTime`,`title`,`typedCount`,`url`,`visitCount`,`userID`) VALUES ('".$hElement['id']."', ".$hElement['lastVisitTime'].", '".$hElement['title']."', ".$hElement['typedCount'].", '".$hElement['url']."', ".$hElement['visitCount'].", ".USERDATA['userID'].");";
+			}
+			
+			$hData = db_query($query);
+			e_log(8, $hData);
+			
+			header("Content-Type: application/json");
+			die($hData);
+			break;
+		case "rvisited":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$message = "History element removed by '$client'";
+			e_log(8, $message);
+			$rElement = json_decode($_POST["rel"], true);
+			$rElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($rElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			$query = "DELETE FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$rElement['url']."';";
+			$hData = db_query($query);
+			e_log(8, $hData);
+			header("Content-Type: application/json");
+			die($hData);
+			break;
+		case "gvisited":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$message = "History requested from '$client'";
+			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID'].";";
+			$hData = db_query($query);
+			header("Content-Type: application/json");
+			die(json_encode($hData));
+			//die();
 			break;
 		default:
 			header("Content-Type: application/json");
@@ -1298,7 +1351,6 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	$clientData = db_query($query);
 	$message = "";
 
-	//if (!empty($clientData) && $sync) {
 	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for client $cl.");
 		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
