@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.4
+ * @version 1.6.5
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -146,7 +146,8 @@ if(isset($_POST['caction'])) {
 			e_log(8,"Try to add entry '".$bookmark['title']."'");
 			$stime = round(microtime(true) * 1000);
 			$bookmark['added'] = $stime;
-			e_log(9,print_r($bookmark, true));
+			$bookmark['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			e_log(9, print_r($bookmark, true));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
@@ -161,8 +162,9 @@ if(isset($_POST['caction'])) {
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
 				die($response);
 			} else {
-				e_log(1,"This bookmark is not added, some parameters are missing");
-				die(false);
+				$message = "This bookmark is not added, some parameters are missing";
+				e_log(1, $message);
+				die($message);
 			}
 			break;
 		case "movemark":
@@ -232,6 +234,7 @@ if(isset($_POST['caction'])) {
 			$jmarks = json_decode($_POST['bookmark'],true);
 			$jerrmsg = "";
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$partial = (isset($_POST['p'])) ? filter_var($_POST['p'], FILTER_VALIDATE_INT):0;
 			switch (json_last_error()) {
 				case JSON_ERROR_NONE:
 					$jerrmsg = '';
@@ -267,8 +270,12 @@ if(isset($_POST['caction'])) {
 			$client = $_POST['client'];
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = round(microtime(true) * 1000);
-			delUsermarks(USERDATA['userID']);
-			markOtherClients($client);
+			
+			if($partial === 0) {
+				delUsermarks(USERDATA['userID']);
+				markOtherClients($client);
+			}
+			
 			$armarks = parseJSON($jmarks);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 			updateClient($client, $ctype, $ctime, true);
@@ -280,12 +287,6 @@ if(isset($_POST['caction'])) {
 			e_log(8,"Received new pushed URL: ".$url);
 			$target = (isset($_POST['tg'])) ? filter_var($_POST['tg'], FILTER_SANITIZE_STRING) : '0';
 			if(newNotification($url, $target) !== 0) die("URL successfully pushed.");
-			break;
-		case "lsnc":
-			e_log(8,"Get clients lastseen date.");
-			$query = "SELECT MAX(`lastseen`) as lastseen FROM `clients` WHERE `uid` = ".USERDATA['userID'].";";
-			$lastSeen = db_query($query)[0]['lastseen'];
-			die($lastSeen);
 			break;
 		case "rmessage":
 			$message = isset($_POST['message']) ? filter_var($_POST['message'], FILTER_VALIDATE_INT):0;
@@ -358,7 +359,26 @@ if(isset($_POST['caction'])) {
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
-			die(updateClient($client, $type, $time));
+			die(updateClient($client, $type, $ctime));
+			break;
+		case "cinfo":
+			e_log(8,"Request clientinfo");
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `cname`, `ctype` ,`fs`, `lastseen` FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
+			$clientData = db_query($query);
+			if(count($clientData) > 0) {
+				e_log(8,"Send clientinfo to client '".$clientData[0]['cname']."'");
+				//e_log(8, );
+			} else {
+				e_log(8,"Client not found.");
+				$clientData[0]['fs'] = 0;
+				$clientData[0]['lastseen'] = 0;
+				$clientData[0]['cname'] = null;
+				$clientData[0]['ctype'] = null;
+			}
+			
+			header("Content-Type: application/json");
+			die(json_encode($clientData[0]));
 			break;
 		case "gname":
 			e_log(8,"Request clientname");
@@ -368,6 +388,13 @@ if(isset($_POST['caction'])) {
 			e_log(8,"Send name '".$clientData['cname']."' back to client");
 			header("Content-Type: application/json");
 			die(json_encode($clientData));
+			break;
+		case "cfsync":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
+			$fsdata = db_query($query)['0'];
+			header("Content-Type: application/json");
+			die(json_encode($fsdata));
 			break;
 		case "gurls":
 			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
@@ -731,7 +758,7 @@ if(isset($_POST['caction'])) {
 					updateClient($client, $ctype, $ctime, true);
 
 					e_log(8, "Set client FullSync marker to 0");
-					$query = "UPDATE `clients` SET `fs`= 0 WHERE `cid` = '$client';";
+					$query = "UPDATE `clients` SET `fs` = 0 WHERE `cid` = '$client';";
 					db_query($query);
 
 					header("Content-Type: application/json");
@@ -790,12 +817,48 @@ if(isset($_POST['caction'])) {
 				die(json_encode('Editing users not allowed'));
 			}
 			break;
-		case "cfsync":
+		case "hvisited":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
-			$fsdata = db_query($query)['0'];
+			$message = "History element received from '$client'";
+			e_log(8, $message);
+			$hElement = json_decode($_POST["hel"], true);
+			$hElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($hElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+
+			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
+			$hData = db_query($query);
+			
+			if(count($hData) > 0) {
+				$query = "UPDATE `history` SET `hID` = '".$hElement['id']."', `lastVisitTime` = ".$hElement['lastVisitTime'].", `title` = '".$hElement['title']."', `typedCount` = ".$hElement['typedCount'].", `visitCount` = ".$hElement['visitCount']." WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
+			} else {
+				$query = "INSERT INTO `history` (`hID`,`lastVisitTime`,`title`,`typedCount`,`url`,`visitCount`,`userID`) VALUES ('".$hElement['id']."', ".$hElement['lastVisitTime'].", '".$hElement['title']."', ".$hElement['typedCount'].", '".$hElement['url']."', ".$hElement['visitCount'].", ".USERDATA['userID'].");";
+			}
+			
+			$hData = db_query($query);
+			e_log(8, $hData);
+			
 			header("Content-Type: application/json");
-			die(json_encode($fsdata));
+			die($hData);
+			break;
+		case "rvisited":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$message = "History element removed by '$client'";
+			e_log(8, $message);
+			$rElement = json_decode($_POST["rel"], true);
+			$rElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($rElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			$query = "DELETE FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$rElement['url']."';";
+			$hData = db_query($query);
+			e_log(8, $hData);
+			header("Content-Type: application/json");
+			die($hData);
+			break;
+		case "gvisited":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$message = "History requested from '$client'";
+			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID'].";";
+			$hData = db_query($query);
+			header("Content-Type: application/json");
+			die(json_encode($hData));
+			//die();
 			break;
 		default:
 			header("Content-Type: application/json");
@@ -1212,7 +1275,7 @@ function addBookmark($bm) {
 	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = ".USERDATA['userID']." AND `bmParentID` = '$folderID';";
 	$nindex = db_query($query)[0]['nindex'];
 	
-	e_log(8,"Add bookmark '$title'");
+	e_log(8,"Add bookmark '".$bm['title']."'");
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".$bm['title']."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".USERDATA["userID"].");";
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
@@ -1288,7 +1351,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	$clientData = db_query($query);
 	$message = "";
 
-	if (!empty($clientData) && $sync) {
+	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for client $cl.");
 		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
 		$message = (db_query($query)) ? "Client updated.":"Failed update client";
@@ -1634,7 +1697,7 @@ function bClientlist($uid) {
 		$cname = $client['cid'];
 		if(isset($client['cname'])) $cname = $client['cname'];
 		$timestamp = $client['lastseen'] / 1000;
-		$lastseen = ($timestamp != '0') ? date('D, d. M. Y H:i', $timestamp):'Sync: -- -- ---- -- --';
+		$lastseen = ($timestamp != '0') ? date('D, d. M. Y H:i', $timestamp):'----: -- -- ---- -- --';
 		$clientList.= "<li title='".$client['cid']."' data-type='".strtolower($client['ctype'])."' id='".$client['cid']."' class='client'><div class='clientname'>$cname<input type='text' name='cname' value='$cname'><div class='lastseen'>$lastseen</div></div><div class='fa-edit rename'></div><div class='fa-trash remove'></div></li>";
 	}
 	$clientList.= "</ul>";
@@ -1721,7 +1784,7 @@ function makeHTMLTree($arr) {
 	
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
-			$title = html_entity_decode($bm['bmTitle'],ENT_QUOTES,'UTF-8'); 
+			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bm['bmTitle'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 			$bookmark = "\n<li class='file'><a id='".$bm['bmID']."' title='".$title."' rel='noopener' target='_blank' href='".$bm['bmURL']."'>".$title."</a></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
@@ -1752,10 +1815,10 @@ function cid($id) {
 	return $id;
 }
 
-function importMarks($bookmarks,$uid) {
+function importMarks($bookmarks, $uid) {
 	e_log(8,"Starting import browser bookmarks");
 	foreach ($bookmarks as $bookmark) {
-		$title = htmlspecialchars($bookmark['bmTitle'],ENT_QUOTES,'UTF-8');
+		$title = htmlspecialchars($bookmark['bmTitle'], ENT_QUOTES, 'UTF-8');
 		$dateGroupModified = strlen($bookmark['dateGroupModified']) == 0 ? NULL : $bookmark['dateGroupModified'];
 		$url = strlen($bookmark['bmURL']) == 0 ? NULL : $bookmark['bmURL'];
 

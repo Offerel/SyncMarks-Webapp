@@ -33,7 +33,7 @@ CREATE TABLE `clients` (
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
-	`lastseen`	TEXT NOT NULL,
+	`lastseen`	TEXT NOT NULL DEFAULT 0,
 	`fs`	INTEGER NOT NULL DEFAULT 0,
 	FOREIGN KEY(`uid`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	PRIMARY KEY(`cid`)

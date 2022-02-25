@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `clients` (
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
-	`lastseen`	TEXT NOT NULL,
+	`lastseen`	TEXT NOT NULL DEFAULT 0,
 	`fs`	INTEGER NOT NULL DEFAULT 0,
 	PRIMARY KEY(`cid`),
 	FOREIGN KEY(`uid`) REFERENCES `users`(`userID`) ON DELETE CASCADE
