@@ -809,49 +809,6 @@ if(isset($_POST['caction'])) {
 				die(json_encode('Editing users not allowed'));
 			}
 			break;
-		case "hvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History element received from '$client'";
-			e_log(8, $message);
-			$hElement = json_decode($_POST["hel"], true);
-			$hElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($hElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-
-			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
-			$hData = db_query($query);
-			
-			if(count($hData) > 0) {
-				$query = "UPDATE `history` SET `hID` = '".$hElement['id']."', `lastVisitTime` = ".$hElement['lastVisitTime'].", `title` = '".$hElement['title']."', `typedCount` = ".$hElement['typedCount'].", `visitCount` = ".$hElement['visitCount']." WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
-			} else {
-				$query = "INSERT INTO `history` (`hID`,`lastVisitTime`,`title`,`typedCount`,`url`,`visitCount`,`userID`) VALUES ('".$hElement['id']."', ".$hElement['lastVisitTime'].", '".$hElement['title']."', ".$hElement['typedCount'].", '".$hElement['url']."', ".$hElement['visitCount'].", ".USERDATA['userID'].");";
-			}
-			
-			$hData = db_query($query);
-			e_log(8, $hData);
-			
-			header("Content-Type: application/json");
-			die($hData);
-			break;
-		case "rvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History element removed by '$client'";
-			e_log(8, $message);
-			$rElement = json_decode($_POST["rel"], true);
-			$rElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($rElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			$query = "DELETE FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$rElement['url']."';";
-			$hData = db_query($query);
-			e_log(8, $hData);
-			header("Content-Type: application/json");
-			die($hData);
-			break;
-		case "gvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History requested from '$client'";
-			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID'].";";
-			$hData = db_query($query);
-			header("Content-Type: application/json");
-			die(json_encode($hData));
-			//die();
-			break;
 		default:
 			header("Content-Type: application/json");
 			die(json_encode("Unknown Action"));
