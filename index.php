@@ -380,15 +380,7 @@ if(isset($_POST['caction'])) {
 			header("Content-Type: application/json");
 			die(json_encode($clientData[0]));
 			break;
-		case "gname":
-			e_log(8,"Request clientname");
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT cname, ctype FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
-			$clientData = db_query($query)[0];
-			e_log(8,"Send name '".$clientData['cname']."' back to client");
-			header("Content-Type: application/json");
-			die(json_encode($clientData));
-			break;
+
 		case "cfsync":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
