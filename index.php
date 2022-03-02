@@ -160,11 +160,11 @@ if(isset($_POST['caction'])) {
 			} else if($bookmark['type'] == 'folder') {
 				$response = addFolder($bookmark);
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
-				die($response);
+				die(json_encode($response));
 			} else {
 				$message = "This bookmark is not added, some parameters are missing";
 				e_log(1, $message);
-				die($message);
+				die(json_encode($message));
 			}
 			break;
 		case "movemark":
