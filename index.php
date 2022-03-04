@@ -353,13 +353,52 @@ if(isset($_POST['caction'])) {
 			header("Content-Type: application/json");
 			die(json_encode($myObj));
 			break;
+		case "tlg":
+			$userID = USERDATA['userID'];
+			$query = "SELECT * FROM `c_token` WHERE `userID` = $userID;";
+			$tData = db_query($query);
+			header("Content-Type: application/json");
+			die(json_encode($tData));
+			break;
+		case "tld":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$userID = USERDATA['userID'];
+			$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+			$tData = db_query($query);
+			header("Content-Type: application/json");
+			die(json_encode($tData));
+			break;
 		case "tl":
 			e_log(8,"Get testrequest from addon options page");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
-			die(updateClient($client, $type, $ctime));
+			$tResponse['message'] = updateClient($client, $type, $ctime);
+			$userID = USERDATA['userID'];
+			$query = "SELECT * FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+			$tData = db_query($query);
+			$tC = count($tData);
+			$expireTime = time()+60*60*24*7;
+			
+			if($tC == 1) {
+				$query = "UPDATE `c_token` SET `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+				db_query($query);
+				$tResponse['token'] = '';
+			} else {
+				$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+				db_query($query);
+				$token = bin2hex(openssl_random_pseudo_bytes(32));
+				$thash = password_hash($token, PASSWORD_DEFAULT);
+				$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+				db_query($query);
+				$tResponse['token'] = $token;
+			}
+			
+			header("Content-Type: application/json");
+			die(json_encode($tResponse));
+			
+			//die($tResponse['message']);
 			break;
 		case "cinfo":
 			e_log(8,"Request clientinfo");
@@ -368,7 +407,6 @@ if(isset($_POST['caction'])) {
 			$clientData = db_query($query);
 			if(count($clientData) > 0) {
 				e_log(8,"Send clientinfo to client '".$clientData[0]['cname']."'");
-				//e_log(8, );
 			} else {
 				e_log(8,"Client not found.");
 				$clientData[0]['fs'] = 0;
@@ -858,7 +896,6 @@ if(isset($_POST['caction'])) {
 			$hData = db_query($query);
 			header("Content-Type: application/json");
 			die(json_encode($hData));
-			//die();
 			break;
 		default:
 			header("Content-Type: application/json");
@@ -1955,6 +1992,18 @@ function clearAuthCookie() {
 
 function checkLogin() {
 	e_log(8,"Check login...");
+
+	$headers = null;
+	if (isset($_SERVER['Authorization'])) {
+		$headers = trim($_SERVER["Authorization"]);
+	} else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+		$headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+    }
+
+	$ctarr = explode(' ', $headers);
+	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
+	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
+
 	$realm = CONFIG['realm'];
 	$tVerified = false;
 	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':cryptCookie($_COOKIE['syncmarks'], 2);
@@ -1963,9 +2012,8 @@ function checkLogin() {
 
 	$aTime = time();
 
-	if(strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+	if(isset($cookieArr) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
 		e_log(8,"Cookie found. Try to login via authToken...");
-		
 		$query = "SELECT t.*, u.userlastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = '".$cookieArr['user']."' ORDER BY t.exDate DESC;";
 		$tkdata = db_query($query);
 
@@ -2014,10 +2062,21 @@ function checkLogin() {
 	}
 	
 	if(count($_GET) != 0 || count($_POST) != 0) {
-		$user = (isset($_POST['username'])) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_USER'];
-		$pw = (isset($_POST['password'])) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_PW'];
+		$u = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER']:false;
+		$p = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW']:false;
+		$user = (isset($_POST['username'])) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING):$u;
+		$pw = (isset($_POST['password'])) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$p;
 
-		if(!$user || !$pw) {
+		if($ctoken) {
+			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '".$cdata['client']."';";
+			$dbdata = db_query($query);
+			if(count($dbdata) === 1) {
+				if(password_verify($cdata['token'], $dbdata[0]['tHash'])) {
+					$_SESSION['sauth'] = $dbdata[0]['userName'];
+					e_log(8,"Client login successfull");
+				}
+			}
+		} else if(!$user || !$pw) {
 			header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
 			header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -2043,7 +2102,7 @@ function checkLogin() {
 					$oTime = $udata[0]['userLastLogin'];
 					$uid = $udata[0]['userID'];
 					$_SESSION['sauth'] = $udata[0]['userName'];
-					e_log(8,"Login successfully");
+					e_log(8,"Login successfull");
 					
 					if(isset($_POST['remember']) && $_POST['remember'] == true) {
 						e_log(8,'Set login Cookie');
