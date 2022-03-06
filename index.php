@@ -36,7 +36,7 @@ if(isset($_GET['reset'])){
 	switch($reset) {
 		case "request":
 			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
-			e_log(8,"Passwort Reset request for '$user'");
+			e_log(8,"Password Reset request for '$user'");
 			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `userID`, `userMail` FROM `users` WHERE `userName` = '$user';";
 			$result = db_query($query)[0];
@@ -53,7 +53,7 @@ if(isset($_GET['reset'])){
 			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES ($uid,'$time','$token');";
 			if(db_query($query)) {
 				$message = "Hello $user,\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=confirm&t=$token\r\nIf this request is not from your side, you should click the following link to chancel the request:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=chancel&t=$token";
-				if(!mail($mail, "Passwort request confirmation",$message,$headers)) {
+				if(!mail($mail, "Password request confirmation",$message,$headers)) {
 					e_log(1,"Error sending password reset request to user");
 				}
 			}
@@ -64,12 +64,12 @@ if(isset($_GET['reset'])){
 			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
 			$result = db_query($query)[0];
-			e_log(8,"Passwort Reset chancel for token '$token', '".$result['userName']."'");
+			e_log(8,"Password Reset chancel for token '$token', '".$result['userName']."'");
 			$query = "DELETE FROM `reset` WHERE `token` = '$token';";
 			if(db_query($query)) {
 				e_log(8,"Request removed successful");
-				$message = "Hello ".$result['userName'].",\r\nYour password request is chanceled, You can login with your old credentials at ".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'].". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
-				if(!mail($result['userMail'], "Password request chanceled",$message,$headers)) {
+				$message = "Hello ".$result['userName'].",\r\nYour password request is canceled, You can login with your old credentials at ".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'].". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
+				if(!mail($result['userMail'], "Password request canceled",$message,$headers)) {
 					e_log(1,"Error sending remove chancel to ".$result['userName']);
 				}
 			}
@@ -77,7 +77,7 @@ if(isset($_GET['reset'])){
 			echo "<div id='loginbody'>
 				<div id='loginform'>
 					<div id='loginformh'>Welcome to SyncMarks</div>
-					<div id='loginformt'>Password reset chanceled. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
+					<div id='loginformt'>Password reset canceled. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
 				</div>
 			</div>";
 			echo htmlFooter();
@@ -87,7 +87,7 @@ if(isset($_GET['reset'])){
 			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
 			$result = db_query($query)[0];
-			e_log(8,"Passwort Reset confirmation for token '$token', '".$result['userName']."'");
+			e_log(8,"Password Reset confirmation for token '$token', '".$result['userName']."'");
 			$tdiff = time() - $result['tokenTime'];
 			if($tdiff <= 300) {
 				$npwd = gpwd(16);
@@ -369,8 +369,8 @@ if(isset($_POST['caction'])) {
 			die(json_encode($tData));
 			break;
 		case "tl":
-			e_log(8,"Get testrequest from addon options page");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			e_log(8,"Token request from client '$client'");
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
@@ -379,36 +379,31 @@ if(isset($_POST['caction'])) {
 			$query = "SELECT * FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
 			$tData = db_query($query);
 			$tC = count($tData);
+
 			$expireTime = time()+60*60*24*7;
-			
-			if($tC == 1) {
-				$query = "UPDATE `c_token` SET `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
-				db_query($query);
-				$tResponse['token'] = '';
-			} else {
-				$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
-				db_query($query);
-				$token = bin2hex(openssl_random_pseudo_bytes(32));
-				$thash = password_hash($token, PASSWORD_DEFAULT);
-				$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
-				db_query($query);
-				$tResponse['token'] = $token;
-			}
-			
+			$token = bin2hex(openssl_random_pseudo_bytes(32));
+			$thash = password_hash($token, PASSWORD_DEFAULT);
+			$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+			db_query($query);
+			$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+			db_query($query);
+			$tResponse['token'] = $token;
 			header("Content-Type: application/json");
-			die(json_encode($tResponse));
+
+			unset($_SESSION['sauth']);
+			session_destroy();
 			
-			//die($tResponse['message']);
+			die(json_encode($tResponse));
 			break;
 		case "cinfo":
-			e_log(8,"Request clientinfo");
+			e_log(8,"Request client info");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `cname`, `ctype` ,`fs`, `lastseen` FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
 			$clientData = db_query($query);
 			if(count($clientData) > 0) {
-				e_log(8,"Send clientinfo to client '".$clientData[0]['cname']."'");
+				e_log(8,"Send client info to client '".$clientData[0]['cname']."'");
 			} else {
-				e_log(8,"Client not found.");
+				e_log(2,"Client not found.");
 				$clientData[0]['fs'] = 0;
 				$clientData[0]['lastseen'] = 0;
 				$clientData[0]['cname'] = null;
@@ -451,7 +446,7 @@ if(isset($_POST['caction'])) {
 				header("Content-Type: application/json");
 				die(json_encode($myObj));
 			} else {
-				e_log(8,"No pushed sites found");
+				e_log(3,"No pushed sites found");
 				header("Content-Type: application/json");
 				die(json_encode("0"));
 			}
@@ -511,7 +506,7 @@ if(isset($_POST['caction'])) {
 			break;
 		case "muedt":
 			if(USERDATA['userType'] < 2) {
-				e_log(1,"Stop userchange, no sufficent privileges.");
+				e_log(1,"Stop user change, no sufficient privileges.");
 				die();
 			}
 			$del = false;
@@ -670,31 +665,31 @@ if(isset($_POST['caction'])) {
 			}
 			break;
 		case "pupdate":
-			e_log(8,"Userchange: Updating user password started");
+			e_log(8,"User change: Updating user password started");
 			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
 			$npassword = filter_var($_POST['npassword'], FILTER_SANITIZE_STRING);
 			$cpassword = filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING);
 
 			if($opassword != "" && $npassword !="" && $cpassword !="") {
-				e_log(8,"Userchange: Data complete entered");
+				e_log(8,"User change: Data complete entered");
 				if(password_verify($opassword,USERDATA['userHash'])) {
-					e_log(8,"Userchange: Verify original password");
+					e_log(8,"User change: Verify original password");
 					if($npassword === $cpassword) {
-						e_log(8,"Userchange: New and confirmed password");
+						e_log(8,"User change: New and confirmed password");
 						if($npassword != $opassword) {
 							$password = password_hash($npassword,PASSWORD_DEFAULT);
 							$query = "UPDATE `users` SET `userHash`='$password' WHERE `userID`=".USERDATA['userID'].";";
 							db_query($query);
-							e_log(8,"Userchange: Password changed");
+							e_log(8,"User change: Password changed");
 						} else {
-							e_log(2,"Userchange: Old and new password identical, user not changed");
+							e_log(2,"User change: Old and new password identical, user not changed");
 						}
 					}
 				} else {
-					e_log(2,"Userchange: Old password missmatch");
+					e_log(2,"User change: Old password mismatch");
 				}
 			} else {
-				e_log(2,"Userchange: Data missing, process failed");
+				e_log(2,"User change: Data missing, process failed");
 			}
 
 			unset($_SESSION['sauth']);
@@ -734,30 +729,30 @@ if(isset($_POST['caction'])) {
 				die();
 			}
 			else {
-				e_log(1,"Password missmatch. Pushbullet not updated.");
-				die("Password missmatch. Pushbullet not updated.");
+				e_log(1,"Password mismatch. Pushbullet not updated.");
+				die("Password mismatch. Pushbullet not updated.");
 			}
 			die();
 			break;
 		case "uupdate":
-			e_log(8,"Userchange: Updating user name started");
+			e_log(8,"User change: Updating user name started");
 			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
 			$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
 
 			if($opassword != "") {
-				e_log(8,"Userchange: Data complete entered");
+				e_log(8,"User change: Data complete entered");
 				if(password_verify($opassword,USERDATA['userHash'])) {
-					e_log(8,"Userchange: Verify original password");
+					e_log(8,"User change: Verify original password");
 					$query = "UPDATE `users` SET `userName`='$username' WHERE `userID`=".USERDATA['userID'].";";
 					db_query($query);
-					e_log(8,"Userchange: Username changed");
+					e_log(8,"User change: Username changed");
 				}
 				else {
-					e_log(2,"Userchange: Failed to verify original password");
+					e_log(2,"User change: Failed to verify original password");
 				}
 			}
 			else {
-				e_log(2,"Userchange: Data missing");
+				e_log(2,"User change: Data missing");
 			}
 			unset($_SESSION['sauth']);
 			e_log(8,"User logged out");
@@ -855,48 +850,6 @@ if(isset($_POST['caction'])) {
 				die(json_encode('Editing users not allowed'));
 			}
 			break;
-		case "hvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History element received from '$client'";
-			e_log(8, $message);
-			$hElement = json_decode($_POST["hel"], true);
-			$hElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($hElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-
-			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
-			$hData = db_query($query);
-			
-			if(count($hData) > 0) {
-				$query = "UPDATE `history` SET `hID` = '".$hElement['id']."', `lastVisitTime` = ".$hElement['lastVisitTime'].", `title` = '".$hElement['title']."', `typedCount` = ".$hElement['typedCount'].", `visitCount` = ".$hElement['visitCount']." WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$hElement['url']."';";
-			} else {
-				$query = "INSERT INTO `history` (`hID`,`lastVisitTime`,`title`,`typedCount`,`url`,`visitCount`,`userID`) VALUES ('".$hElement['id']."', ".$hElement['lastVisitTime'].", '".$hElement['title']."', ".$hElement['typedCount'].", '".$hElement['url']."', ".$hElement['visitCount'].", ".USERDATA['userID'].");";
-			}
-			
-			$hData = db_query($query);
-			e_log(8, $hData);
-			
-			header("Content-Type: application/json");
-			die($hData);
-			break;
-		case "rvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History element removed by '$client'";
-			e_log(8, $message);
-			$rElement = json_decode($_POST["rel"], true);
-			$rElement['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($rElement['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			$query = "DELETE FROM `history` WHERE `userID` = ".USERDATA['userID']." AND `url` = '".$rElement['url']."';";
-			$hData = db_query($query);
-			e_log(8, $hData);
-			header("Content-Type: application/json");
-			die($hData);
-			break;
-		case "gvisited":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$message = "History requested from '$client'";
-			$query = "SELECT * FROM `history` WHERE `userID` = ".USERDATA['userID'].";";
-			$hData = db_query($query);
-			header("Content-Type: application/json");
-			die(json_encode($hData));
-			break;
 		default:
 			header("Content-Type: application/json");
 			die(json_encode("Unknown Action"));
@@ -971,7 +924,6 @@ function markOtherClients($client) {
 function newNotification($url, $target) {
 	$erg = 0;
 	$title = getSiteTitle($url);
-	e_log(8, $title);
 	$ctime = time();
 	$uidd = USERDATA['userID'];
 
@@ -1179,7 +1131,7 @@ function editFolder($bm) {
 		$query = "UPDATE `bookmarks` SET `bmAction` = NULL, `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 		$count = db_query($query);
 	} else {
-		e_log(8,"Folder not found, chancel operation and send error to client.");
+		e_log(3,"Folder not found, chancel operation and send error to client.");
 		$count = 0;
 	}
 	return $count;
@@ -1195,7 +1147,7 @@ function editBookmark($bm) {
 		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 		$count = db_query($query);
 	} else {
-		e_log(8,"No unique bookmark found, try to find now by title...");
+		e_log(3,"No unique bookmark found, try to find now by title...");
 		$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `userID` = ".USERDATA['userID'];
 		$bmData = db_query($query);
 
@@ -1204,7 +1156,7 @@ function editBookmark($bm) {
 			$query = "UPDATE `bookmarks` SET `bmURL` = '".$bm['url']."' WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 			$count = db_query($query);
 		} else {
-			e_log(8,"No Unique entry found, chancel operation and send error to client.");
+			e_log(3,"No Unique entry found, chancel operation and send error to client.");
 			$count = 0;
 		}
 	}
@@ -1249,7 +1201,7 @@ function moveBookmark($bm) {
 		}
 	}
 	else {
-		e_log(8,"url key not found");
+		e_log(2,"url key not found");
 	}
 }
 
@@ -1266,7 +1218,7 @@ function addFolder($bm) {
 	}
 
 	if($res["bmCount"] > 0 && $count != 1) {
-		e_log(8,"Folder not added, it exists already for this user, exit request");
+		e_log(3,"Folder not added, it exists already for this user, exit request");
 		return false;
 	}
 	
@@ -1295,12 +1247,12 @@ function addBookmark($bm) {
 			$query = "UPDATE `bookmarks` SET `bmAction` = NULL WHERE `bmID` = '".$bmExistData[0]["bmID"]."' AND userID = ".USERDATA["userID"].";";
 			$count = db_query($query);
 			$message = "Bookmark not added at server, it already exists for this user, bookmark undeleted now.";
-			e_log(8,$message);
+			e_log(3,$message);
 			return $count;
 		}
 		else {
 			$message = "Bookmark not added at server, it already exists";
-			e_log(8,$message);
+			e_log(3,$message);
 			return $message;
 		}
 	}
@@ -2002,6 +1954,7 @@ function checkLogin() {
 
 	$ctarr = explode(' ', $headers);
 	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
+
 	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
 
 	$realm = CONFIG['realm'];
@@ -2067,13 +2020,31 @@ function checkLogin() {
 		$user = (isset($_POST['username'])) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING):$u;
 		$pw = (isset($_POST['password'])) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$p;
 
-		if($ctoken) {
+		if($ctoken && isset($cdata)) {
 			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '".$cdata['client']."';";
 			$dbdata = db_query($query);
 			if(count($dbdata) === 1) {
 				if(password_verify($cdata['token'], $dbdata[0]['tHash'])) {
 					$_SESSION['sauth'] = $dbdata[0]['userName'];
 					e_log(8,"Client login successfull");
+
+					$expireTime = time()+60*60*24*7;
+					$token = bin2hex(openssl_random_pseudo_bytes(32));
+					$thash = password_hash($token, PASSWORD_DEFAULT);
+					$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+					db_query($query);
+					$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+					db_query($query);
+					e_log(8, "token: ".$token);
+					header("X-T-Response: $token");
+				} else {
+					e_log(3,"Client login failed");
+					header("Content-Type: application/json");
+					unset($_SESSION['sauth']);
+					session_destroy();
+					header("X-F-Response: failed");
+					die(json_encode("false"));
+					exit;
 				}
 			}
 		} else if(!$user || !$pw) {
@@ -2141,7 +2112,7 @@ function checkLogin() {
 						header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
 						http_response_code(401);
 					}
-					e_log(8,"Login failed. Password missmatch");
+					e_log(3,"Login failed. Password missmatch");
 					echo htmlHeader();
 					$lform = "<div id='loginbody'>
 						<div id='loginform'>
@@ -2171,7 +2142,7 @@ function checkLogin() {
 						</div>";
 					echo htmlFooter();
 				}
-				e_log(8,"Login failed. Credential missmatch");
+				e_log(3,"Login failed. Credential missmatch");
 				exit;
 			}
 		}
@@ -2290,7 +2261,7 @@ function checkDB() {
 	} elseif($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
 		if($olddate <> $newdate) db_query("UPDATE `system` SET `updated` = '$newdate' WHERE `updated` = '$olddate';");
 	} else {
-		e_log(8,"Database not ready. Initialize database now");
+		e_log(3,"Database not ready. Initialize database now");
 		if(CONFIG['db']['type'] == "sqlite") {
 			if(!file_exists(CONFIG['db']['dbname'])) {
 				if(!file_exists(dirname(CONFIG['db']['dbname']))) {
