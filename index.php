@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.5
+ * @version 1.6.6
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -271,10 +271,7 @@ if(isset($_POST['caction'])) {
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = round(microtime(true) * 1000);
 			
-			if($partial === 0) {
-				delUsermarks(USERDATA['userID']);
-				markOtherClients($client);
-			}
+			if($partial === 0) delUsermarks(USERDATA['userID']);
 			
 			$armarks = parseJSON($jmarks);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
@@ -286,7 +283,7 @@ if(isset($_POST['caction'])) {
 			$url = validate_url($_POST['url']);
 			e_log(8,"Received new pushed URL: ".$url);
 			$target = (isset($_POST['tg'])) ? filter_var($_POST['tg'], FILTER_SANITIZE_STRING) : '0';
-			if(newNotification($url, $target) !== 0) die("URL successfully pushed.");
+			if(newNotification($url, $target) !== 0) die("URL successful pushed.");
 			break;
 		case "rmessage":
 			$message = isset($_POST['message']) ? filter_var($_POST['message'], FILTER_VALIDATE_INT):0;
@@ -322,7 +319,7 @@ if(isset($_POST['caction'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = ".USERDATA['userID']." AND NOT `cid` = '$client';";
 			$clientList = db_query($query);
-			e_log(8,"Found ".count($clientList)." clients. Send list to requesting client.");
+			e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
 			
 			uasort($clientList, function($a, $b) {
 				return strnatcasecmp($a['cname'], $b['cname']);
@@ -398,13 +395,12 @@ if(isset($_POST['caction'])) {
 		case "cinfo":
 			e_log(8,"Request client info");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `cname`, `ctype` ,`fs`, `lastseen` FROM clients WHERE cid = '$client' and uid = ".USERDATA['userID'].";";
+			$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `uid` = ".USERDATA['userID'].";";
 			$clientData = db_query($query);
 			if(count($clientData) > 0) {
-				e_log(8,"Send client info to client '".$clientData[0]['cname']."'");
+				e_log(8,"Send client info to '$client'");
 			} else {
 				e_log(2,"Client not found.");
-				$clientData[0]['fs'] = 0;
 				$clientData[0]['lastseen'] = 0;
 				$clientData[0]['cname'] = null;
 				$clientData[0]['ctype'] = null;
@@ -422,16 +418,9 @@ if(isset($_POST['caction'])) {
 			header("Content-Type: application/json");
 			die(json_encode($clientData));
 			break;
-		case "cfsync":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `fs`, `lastseen` FROM `clients` WHERE `cid` = '$client';";
-			$fsdata = db_query($query)['0'];
-			header("Content-Type: application/json");
-			die(json_encode($fsdata));
-			break;
 		case "gurls":
 			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
-			e_log(8,"Request pushed sites for client $client");
+			e_log(8,"Request pushed sites for '$client'");
 			$query = "SELECT * FROM `notifications` WHERE `nloop` = 1 AND `userID` = ".USERDATA['userID']." AND `client` IN ('".$client."','0');";
 			$uOptions = json_decode(USERDATA['uOptions'],true);
 			$notificationData = db_query($query);
@@ -446,7 +435,7 @@ if(isset($_POST['caction'])) {
 				header("Content-Type: application/json");
 				die(json_encode($myObj));
 			} else {
-				e_log(3,"No pushed sites found");
+				e_log(2,"No pushed sites found");
 				header("Content-Type: application/json");
 				die(json_encode("0"));
 			}
@@ -472,7 +461,8 @@ if(isset($_POST['caction'])) {
 			$folder = filter_var($_POST['folder'], FILTER_SANITIZE_STRING);
 			$query = "SELECT MAX(bmIndex)+1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$folder';";
 			$folderData = db_query($query);
-			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAction` = 2, `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".USERDATA['userID'].";";
+			//$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAction` = 2, `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".USERDATA['userID'].";";
+			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".USERDATA['userID'].";";
 			$count = db_query($query);
 			($count > 0) ? die(true) : die(false);
 			break;
@@ -767,7 +757,7 @@ if(isset($_POST['caction'])) {
 			die();
 			break;
 		case "export":
-			e_log(8,"Requested bookmark export...");
+			e_log(8,"Request bookmark export");
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = round(microtime(true) * 1000);
 			$format = filter_var($_POST['type'], FILTER_SANITIZE_STRING);
@@ -786,13 +776,9 @@ if(isset($_POST['caction'])) {
 						e_log(8,"Export file is saved to $filename");
 					}
 					$bcount = count(json_decode($bookmarks));
-					e_log(8,"Send now $bcount bookmarks to the client");
+					e_log(8,"Send $bcount bookmarks to '$client'");
 					$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $ctime, true);
-
-					e_log(8, "Set client FullSync marker to 0");
-					$query = "UPDATE `clients` SET `fs` = 0 WHERE `cid` = '$client';";
-					db_query($query);
 
 					header("Content-Type: application/json");
 					die($bookmarks);
@@ -804,10 +790,12 @@ if(isset($_POST['caction'])) {
 			break;
 		case "checkdups":
 			e_log(8,"Checking for duplicated bookmarks by url");
-			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `userID` = ".USERDATA['userID']." AND `bmAction` IS NULL OR `bmAction` = 2 GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
+			//$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `userID` = ".USERDATA['userID']." AND `bmAction` IS NULL OR `bmAction` = 2 GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
+			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `userID` = ".USERDATA['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
 			$dubData = db_query($query);
 			foreach($dubData as $key => $dub) {
-				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmURL` = '".$dub['bmURL']."' AND `userID` = ".USERDATA['userID']." AND `bmAction` IS NULL OR `bmAction` = 2 ORDER BY `bmParentID`, `bmIndex`;";
+				//$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmURL` = '".$dub['bmURL']."' AND `userID` = ".USERDATA['userID']." AND `bmAction` IS NULL OR `bmAction` = 2 ORDER BY `bmParentID`, `bmIndex`;";
+				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmURL` = '".$dub['bmURL']."' AND `userID` = ".USERDATA['userID']." ORDER BY `bmParentID`, `bmIndex`;";
 				$subData = db_query($query);
 				foreach($subData as $index => $entry) {
 					$subData[$index]['fway'] = fWay($entry['bmParentID'], USERDATA['userID'],'');
@@ -916,11 +904,6 @@ echo htmlForms();
 echo showBookmarks(2);
 echo htmlFooter();
 
-function markOtherClients($client) {
-	e_log(8, "Set other sync clients to fullsync = true");
-	$query = "UPDATE `clients` SET `fs` = 1 WHERE `lastseen` > 0 AND `uid` = ".USERDATA['userID']." AND `cid` <> '$client';";
-}
-
 function newNotification($url, $target) {
 	$erg = 0;
 	$title = getSiteTitle($url);
@@ -965,7 +948,8 @@ function fWay($parent, $user, $str) {
 function delMark($bmID) {
 	$count = 0;
 	e_log(8,"Delete bookmark '$bmID'");
-	$query = "UPDATE `bookmarks` SET `bmAction`= 1, `bmAdded`= '".round(microtime(true) * 1000)."' WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
+	//$query = "UPDATE `bookmarks` SET `bmAction`= 1, `bmAdded`= '".round(microtime(true) * 1000)."' WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
+	$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
 	$count = db_query($query);
 
 	$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
@@ -1128,10 +1112,11 @@ function editFolder($bm) {
 
 	if(count($fData) == 1) {
 		e_log(8,"Unique folder found, edit the folder");
-		$query = "UPDATE `bookmarks` SET `bmAction` = NULL, `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
+		//$query = "UPDATE `bookmarks` SET `bmAction` = NULL, `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
+		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 		$count = db_query($query);
 	} else {
-		e_log(3,"Folder not found, chancel operation and send error to client.");
+		e_log(2,"Folder not found, chancel operation and send error to client.");
 		$count = 0;
 	}
 	return $count;
@@ -1147,7 +1132,7 @@ function editBookmark($bm) {
 		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."' WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 		$count = db_query($query);
 	} else {
-		e_log(3,"No unique bookmark found, try to find now by title...");
+		e_log(2,"No unique bookmark found, try to find now by title...");
 		$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `userID` = ".USERDATA['userID'];
 		$bmData = db_query($query);
 
@@ -1156,7 +1141,7 @@ function editBookmark($bm) {
 			$query = "UPDATE `bookmarks` SET `bmURL` = '".$bm['url']."' WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = ".USERDATA["userID"].";";
 			$count = db_query($query);
 		} else {
-			e_log(3,"No Unique entry found, chancel operation and send error to client.");
+			e_log(2,"No Unique entry found, chancel operation and send error to client.");
 			$count = 0;
 		}
 	}
@@ -1187,7 +1172,8 @@ function moveBookmark($bm) {
 				$query = "DELETE FROM `bookmarks` WHERE `bmID` = '".$oldData["bmID"]."'";
 				db_query($query);
 				e_log(8,"Re-Add bookmark on new position");
-				$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmAction`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".USERDATA["userID"].",2)";
+				//$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmAction`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".USERDATA["userID"].",2)";
+				$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".USERDATA["userID"].")";
 				db_query($query);
 				return true;
 			}
@@ -1208,17 +1194,20 @@ function moveBookmark($bm) {
 function addFolder($bm) {
 	$count = 0;
 	e_log(8,"Try to find if this folder exists already");
-	$query = "SELECT COUNT(*) AS bmCount, bmAction, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = ".USERDATA['userID'].";";
+	//$query = "SELECT COUNT(*) AS bmCount, bmAction, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = ".USERDATA['userID'].";";
+	$query = "SELECT COUNT(*) AS bmCount, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = ".USERDATA['userID'].";";
 	$res = db_query($query)[0];
 
+	/*
 	if($res["bmAction"]) {
 		e_log(8,"Remove temporary entry ".$res["bmID"]);
 		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '".$res["bmID"]."' AND `userID` = ".USERDATA['userID'].";";
 		$count = db_query($query);
 	}
+	*/
 
 	if($res["bmCount"] > 0 && $count != 1) {
-		e_log(3,"Folder not added, it exists already for this user, exit request");
+		e_log(2,"Folder not added, it exists already for this user, exit request");
 		return false;
 	}
 	
@@ -1239,22 +1228,25 @@ function addFolder($bm) {
 
 function addBookmark($bm) {
 	e_log(8,"Check if bookmark already exists for user.");
-	$query = "SELECT `bmID`, COUNT(*) AS `bmcount`, MAX(`bmAction`) AS `bmaction` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = ".USERDATA["userID"].";";
+	//$query = "SELECT `bmID`, COUNT(*) AS `bmcount`, MAX(`bmAction`) AS `bmaction` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = ".USERDATA["userID"].";";
+	$query = "SELECT `bmID`, COUNT(*) AS `bmcount` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = ".USERDATA["userID"].";";
+	
 	$bmExistData = db_query($query);
 	if($bmExistData[0]["bmcount"] > 0) {
+		/*
 		if($bmExistData[0]["bmaction"] == 1) {
 			e_log(8,"Undelete removed bookmark.");
 			$query = "UPDATE `bookmarks` SET `bmAction` = NULL WHERE `bmID` = '".$bmExistData[0]["bmID"]."' AND userID = ".USERDATA["userID"].";";
 			$count = db_query($query);
 			$message = "Bookmark not added at server, it already exists for this user, bookmark undeleted now.";
-			e_log(3,$message);
+			e_log(2,$message);
 			return $count;
-		}
-		else {
+		*/
+		//} else {
 			$message = "Bookmark not added at server, it already exists";
-			e_log(3,$message);
+			e_log(2,$message);
 			return $message;
-		}
+		//}
 	}
 	e_log(8,"Get folder for adding bookmark");
 	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = '".$bm["folder"]."' AND `userID` = ".USERDATA['userID'].";";
@@ -1284,7 +1276,8 @@ function getChanges($cl, $ct, $time) {
 	if($clientData) {
 		$lastseen = $clientData["lastseen"];
 		e_log(8,"Get changed bookmarks for client $cl");
-		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
+		//$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified`, `bmAction` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAction = 1 AND bmAdded > $lastseen AND userID = $uid);";
+		$query = "SELECT a.`bmParentID` as fdID, (SELECT `bmTitle` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdName, (SELECT `bmIndex` FROM `bookmarks` WHERE `bmID` = a.`bmParentID` AND userID = $uid) as fdIndex, `bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `bmModified` FROM `bookmarks` a WHERE (bmAdded > $lastseen AND userID = $uid) OR (bmAdded > $lastseen AND userID = $uid);";
 		
 		$bookmarkData = db_query($query);
 		foreach($bookmarkData as $key => $entry) {
@@ -1299,7 +1292,9 @@ function getChanges($cl, $ct, $time) {
 
 	if (!empty($bookmarkData)) {
 		updateClient($cl, $ct, $time, true);
+		/*
 		e_log(8,"Try to find bookmarks, which could be completely deleted");
+		//$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmAdded` <= (SELECT MIN(`lastseen`) FROM `clients` WHERE `uid` = $uid AND `lastseen` > 1) AND `bmAction` = 1;";
 		$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmAdded` <= (SELECT MIN(`lastseen`) FROM `clients` WHERE `uid` = $uid AND `lastseen` > 1) AND `bmAction` = 1;";
 		$removeMarks = db_query($query);
 
@@ -1315,6 +1310,7 @@ function getChanges($cl, $ct, $time) {
 		else {
 			e_log(8,"No bookmarks found to delete from the database");
 		}
+		*/
 
 		if(CONFIG['cexpjson'] && CONFIG['loglevel'] == 9) {
 			$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/changes_".time().".json":"changes_".time().".json";
@@ -1341,7 +1337,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	$message = "";
 
 	if (!empty($clientData)) {
-		e_log(8,"Updating lastlogin for client $cl.");
+		e_log(8,"Updating lastlogin for '$cl'");
 		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
 		$message = (db_query($query)) ? "Client updated.":"Failed update client";
 	} else if(empty($clientData)) {
@@ -1430,7 +1426,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 	if($errfile != "") $message = $message." in ".$errfile." on line ".$errline;
 	$user = '';
 	if(isset($_SESSION['sauth'])) $user = "- ".$_SESSION['sauth']." ";
-	$line = "[".date("d-M-Y H:i:s")."] [$mode] $user- $message\n";
+	$line = "[".date("d-M-Y H:i:s")."] $mode $user- $message\n";
 	
 	if($level <= CONFIG['loglevel']) {
 		$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
@@ -1449,6 +1445,7 @@ function filterIP($remote) {
 }
 
 function delUsermarks($uid) {
+	e_log(8, "Delete all bookmarks for logged in user");
 	$query = "DELETE FROM `bookmarks` WHERE `UserID`=".$uid;
 	db_query($query);
 }
@@ -1805,7 +1802,7 @@ function cid($id) {
 }
 
 function importMarks($bookmarks, $uid) {
-	e_log(8,"Starting import browser bookmarks");
+	e_log(8,"Starting bookmark import");
 	foreach ($bookmarks as $bookmark) {
 		$title = htmlspecialchars($bookmark['bmTitle'], ENT_QUOTES, 'UTF-8');
 		$dateGroupModified = strlen($bookmark['dateGroupModified']) == 0 ? NULL : $bookmark['dateGroupModified'];
@@ -1851,9 +1848,9 @@ function importMarks($bookmarks, $uid) {
 	$response = db_query($query,$data2);
 
 	if($response)
-		e_log(8,"Browser bookmark import successfully");
+		e_log(8,"Bookmark import successful");
 	else
-		e_log(1,"Error importing browser bookmarks");
+		e_log(1,"Error importing bookmarks");
 	
 	return $response;
 }
@@ -1878,7 +1875,8 @@ function parseJSON($arr) {
 }
 
 function getBookmarks() {
-	$query = "SELECT * FROM `bookmarks` WHERE `bmAction` IS NOT 1 AND `userID` = ".USERDATA['userID'].";";
+	//$query = "SELECT * FROM `bookmarks` WHERE `bmAction` IS NOT 1 AND `userID` = ".USERDATA['userID'].";";
+	$query = "SELECT * FROM `bookmarks` WHERE `userID` = ".USERDATA['userID'].";";
 	e_log(8,"Get bookmarks");
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
@@ -1956,6 +1954,7 @@ function checkLogin() {
 	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
 
 	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
+	
 
 	$realm = CONFIG['realm'];
 	$tVerified = false;
@@ -1978,7 +1977,7 @@ function checkLogin() {
 		}
 		
 		if($tVerified) {
-			e_log(8,"Cookie Login successfull. Renew cookie");
+			e_log(8,"Cookie Login successful. Renew cookie");
 			$seid = session_id();
 			$oTime = $tkdata[0]['userLastLogin'];
 			$_SESSION['sauth'] = $tkdata[0]['userName'];
@@ -2021,30 +2020,34 @@ function checkLogin() {
 		$pw = (isset($_POST['password'])) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$p;
 
 		if($ctoken && isset($cdata)) {
-			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '".$cdata['client']."';";
+			$client = $cdata['client'];
+			e_log(8,"Try login $client");
+			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '$client';";
 			$dbdata = db_query($query);
+			
 			if(count($dbdata) === 1) {
-				if(password_verify($cdata['token'], $dbdata[0]['tHash'])) {
+				$pverify = (password_verify($cdata['token'], $dbdata[0]['tHash'])) ? "true":"false";
+				$zeit = ($dbdata[0]['exDate'] > time()) ? "dbzeit":"actzeit";
+				if(password_verify($cdata['token'], $dbdata[0]['tHash']) && $dbdata[0]['exDate'] > time()) {
 					$_SESSION['sauth'] = $dbdata[0]['userName'];
-					e_log(8,"Client login successfull");
-
+					e_log(8,"$client login successful");
 					$expireTime = time()+60*60*24*7;
 					$token = bin2hex(openssl_random_pseudo_bytes(32));
 					$thash = password_hash($token, PASSWORD_DEFAULT);
-					$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+					$userID = $dbdata[0]['userID'];
+					$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client';";
 					db_query($query);
-					$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
-					db_query($query);
-					e_log(8, "token: ".$token);
-					header("X-T-Response: $token");
+					header("X-Request-Info: $token");
 				} else {
-					e_log(3,"Client login failed");
-					header("Content-Type: application/json");
+					$action = $_POST['caction'];
+					$ctoken = $cdata['token'];
+					$thash = $dbdata[0]['tHash'];
+					e_log(2,"$client login failed, request '$action', passwort: $pverify, ctoken: $ctoken, hash: $thash, zeit: $zeit");
 					unset($_SESSION['sauth']);
 					session_destroy();
-					header("X-F-Response: failed");
+					header("X-Request-Info: 0");
+					header("Content-Type: application/json");
 					die(json_encode("false"));
-					exit;
 				}
 			}
 		} else if(!$user || !$pw) {
@@ -2112,7 +2115,7 @@ function checkLogin() {
 						header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
 						http_response_code(401);
 					}
-					e_log(3,"Login failed. Password missmatch");
+					e_log(2,"Login failed. Password missmatch");
 					echo htmlHeader();
 					$lform = "<div id='loginbody'>
 						<div id='loginform'>
@@ -2142,7 +2145,7 @@ function checkLogin() {
 						</div>";
 					echo htmlFooter();
 				}
-				e_log(3,"Login failed. Credential missmatch");
+				e_log(2,"Login failed. Credential missmatch");
 				exit;
 			}
 		}
@@ -2261,7 +2264,7 @@ function checkDB() {
 	} elseif($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
 		if($olddate <> $newdate) db_query("UPDATE `system` SET `updated` = '$newdate' WHERE `updated` = '$olddate';");
 	} else {
-		e_log(3,"Database not ready. Initialize database now");
+		e_log(2,"Database not ready. Initialize database now");
 		if(CONFIG['db']['type'] == "sqlite") {
 			if(!file_exists(CONFIG['db']['dbname'])) {
 				if(!file_exists(dirname(CONFIG['db']['dbname']))) {
