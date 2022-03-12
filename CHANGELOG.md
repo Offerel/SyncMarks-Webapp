@@ -1,5 +1,10 @@
 ChangeLog
 =========
+1.6.6 (2022-03-08)
+-------------------------
+- Added token based login
+
+
 1.6.5 (2022-02-24)
 -------------------------
 - Streamlined client info
