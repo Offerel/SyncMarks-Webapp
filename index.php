@@ -2039,10 +2039,9 @@ function checkLogin() {
 					db_query($query);
 					header("X-Request-Info: $token");
 				} else {
-					$action = $_POST['caction'];
 					$ctoken = $cdata['token'];
 					$thash = $dbdata[0]['tHash'];
-					e_log(2,"$client login failed, request '$action', passwort: $pverify, ctoken: $ctoken, hash: $thash, zeit: $zeit");
+					e_log(2,"Client login failed");
 					unset($_SESSION['sauth']);
 					session_destroy();
 					header("X-Request-Info: 0");
