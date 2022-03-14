@@ -943,8 +943,6 @@ function fWay($parent, $user, $str) {
 function delMark($bmID) {
 	$count = 0;
 	e_log(8,"Delete bookmark '$bmID'");
-	$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
-	$count = db_query($query);
 
 	$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
 	$dData = db_query($query)[0];
@@ -957,6 +955,9 @@ function delMark($bmID) {
 		$query = "UPDATE `bookmarks` SET `bmIndex`= $nIndex WHERE `bmID` = '".$sMark['bmID']."' AND `userID` = ".USERDATA['userID'].";";
 		$count = db_query($query);
 	}
+
+	$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";
+	$count = db_query($query);
 
 	if(!isset($dData['bmURL'])) {
 		$query = "DELETE FROM `bookmarks` WHERE `bmParentID` = '$bmID' AND `userID` = ".USERDATA['userID'].";";

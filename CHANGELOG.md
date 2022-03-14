@@ -1,5 +1,10 @@
 ChangeLog
 =========
+1.6.7 (2022-03-14)
+-------------------------
+- Fixed delete bookmarks
+
+
 1.6.6 (2022-03-08)
 -------------------------
 - Added token based login
