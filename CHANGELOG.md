@@ -1,8 +1,10 @@
 ChangeLog
 =========
-1.6.7 (2022-03-14)
+1.6.7 (2022-03-16)
 -------------------------
 - Fixed delete bookmarks
+- Fixed search
+- Added colorize of logfile
 
 
 1.6.6 (2022-03-08)

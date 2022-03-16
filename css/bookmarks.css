@@ -737,6 +737,25 @@ input[type="submit"]:disabled {
     overflow: auto;
     bottom: 0;
     padding-left: 10px;
+    outline: 0;
+}
+#lfiletext span {
+	display: block;
+	padding: .1em .2em;
+}
+span.notice {
+	color: #228b22;
+	background-color: ghostwhite;
+}
+span.debug {
+	color: darkslategray;
+}
+span.warn {
+	color: darkorange;
+}
+span.error {
+	color: crimson;
+	background-color: bisque;
 }
 #close button {
     border-radius: 4px;
@@ -793,7 +812,7 @@ input[type="submit"]:disabled {
 	line-height: 50px;
 	background: 0 0;
 	font-size: 20px;
-	cursor: default;
+	cursor: pointer;
 	font-weight: bolder;
 }
 span.rdesc {

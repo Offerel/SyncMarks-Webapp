@@ -53,6 +53,38 @@ document.addEventListener("DOMContentLoaded", function() {
 			hideMenu();
 		});
 
+		document.getElementById('mprofile').addEventListener('click', function() {
+			if(document.querySelector('#menu button').innerHTML == '\u00D7') {
+				document.querySelector('#menu input').blur();
+				document.querySelector('#menu button').innerHTML = '\u2315';
+				document.querySelector('#menu button').classList.remove('asform');
+				document.querySelector('#menu input').classList.remove('asform');
+				document.querySelector('#menu input').classList.add('isform');
+				document.getElementById('mprofile').style.display = 'block';
+			}
+			else {
+				document.querySelector('#menu button').innerHTML = '\u00D7';
+				document.querySelector('#menu button').classList.add('asform');
+				document.querySelector('#menu input').classList.remove('isform');
+				document.querySelector('#menu input').classList.add('asform');
+				document.getElementById('mprofile').style.display = 'none';
+				document.querySelector('#menu input').focus();
+			}
+			hideMenu();
+		});
+
+		document.getElementById('bmsearch').addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				document.querySelector('#menu input').blur();
+				document.querySelector('#menu button').innerHTML = '\u2315';
+				document.querySelector('#menu button').classList.remove('asform');
+				document.querySelector('#menu input').classList.remove('asform');
+				document.querySelector('#menu input').classList.add('isform');
+				document.getElementById('mprofile').style.display = 'block';
+				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
+			}
+		});
+
 		if(document.getElementById("logfile")) {
 			document.getElementById("logfile").addEventListener("mousedown", function(e){
 				if (e.offsetX < 3) {
@@ -669,7 +701,26 @@ document.addEventListener("DOMContentLoaded", function() {
 				xhr.onreadystatechange = function () {
 					if (this.readyState == 4) {
 						if(this.status == 200) {
-							document.getElementById('lfiletext').innerText = this.responseText;
+							const logger = document.getElementById("lfiletext")
+							while (logger.firstChild) {
+								logger.firstChild.remove()
+							}
+
+							let lparse = this.responseText.split("\n");
+							lparse.forEach(function(line){
+								let span = document.createElement('span');
+								if(line.indexOf('debug') > 0) {
+									span.classList.add("debug");
+								} else if (line.indexOf('notice') > 0) {
+									span.classList.add("notice");
+								} else if (line.indexOf('warn') > 0) {
+									span.classList.add("warn");
+								} else if (line.indexOf('error') > 0) {
+									span.classList.add("error");
+								}
+								span.innerText = line;
+								logger.appendChild(span);
+							});
 							moveEnd();
 						} else {
 							let message = "Error loading logfile, please check server log.";
@@ -691,7 +742,26 @@ document.addEventListener("DOMContentLoaded", function() {
 			xhr.onreadystatechange = function () {
 				if (this.readyState == 4) {
 					if(this.status == 200) {
-						document.getElementById('lfiletext').innerText = this.responseText;
+						const logger = document.getElementById("lfiletext")
+						while (logger.firstChild) {
+							logger.firstChild.remove()
+						}
+
+						let lparse = this.responseText.split("\n");
+						lparse.forEach(function(line){
+							let span = document.createElement('span');
+							if(line.indexOf('debug') > 0) {
+								span.classList.add("debug");
+							} else if (line.indexOf('notice') > 0) {
+								span.classList.add("notice");
+							} else if (line.indexOf('warn') > 0) {
+								span.classList.add("warn");
+							} else if (line.indexOf('error') > 0) {
+								span.classList.add("error");
+							}
+							span.innerText = line;
+							logger.appendChild(span);
+						});
 						moveEnd();
 						console.info("Logfile should now be empty.");
 					} else {
@@ -817,7 +887,26 @@ function logRefresh() {
 		xhr.onreadystatechange = function () {
 			if (this.readyState == 4) {
 				if(this.status == 200) {
-					document.getElementById('lfiletext').innerText = this.responseText;
+					const logger = document.getElementById("lfiletext")
+					while (logger.firstChild) {
+						logger.firstChild.remove()
+					}
+
+					let lparse = this.responseText.split("\n");
+					lparse.forEach(function(line){
+						let span = document.createElement('span');
+						if(line.indexOf('debug') > 0) {
+							span.classList.add("debug");
+						} else if (line.indexOf('notice') > 0) {
+							span.classList.add("notice");
+						} else if (line.indexOf('warn') > 0) {
+							span.classList.add("warn");
+						} else if (line.indexOf('error') > 0) {
+							span.classList.add("error");
+						}
+						span.innerText = line;
+						logger.appendChild(span);
+					});
 					moveEnd();
 				} else {
 					let message = "Error couldnt reload logfile.";
