@@ -376,23 +376,23 @@ if(isset($_POST['caction'])) {
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
 			$tResponse['message'] = updateClient($client, $type, $ctime);
 			$userID = $_SESSION['sud']['userID'];
-			$query = "SELECT * FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
+			$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
 			$tData = db_query($query);
+			$tResponse['cname'] = $tData[0]['cname'];
 			$tC = count($tData);
-
 			$expireTime = time()+60*60*24*7;
 			$token = bin2hex(openssl_random_pseudo_bytes(32));
 			$thash = password_hash($token, PASSWORD_DEFAULT);
-			$query = "DELETE FROM `c_token` WHERE `cid` = '$client' AND `userID` = $userID;";
-			db_query($query);
-			$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+			if(count($tData) > 0) {
+				$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+			} else {
+				$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+			}
 			db_query($query);
 			$tResponse['token'] = $token;
 			header("Content-Type: application/json");
-
 			unset($_SESSION['sauth']);
 			session_destroy();
-			
 			die(json_encode($tResponse));
 			break;
 		case "cinfo":
@@ -405,8 +405,8 @@ if(isset($_POST['caction'])) {
 			} else {
 				e_log(2,"Client not found.");
 				$clientData[0]['lastseen'] = 0;
-				$clientData[0]['cname'] = null;
-				$clientData[0]['ctype'] = null;
+				$clientData[0]['cname'] = '';
+				$clientData[0]['ctype'] = '';
 			}
 			
 			header("Content-Type: application/json");
@@ -1910,7 +1910,6 @@ function clearAuthCookie() {
 
 function checkLogin() {
 	e_log(8,"Check login...");
-
 	$headers = null;
 	if (isset($_SERVER['Authorization'])) {
 		$headers = trim($_SERVER["Authorization"]);
@@ -1922,7 +1921,6 @@ function checkLogin() {
 	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
 
 	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
-	
 
 	$realm = CONFIG['realm'];
 	$tVerified = false;
@@ -2011,13 +2009,13 @@ function checkLogin() {
 					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
 					$cInfo = db_query($query)[0];
 					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
-					$cInfo = db_query($query);
+					db_query($query);
 					e_log(2,"Client login failed");
 					unset($_SESSION['sauth']);
 					session_destroy();
 					header("X-Request-Info: 0");
 					header("Content-Type: application/json");
-					die($cInfo);
+					die(json_encode($cInfo));
 				}
 			}
 		} else if(!$user || !$pw) {
@@ -2157,17 +2155,18 @@ function ip_info() {
 	foreach($wArr as $ipi ) {
 		$iarr = explode(": ", $ipi);
 		if($iarr[0] == "descr") {
-			$ipArr['descr'] = trim($iarr[1]);
+			$ipArr['de'] = trim($iarr[1]);
 			break;
 		}
 	}
 	
 	$ip_info = @json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=".$ipArr['ip']));
 	if($ip_info && $ip_info->geoplugin_countryName != null){
-		$ipArr['continent'] = $ip_info->geoplugin_continentName;
-		$ipArr['country'] = $ip_info->geoplugin_countryName;
-		$ipArr['region'] = $ip_info->geoplugin_region;
+		$ipArr['co'] = $ip_info->geoplugin_continentName;
+		$ipArr['ct'] = $ip_info->geoplugin_countryName;
+		$ipArr['re'] = $ip_info->geoplugin_region;
 		$ipArr['ua'] = $_SERVER['HTTP_USER_AGENT'];
+		$ipArr['tm'] = time();
 	}
 	
 	return $ipArr;
