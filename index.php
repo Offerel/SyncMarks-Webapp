@@ -378,21 +378,25 @@ if(isset($_POST['caction'])) {
 			$userID = $_SESSION['sud']['userID'];
 			$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
 			$tData = db_query($query);
-			$tResponse['cname'] = $tData[0]['cname'];
-			$tC = count($tData);
 			$expireTime = time()+60*60*24*7;
 			$token = bin2hex(openssl_random_pseudo_bytes(32));
 			$thash = password_hash($token, PASSWORD_DEFAULT);
 			if(count($tData) > 0) {
 				$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+				$tResponse['cname'] = $tData[0]['cname'];
 			} else {
 				$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+				$tResponse['cname'] = '';
 			}
 			db_query($query);
 			$tResponse['token'] = $token;
-			header("Content-Type: application/json");
+			
+			e_log(8, "Logout $client");
 			unset($_SESSION['sauth']);
 			session_destroy();
+
+			header("Content-Type: application/json");
+			e_log(8, "Send new token to client $client");
 			die(json_encode($tResponse));
 			break;
 		case "cinfo":
@@ -2006,17 +2010,24 @@ function checkLogin() {
 					db_query($query);
 					header("X-Request-Info: $token");
 				} else {
+					e_log(2,"Client login failed");
 					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
 					$cInfo = db_query($query)[0];
 					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
 					db_query($query);
-					e_log(2,"Client login failed");
 					unset($_SESSION['sauth']);
 					session_destroy();
 					header("X-Request-Info: 0");
 					header("Content-Type: application/json");
 					die(json_encode($cInfo));
 				}
+			} else {
+				e_log(2,"Client not registered");
+				unset($_SESSION['sauth']);
+				session_destroy();
+				header("X-Request-Info: 0");
+				header("Content-Type: application/json");
+				die(json_encode(""));
 			}
 		} else if(!$user || !$pw) {
 			header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
