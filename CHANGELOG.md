@@ -1,6 +1,6 @@
 ChangeLog
 =========
-1.6.7 (2022-03-16)
+1.6.7 (2022-03-19)
 -------------------------
 - Fixed delete bookmarks
 - Fixed search
