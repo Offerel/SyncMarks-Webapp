@@ -1428,7 +1428,7 @@ function htmlHeader() {
 		<html lang='en'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				<script src='js/bookmarks.js'></script>
+				<script src='js/bookmarks.min.js'></script>
 				<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
