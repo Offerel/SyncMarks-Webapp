@@ -142,7 +142,7 @@ if(isset($_POST['caction'])) {
 	switch($_POST['caction']) {
 		case "addmark":
 			$bookmark = json_decode($_POST['bookmark'], true);
-			e_log(8,"Try to add entry '".$bookmark['title']."'");
+			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 			$stime = round(microtime(true) * 1000);
 			$bookmark['added'] = $stime;
 			$bookmark['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
@@ -649,7 +649,7 @@ if(isset($_POST['caction'])) {
 			$delMark = delMark($bmID);
 			if($delMark != 0) {
 				if(!isset($_POST['rc'])) {
-					e_log(8,"Deleted bookmark $bmID");
+					e_log(8,"Bookmark $bmID removed");
 					die();
 				} else {
 					die(e_log(8,"Bookmark $bmID deleted by Roundcube"));
@@ -968,7 +968,7 @@ function delMark($bmID) {
 	$fBookmarks = db_query($query);
 	$bm_count = count($fBookmarks);
 	
-	e_log(8,"Reset index in folder");
+	e_log(8,"Re-index folder ".$dData['bmParentID']);
 	for ($i = 0; $i < $bm_count; $i++) {
 		$query = "UPDATE `bookmarks` SET `bmIndex`= $i WHERE `bmID` = '".$fBookmarks[$i]['bmID']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
 		db_query($query);
@@ -1229,7 +1229,7 @@ function addBookmark($bm) {
 		e_log(2,$message);
 		return $message;
 	}
-	e_log(8,"Get folder for adding bookmark");
+	e_log(8,"Identify folder for new bookmark");
 	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = '".$bm["folder"]."' AND `userID` = ".$_SESSION['sud']['userID'].";";
 	$folderID = db_query($query)[0]['bmID'];
 
@@ -1428,7 +1428,7 @@ function htmlHeader() {
 		<html lang='en'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				<script src='js/bookmarks.js'></script>
+				<script src='js/bookmarks.min.js'></script>
 				<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
