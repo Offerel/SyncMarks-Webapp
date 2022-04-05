@@ -138,6 +138,260 @@ if(isset($_GET['reset'])){
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
 
+if(isset($_POST['action'])) {
+	switch($_POST['action']) {
+		case "getclients":
+			e_log(8,"Try to get list of clients");
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = ".$_SESSION['sud']['userID']." AND NOT `cid` = '$client';";
+			$clientList = db_query($query);
+			e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
+			
+			uasort($clientList, function($a, $b) {
+				return strnatcasecmp($a['cname'], $b['cname']);
+			});
+			
+			if (!empty($clientList)) {
+				foreach($clientList as $key => $clients) {
+					$myObj[$key]['id'] =	$clients['cid'];
+					$myObj[$key]['name'] = 	$clients['cname'];
+					$myObj[$key]['type'] = 	$clients['ctype'];
+					$myObj[$key]['date'] = 	$clients['lastseen'];
+				}
+				$all = array('id'=>'0', 'name'=>'All Clients', 'type'=>'', 'date'=>'');
+				array_unshift($myObj, $all);
+			} else {
+				$myObj[0]['id'] =	'0';
+				$myObj[0]['name'] =	'All Clients';
+				$myObj[0]['type'] =	'';
+				$myObj[0]['date'] =	'';
+			}
+			
+			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/clist_".time().".json":"clist_".time().".json";
+				e_log(8,"Write clientlist to $filename");
+				file_put_contents($filename,json_encode($myObj),true);
+			}
+			
+			header("Content-Type: application/json");
+			die(json_encode($myObj));
+			break;
+		case "gurls":
+			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
+			e_log(8,"Request pushed sites for '$client'");
+			$query = "SELECT * FROM `notifications` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']." AND `client` IN ('".$client."','0');";
+			$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
+			$notificationData = db_query($query);
+			if (!empty($notificationData)) {
+				e_log(8,"Found ".count($notificationData)." links. Will push them to the client.");
+				foreach($notificationData as $key => $notification) {
+					$myObj[$key]['title'] = html_entity_decode($notification['title'], ENT_QUOTES | ENT_XML1, 'UTF-8');
+					$myObj[$key]['url'] = $notification['message'];
+					$myObj[$key]['nkey'] = $notification['id'];
+					$myObj[$key]['nOption'] = $uOptions['notifications'];
+				}
+				header("Content-Type: application/json");
+				die(json_encode($myObj));
+			} else {
+				e_log(8,"No pushed sites found");
+				header("Content-Type: application/json");
+				die(json_encode("0"));
+			}
+			break;
+		case "getpurl":
+			$url = validate_url($_POST['data']);
+			e_log(8,"Received new pushed URL: ".$url);
+			$target = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING) : '0';
+			header("Content-Type: application/json");
+			if(newNotification($url, $target) !== 0) die("URL successful pushed.");
+			break;
+		case "cinfo":
+			e_log(8,"Request client info");
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `uid` = ".$_SESSION['sud']['userID'].";";
+			$clientData = db_query($query)[0];
+			if(count($clientData) > 0) {
+				e_log(8,"Send client info to '$client'");
+			} else {
+				e_log(2,"Client not found.");
+				$clientData['lastseen'] = 0;
+				$clientData['cname'] = '';
+				$clientData['ctype'] = '';
+			}
+			header("Content-Type: application/json");
+			die(json_encode($clientData));
+			break;
+		case "bexport":
+			e_log(8,"Request bookmark export");
+			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
+			$ctime = round(microtime(true) * 1000);
+			$format = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			switch($format) {
+				case "html":
+					e_log(8,"Exporting in HTML format for download");
+					die(html_export());
+					break;
+				case "json":
+					e_log(8,"Exporting in JSON format");
+					$bookmarks = json_encode(getBookmarks());
+					if(CONFIG['loglevel'] == 9 && CONFIG['cexp'] == true) {
+						$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/export_".time().".json":"export_".time().".json";
+						file_put_contents($filename,$bookmarks,true);
+						e_log(8,"Export file is saved to $filename");
+					}
+					$bcount = count(json_decode($bookmarks));
+					e_log(8,"Send $bcount bookmarks to '$client'");
+					$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
+					updateClient($client, $ctype, $ctime, true);
+
+					header("Content-Type: application/json");
+					die($bookmarks);
+					break;
+				default:
+					die(e_log(2,"Unknown export format, exit process"));
+			}
+			exit;
+			break;
+		case "bimport":
+			$jmarks = json_decode($_POST['data'],true);
+			$jerrmsg = "";
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$partial = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_VALIDATE_INT):0;
+			switch (json_last_error()) {
+				case JSON_ERROR_NONE:
+					$jerrmsg = '';
+				break;
+				case JSON_ERROR_DEPTH:
+					$jerrmsg = 'Maximum stack depth exceeded';
+				break;
+				case JSON_ERROR_STATE_MISMATCH:
+					$jerrmsg = 'Underflow or the modes mismatch';
+				break;
+				case JSON_ERROR_CTRL_CHAR:
+					$jerrmsg = 'Unexpected control character found';
+				break;
+				case JSON_ERROR_SYNTAX:
+					$jerrmsg = 'Syntax error, malformed JSON';
+				break;
+				case JSON_ERROR_UTF8:
+					$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+				break;
+				default:
+					$jerrmsg = 'Unknown error';
+			}
+			if(strlen($jerrmsg) > 0) {
+				e_log(1,"JSON error: ".$jerrmsg);
+				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
+				e_log(8,"JSON file written as $filename");
+				file_put_contents($filename,urldecode($_POST['data']),true);
+				header("Content-Type: application/json");
+				die(json_encode($jerrmsg));
+			}
+			$client = $_POST['client'];
+			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
+			$ctime = round(microtime(true) * 1000);
+			if($partial === 0) delUsermarks($_SESSION['sud']['userID']);
+			$armarks = parseJSON($jmarks);
+			$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
+			updateClient($client, $ctype, $ctime, true);
+			header("Content-Type: application/json");
+			die(json_encode(importMarks($armarks,$_SESSION['sud']['userID'])));
+			break;
+		case "addmark":
+			$bookmark = json_decode($_POST['data'], true);
+			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
+			$stime = round(microtime(true) * 1000);
+			$bookmark['added'] = $stime;
+			$bookmark['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			e_log(9, print_r($bookmark, true));
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
+			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
+			$stime = (!isset($_POST['sync'])) ? 0:$stime;
+			header("Content-Type: application/json");
+			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
+				$response = json_encode(addBookmark($bookmark));
+				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
+				die($response);
+			} else if($bookmark['type'] == 'folder') {
+				$response = addFolder($bookmark);
+				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
+				die(json_encode($response));
+			} else {
+				$message = "This bookmark is not added, some parameters are missing";
+				e_log(1, $message);
+				die(json_encode($message));
+			}
+			break;
+		case "editmark":
+			$bookmark = json_decode(rawurldecode($_POST['data']),true);
+			header("Content-Type: application/json");
+			(array_key_exists('url',$bookmark)) ? die(editBookmark($bookmark)) : die(editFolder($bookmark));
+			break;
+		case "movemark":
+			$bookmark = json_decode($_POST['data'],true);
+			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/movemark_".time().".json":"movemark_".time().".json";
+				e_log(8,"Write move bookmark json to $filename");
+				file_put_contents($filename,json_encode($bookmark),true);
+			}
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$ctime = round(microtime(true) * 1000);
+			$response = json_encode(moveBookmark($bookmark));
+			$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
+			updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $ctime, true);
+			header("Content-Type: application/json");
+			die($response);
+			break;
+		case "delmark":
+			$bookmark = json_decode(rawurldecode($_POST['data']), true);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$ctime = round(microtime(true) * 1000);
+			e_log(8,"Try to identify bookmark to delete");
+			if(isset($bookmark['url'])) {
+				$url = prepare_url($bookmark['url']);
+				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '$url' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			} else {
+				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bookmark['title']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			}
+			$bData = db_query($query);
+			header("Content-Type: application/json");
+			if(count($bData) == 1) {
+				e_log(2, "Bookmark found, trying to remove it");
+				$delmark = delMark($bData[0]['bmID']);
+				die(json_encode($delmark));
+			} else if (count($bData) > 1) {
+				$message = "No unique bookmark found, doing nothing";
+				e_log(2,$message);
+				die(json_encode($message));
+			} else {
+				e_log(2, "Bookmark not found, mark as deleted");
+				die(json_encode(1));
+			}
+			break;
+		case "durl":
+			e_log(8,"Hide notification");
+			$notification = filter_var($_POST['data'], FILTER_VALIDATE_INT);
+			$query = "UPDATE `notifications` SET `nloop`= 0, `ntime`= '".time()."' WHERE `id` = $notification AND `userID` = ".$_SESSION['sud']['userID'];
+			header("Content-Type: application/json");
+			die(db_query($query));
+			break;
+		case "arename":
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			e_log(8,"Rename client $client to $name");
+			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
+			$count = db_query($query);
+			header("Content-Type: application/json");
+			($count > 0) ? die(bClientlist($_SESSION['sud']['userID'])) : die(false);
+			break;
+		default:
+			header("Content-Type: application/json");
+			die(json_encode("Unknown Action"));
+	}
+}
+
 if(isset($_POST['caction'])) {
 	switch($_POST['caction']) {
 		case "addmark":
@@ -168,7 +422,6 @@ if(isset($_POST['caction'])) {
 			break;
 		case "movemark":
 			$bookmark = json_decode($_POST['bookmark'],true);
-
 			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
 				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/movemark_".time().".json":"movemark_".time().".json";
 				e_log(8,"Write move bookmark json to $filename");
@@ -842,7 +1095,7 @@ if(isset($_POST['caction'])) {
 			break;
 		default:
 			header("Content-Type: application/json");
-			die(json_encode("Unknown Action"));
+			die(json_encode("Unknown cAction"));
 	}
 	exit;
 }
