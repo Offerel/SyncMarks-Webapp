@@ -3,7 +3,7 @@
 	display: block;
 	padding-left: 15px;
 	text-indent: -15px;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 	font-size: .9em;
 }
 #loginform input[type="checkbox"] {
@@ -70,7 +70,7 @@
 	display: none;
 	margin-left: -7px;
 	bottom: 0;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 }
 .mmenu ul {
 	margin: -1px 0;
@@ -79,7 +79,7 @@
 .mmenu li {
 	list-style: none;
 	line-height: 32px;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 	color: #29302e;
 	padding: 0 16px;
 }
@@ -957,7 +957,7 @@ span.rdesc {
 	margin: 0;
 	padding: 0 0 0 6px;
 	white-space: nowrap;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif !important;
+	font-family: Roboto,Arial,Helvetica,sans-serif !important;
 	line-height: 25px !important;
 	font-size: 0.95em !important;
 }
@@ -1225,7 +1225,7 @@ input:checked + .slider:before {
 	width: 260px;
 	background: transparent;
 	border: 0;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 	line-height: 32px;
 	font-size: 16px;
 	text-align: left;
@@ -1258,7 +1258,7 @@ input:checked + .slider:before {
 #loginformh {
 	background: #0879d9;
 	color: #fff;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 	padding: 10px;
 	font-weight: bolder;
 	white-space: nowrap;
@@ -1267,7 +1267,7 @@ input:checked + .slider:before {
 	font-size: 1.2rem;
 }
 #loginformt {
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 	color: #29302e;
 	padding: 5px 10px 5px 10px;
 	font-size: 0.9em;
