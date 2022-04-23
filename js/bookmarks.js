@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.7.1
+ * @version 1.6.7
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -149,31 +149,25 @@ document.addEventListener("DOMContentLoaded", function() {
 			hideMenu();
 			let folder = document.getElementById('folder').value;
 			let url = encodeURIComponent(document.getElementById('url').value);
-			var xhr = new XMLHttpRequest();
-			var data = "caction=madd&folder=" + folder + "&url=" + url;
+			//var xhr = new XMLHttpRequest();
+			//var data = "action=madd&folder=" + folder + "&url=" + url;
 
-			xhr.onload = function() {
-				if(xhr.status == 200) {
-					document.getElementById('bookmarks').innerHTML = this.responseText;
-					document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
-					document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
-					console.info("Bookmark added successfully.");
-				} else {
-					let message = (this.responseText != '') ? this.responseText:"Error adding bookmark, please check server log.";
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					console.error(message);
-				}
-			};
+			let jsonMark = JSON.stringify({ 
+				"id": Math.random().toString(24).substring(2, 12),
+				"url": document.getElementById('url').value,
+				"title": '',
+				"type": 'bookmark',
+				"folder": document.getElementById('folder').value,  
+				"nfolder": 'More Bookmarks',
+				"added": new Date().valueOf()
+			});
 
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
+			sendRequest(addmark, jsonMark, 2);
 		});
 
 		if(document.getElementById('npwd')) document.getElementById('npwd').addEventListener('input', function() {checkuform()});
 		if(document.getElementById('nuser')) document.getElementById('nuser').addEventListener('input', function() {checkuform()});
 		if(document.getElementById('userLevel')) document.getElementById('userLevel').addEventListener('input', function() {checkuform()});
-
 		document.getElementById('hmenu').addEventListener('click', function() {
 			var mainmenu = document.getElementById('mainmenu');
 			if(document.querySelector('#bookmarks')) document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
@@ -188,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		if(document.getElementById('mngusers')) document.getElementById('mngusers').addEventListener('click', function() {
 			hideMenu();
 			let xhr = new XMLHttpRequest();
-			let data = "caction=getUsers";
+			let data = "action=getUsers";
 			xhr.onreadystatechange = function () {
 				if(this.readyState == 4 && this.status == 200) {
 					let uData = JSON.parse(xhr.responseText);
@@ -292,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function() {
 							document.querySelector('body').appendChild(loader);
 							let xhrAdd = new XMLHttpRequest();
 							let type = (userSelect.selectedIndex == 0) ? 1:2;
-							let AddData = "caction=muedt&type="+type+"&p="+npwd.value+"&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
+							let AddData = "action=muedt&type="+type+"&p="+npwd.value+"&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
 							xhrAdd.onreadystatechange = function () {
 								if(this.readyState == 4) {
 									if(this.status == 200) {
@@ -306,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function() {
 											console.info("Syncmarks: "+response);
 										}
 										let xhrUpdate = new XMLHttpRequest();
-										let UpdateData = "caction=getUsers";
+										let UpdateData = "action=getUsers";
 										xhrUpdate.onreadystatechange = function () {
 											if(this.readyState == 4) {
 												if(this.status == 200) {
@@ -338,7 +332,7 @@ document.addEventListener("DOMContentLoaded", function() {
 							loader.id = 'db-spinner';
 							document.querySelector('body').appendChild(loader);
 							let xhrDel = new XMLHttpRequest();
-							let DelData = "caction=muedt&type=3&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
+							let DelData = "action=muedt&type=3&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
 							xhrDel.onreadystatechange = function () {
 								if(this.readyState == 4) {
 									if(this.status == 200) {
@@ -352,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function() {
 											console.info("Syncmarks: "+response);
 										}
 										let xhrUpdate = new XMLHttpRequest();
-										let UpdateData = "caction=getUsers";
+										let UpdateData = "action=getUsers";
 										xhrUpdate.onreadystatechange = function () {
 											if(this.readyState == 4) {
 												if(this.status == 200) {
@@ -420,7 +414,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 			mchange.addEventListener('click', function(){
 				let xhr = new XMLHttpRequest();
-				let data = "caction=cmail&mail="+mput.value;
+				let data = "action=cmail&mail="+mput.value;
 				xhr.onreadystatechange = function () {
 					if (this.readyState == 4 && this.status == 200) {
 						let response = JSON.parse(this.responseText);
@@ -469,7 +463,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			hideMenu();
 
 			let xhr = new XMLHttpRequest();
-			let data = 'caction=rmessage&lp=aNoti';
+			let data = 'action=rmessage&lp=aNoti';
 			xhr.onreadystatechange = function () {
 				if (xhr.readyState == 4 && xhr.status == 200) {
 					const response =  new DOMParser().parseFromString(xhr.responseText, "text/html");
@@ -491,62 +485,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('clientedt').addEventListener('click', function() {
 			hideMenu();
-			var clientListForm = document.getElementById('mngcform');
-			if(clientListForm.childNodes.length) clientListForm.removeChild(clientListForm.firstChild);
-			let xhr = new XMLHttpRequest();
-			let data = 'caction=getclients&client='+0;
-			xhr.onreadystatechange = function () {
-				if (xhr.readyState == 4 && xhr.status == 200) {
-					let cList = JSON.parse(xhr.responseText);
-					var ulClients = document.createElement('ul');
-					cList.forEach(function(client, key){
-						if(client.id != '0') {
-							let liEl = document.createElement('li');
-							liEl.title = client.id;
-							liEl.dataset.type = client.type.toLowerCase();
-							liEl.id = client.id;
-							liEl.classList = 'client';
-							let cename = document.createElement('div');
-							cename.classList = 'clientname';
-							cename.appendChild(document.createTextNode(client.name ? client.name:client.id));
-							liEl.appendChild(cename);
-							let ceinput = document.createElement('input');
-							ceinput.type = 'text';
-							ceinput.name = 'cname';
-							ceinput.value = client.name;
-							cename.appendChild(ceinput);
-							let cels = document.createElement('div');
-							cels.classList = 'lastseen';
-							cels.innerText = client.date != "0" ? 'Sync: ' + new Date(parseInt(client.date)).toLocaleString(
-								navigator.language, 
-								{
-									year: "numeric",
-									month: "2-digit",
-									day: "2-digit",
-									hour: '2-digit',
-									minute: '2-digit'
-								}):'Sync: -- -- ---- -- --';
-							cename.appendChild(cels);
-							let cedit = document.createElement('div');
-							cedit.classList = 'fa-edit rename';
-							cedit.addEventListener('click', mvClient, false);
-							liEl.appendChild(cedit);
-							let cerm = document.createElement('div');
-							cerm.classList = 'fa-trash remove';
-							cerm.addEventListener('click', delClient, false);
-							liEl.appendChild(cerm);
-							ulClients.appendChild(liEl);
-						}
-					});
-					clientListForm.appendChild(ulClients);
-				}
-			};
-			
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-			document.getElementById('mngcform').style.display = 'block';
-			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+			sendRequest(getclients);
 		});
 
 		document.getElementById('psettings').addEventListener('click', function() {
@@ -562,7 +501,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			loader.id = 'db-spinner';
 			document.querySelector('body').appendChild(loader);
 			var xhr = new XMLHttpRequest();
-			var data = "caction=checkdups";
+			var data = "action=checkdups";
 			xhr.onreadystatechange = function () {
 				if(this.readyState == 4) {
 					if(this.status == 200) {
@@ -596,7 +535,7 @@ document.addEventListener("DOMContentLoaded", function() {
 									subLi.addEventListener('click', function(){
 										let xhrDel = new XMLHttpRequest();
 										let dub = this;
-										let delData = "caction=mdel&rc=1&id="+dub.dataset.bmid;
+										let delData = "action=mdel&rc=1&id="+dub.dataset.bmid;
 										let loader = document.createElement('div');
 										loader.classList.add('db-spinner');
 										loader.id = 'db-spinner';
@@ -653,12 +592,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			today = dd+'-'+mm+'-'+yyyy;
 
 			var xhr = new XMLHttpRequest();
-			var data = "caction=export&type=html";
+			var data = "action=bexport&type=html";
 
 			xhr.onreadystatechange = function () {
 				if (this.readyState == 4) {
 					if(this.status == 200) {
-						var blob = new Blob([this.responseText], { type: 'text/html' });
+						var blob = new Blob([this.response], { type: 'text/html' });
 						var link = document.createElement('a');
 						link.href = window.URL.createObjectURL(blob);
 						link.download = "bookmarks_" + today + ".html";
@@ -674,6 +613,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 			xhr.open("POST", document.location.href, true);
 			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			xhr.responseType = 'json';
 			xhr.send(data);
 
 			return false;
@@ -697,7 +637,7 @@ document.addEventListener("DOMContentLoaded", function() {
 				logfile.style.visibility = 'visible';
 				document.getElementById('close').style.visibility = 'visible';
 				let xhr = new XMLHttpRequest();
-				let data = "caction=mlog";
+				let data = "action=mlog";
 				xhr.onreadystatechange = function () {
 					if (this.readyState == 4) {
 						if(this.status == 200) {
@@ -738,7 +678,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		if(document.getElementById('mclear')) document.getElementById('mclear').addEventListener('click', function() {
 			let logfile = document.getElementById('logfile');
 			let xhr = new XMLHttpRequest();
-			let data = "caction=mclear";
+			let data = "action=mclear";
 			xhr.onreadystatechange = function () {
 				if (this.readyState == 4) {
 					if(this.status == 200) {
@@ -824,7 +764,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('fsave').addEventListener('click', function(e) {
 			e.preventDefault();
 			let xhr = new XMLHttpRequest();
-			let data = 'caction=cfolder&fname=' + document.getElementById('fname').value + '&fbid=' + document.getElementById('fbid').value;
+			let data = 'action=cfolder&fname=' + document.getElementById('fname').value + '&fbid=' + document.getElementById('fbid').value;
 			
 			xhr.onreadystatechange = function () {
 				if (this.readyState == 4) {
@@ -850,7 +790,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('edsave').addEventListener('click', function(e) {
 			e.preventDefault();
 			let xhr = new XMLHttpRequest();
-			let data = 'caction=bmedt&title=' + document.getElementById('edtitle').value + '&url=' + document.getElementById('edurl').value + '&id=' + document.getElementById('edid').value;
+			let data = 'action=bmedt&title=' + document.getElementById('edtitle').value + '&url=' + document.getElementById('edurl').value + '&id=' + document.getElementById('edid').value;
 			xhr.onreadystatechange = function () {
 				if (this.readyState == 4) {
 					if(this.status == 200) {
@@ -878,12 +818,114 @@ document.addEventListener("DOMContentLoaded", function() {
 	}
 }, false);
 
+function sendRequest(action, data = null, addendum = null) {
+	const params = {
+		action: action.name,
+		client: 0,
+		data: data,
+		add: addendum,
+		sync: null
+	}
+
+	const xhr = new XMLHttpRequest();
+	/*
+	if(action.name === 'addmark' && options['actions']['startup'] == false) {
+		client = 'bookmarkTab';
+		sync = options['actions']['startup'];
+	}
+	*/
+
+	xhr.open("POST", document.location.href, true);
+	xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+	xhr.responseType = 'json';
+
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				action(xhr.response, addendum);
+			} else {
+				let message = `Error ${xhr.status}: ${xhr.statusText}`;
+				show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+				console.error(action.name, message);
+				return false;
+			}
+		}
+	}
+
+	xhr.onerror = function () {
+		let message = "Error: " + xhr.status + ' | ' + xhr.response;
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		console.error(action.name, message);
+		return false;
+	}
+
+	const qparams = new URLSearchParams(params);
+	xhr.send(qparams);
+}
+
+function getclients(response, a = '') {
+	let cList = response;
+	var clientListForm = document.getElementById('mngcform');
+	if(clientListForm.childNodes.length) clientListForm.removeChild(clientListForm.firstChild);
+	var ulClients = document.createElement('ul');
+	cList.forEach(function(client, key){
+		if(client.id != '0') {
+			let liEl = document.createElement('li');
+			liEl.title = client.id;
+			liEl.dataset.type = client.type.toLowerCase();
+			liEl.id = client.id;
+			liEl.classList = 'client';
+			let cename = document.createElement('div');
+			cename.classList = 'clientname';
+			cename.appendChild(document.createTextNode(client.name ? client.name:client.id));
+			liEl.appendChild(cename);
+			let ceinput = document.createElement('input');
+			ceinput.type = 'text';
+			ceinput.name = 'cname';
+			ceinput.value = client.name;
+			cename.appendChild(ceinput);
+			let cels = document.createElement('div');
+			cels.classList = 'lastseen';
+			cels.innerText = client.date != "0" ? 'Sync: ' + new Date(parseInt(client.date)).toLocaleString(
+				navigator.language, 
+				{
+					year: "numeric",
+					month: "2-digit",
+					day: "2-digit",
+					hour: '2-digit',
+					minute: '2-digit'
+				}):'Sync: -- -- ---- -- --';
+			cename.appendChild(cels);
+			let cedit = document.createElement('div');
+			cedit.classList = 'fa-edit rename';
+			cedit.addEventListener('click', mvClient, false);
+			liEl.appendChild(cedit);
+			let cerm = document.createElement('div');
+			cerm.classList = 'fa-trash remove';
+			cerm.addEventListener('click', delClient, false);
+			liEl.appendChild(cerm);
+			ulClients.appendChild(liEl);
+		}
+	});
+	clientListForm.appendChild(ulClients);
+
+	document.getElementById('mngcform').style.display = 'block';
+	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+}
+
+function addmark(response, a = '') {
+	document.getElementById('bookmarks').innerHTML = response;
+	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
+	console.info("Bookmark added successfully.");
+}
+
 function logRefresh() {
 	let arefresh = document.getElementById('arefresh').checked;
 	let logfile = document.getElementById('logfile');
 	if(logfile.style.visibility === 'visible') {
 		let xhr = new XMLHttpRequest();
-		let data = "caction=mrefresh";
+		let data = "action=mrefresh";
 		xhr.onreadystatechange = function () {
 			if (this.readyState == 4) {
 				if(this.status == 200) {
@@ -935,7 +977,7 @@ function mngUform(uData, userSelect) {
 }
 
 function movBookmark(folderID, bookmarkID) {
-	let data = 'caction=bmmv&folder='+folderID+'&id='+bookmarkID;
+	let data = 'action=bmmv&folder='+folderID+'&id='+bookmarkID;
 	let xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4) {
@@ -961,7 +1003,7 @@ function movBookmark(folderID, bookmarkID) {
 
 function delClient(element) {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=adel&client=' + element.target.parentElement.id;
+	let data = 'action=adel&client=' + element.target.parentElement.id;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			document.getElementById('mngcform').innerHTML = xhr.responseText;
@@ -981,10 +1023,10 @@ function mvClient(element) {
 	document.querySelector('body').appendChild(loader);
 	
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=arename&client=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
+	let data = 'action=arename&client=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
-			document.getElementById('mngcform').innerHTML = xhr.responseText;
+			document.getElementById('mngcform').innerHTML = xhr.response;
 			document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
 			document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
 			loader.remove();
@@ -992,6 +1034,7 @@ function mvClient(element) {
 	};
 	xhr.open("POST", document.location.href, true);
 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.responseType = 'json';
 	xhr.send(data);
 }
 
@@ -1008,7 +1051,7 @@ function moveEnd() {
 function delBookmark(id, title) {
 	if(confirm("Would you like to delete \"" + title + "\"?")) {
 		let xhr = new XMLHttpRequest();
-		let data = 'caction=mdel&id=' + id;
+		let data = 'action=mdel&id=' + id;
 
 		let loader = document.createElement('div');
 		loader.classList.add('db-spinner');
@@ -1152,7 +1195,7 @@ function openMessages(element) {
 	}
 
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=rmessage&lp='+element.target.dataset.val;
+	let data = 'action=rmessage&lp='+element.target.dataset.val;
 	xhr.onreadystatechange = function () {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			const response =  new DOMParser().parseFromString(xhr.responseText, "text/html");
@@ -1184,7 +1227,7 @@ function delMessage(message) {
 		
 	let loop = message.target.parentElement.parentElement.parentElement.parentElement.parentElement.id;
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=rmessage&lp=' + loop + '&message=' + message.target.dataset['message'];
+	let data = 'action=rmessage&lp=' + loop + '&message=' + message.target.dataset['message'];
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4) {
 			if(this.status == 200) {
@@ -1231,7 +1274,7 @@ function eNoti(e) {
 
 function setOption(option,val) {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=soption&option=' + option + '&value=' + val;
+	let data = 'action=soption&option=' + option + '&value=' + val;
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4) {
 			if(this.status == 200) {
@@ -1252,11 +1295,11 @@ function setOption(option,val) {
 
 function rNot(noti) {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=durl&durl=' + noti;
+	let data = 'action=durl&durl=' + noti;
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4) {
 			if(this.status == 200) {
-				if(this.responseText === "1") {
+				if(this.response === "1") {
 					console.info("Notification removed");
 				} else {
 					let message = "Problem removing notification, please check server log.";
@@ -1268,6 +1311,7 @@ function rNot(noti) {
 	};
 	xhr.open("POST", document.location.href, true);
 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.responseType = 'json';
 	xhr.send(data);
 }
 
@@ -1292,23 +1336,23 @@ function show_noti(noti, rei = true) {
 
 function getNotifications() {
 	let xhr = new XMLHttpRequest();
-	let data = 'caction=gurls';
-
+	let data = 'action=gurls';
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status == 200) {
-			if(this.responseText) {
-				let notifications = JSON.parse(this.responseText);
+			//if(this.response) {
+				let notifications = this.response;
 				if(notifications[0]['nOption'] == 1) {
 					notifications.forEach(function(notification){
 						show_noti(notification);
 					});
 				}
-			}
+			//}
 		}
 	};
 
 	xhr.open("POST", document.location.href, true);
 	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	xhr.responseType = 'json';
 	xhr.send(data);
 
 	sessionStorage.setItem('gNoti', '1');

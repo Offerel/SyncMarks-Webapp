@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.6.7.1
+ * @version 1.6.7
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -245,7 +245,7 @@ if(isset($_POST['action'])) {
 						file_put_contents($filename,$bookmarks,true);
 						e_log(8,"Export file is saved to $filename");
 					}
-					$bcount = count(json_decode($bookmarks));
+					$bcount = count(json_decode($bookmarks)) + 1;
 					e_log(8,"Send $bcount bookmarks to '$client'");
 					$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $ctime, true);
@@ -302,18 +302,30 @@ if(isset($_POST['action'])) {
 			break;
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
-			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 			$stime = round(microtime(true) * 1000);
-			$bookmark['added'] = $stime;
-			$bookmark['title'] = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			$bookmark['added'] = $stime;	//
+			$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle($bookmark['url']):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 			e_log(9, print_r($bookmark, true));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
 			$stime = (!isset($_POST['sync'])) ? 0:$stime;
+			
 			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
 				$response = addBookmark($bookmark);
-				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
+
+				if($_POST['add'] === '2') {
+					if($response === 1) {
+						e_log(8,"Bookmark added");
+						sendJSONResponse(bmTree());
+					} else {
+						echo $res;
+						http_response_code(417);
+					}
+				} else {
+					updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
+				}
 			} else if($bookmark['type'] == 'folder') {
 				$response = addFolder($bookmark);
 				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
@@ -601,38 +613,6 @@ if(isset($_POST['action'])) {
 			}
 				
 			die();
-			break;
-		case "madd":
-			$bmParentID = filter_var($_POST['folder'], FILTER_SANITIZE_STRING);
-			$bmURL = validate_url(trim($_POST['url']));
-			e_log(8,"Try to add manually new bookmark ".$bmURL);
-			
-			if(strpos($bmURL,'http') != 0) {
-				e_log(1,"Given string is not a real URL, cant add this.");
-				exit;
-			}
-			
-			$bookmark['url'] = $bmURL;
-			$bookmark['folder'] = $bmParentID;
-			$bookmark['title'] = getSiteTitle($bmURL);
-			$bookmark['id'] = unique_code(12);
-			$bookmark['type'] = 'bookmark';
-			$bookmark['added'] = round(microtime(true) * 1000);
-			
-			$res = addBookmark($bookmark);
-			
-			if($res === 1) {
-				if(!isset($_POST['rc'])) {
-					e_log(8,"Manually added bookmark.");
-					die(bmTree());
-				} else {
-					die(e_log(8,"Roundcube added bookmark."));
-				}
-			} else {
-				echo $res;
-				http_response_code(417);
-			}
-			
 			break;
 		case "mdel":
 			$bmID = filter_var($_POST['id'], FILTER_SANITIZE_STRING);
@@ -1986,14 +1966,10 @@ function getSiteTitle($url) {
 	e_log(8,"Get titel for site ".$url);
 	$src = file_get_contents($url);
 	if(strlen($src) > 0) {
-		preg_match("/\<title\>(.*)\<\/title\>/i",$src,$title_arr);
-		$title = (strlen($title_arr[1]) > 0) ? strval($title_arr[1]) : substr($url, 0, 240);
-		e_log(8,"Titel for site is '$title'");
-		$convTitle = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-	} else {
-		$convTitle = substr($url, 0, 240);
+		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1] : null;
+		$convTitle = ($title == '' ) ? substr($url, 0, 240):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 	}
-	
+	e_log(8,"Titel for site is '$convTitle'");
 	return $convTitle;
 }
 
@@ -2267,7 +2243,7 @@ function htmlForms() {
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
 		<h6>Add Bookmark</h6>
-		<form id='bmadd' action='?madd' method='POST'>
+		<form id='bmadd' action='?' method='POST'>
 			<input placeholder='URL' type='text' id='url' name='url' value=''>
 			<div class='select'>
 				<select id='folder' name='folder'>
@@ -2275,7 +2251,7 @@ function htmlForms() {
 				</select>
 				<div class='select__arrow'></div>
 			</div>
-			<div class='dbutton'><button type='submit' id='save' name='madd' value='Save'>Save</button></div>
+			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>Save</button></div>
 		</form>
 	</div>
 	<div id='footer'></div>";
@@ -2332,7 +2308,7 @@ function notiList($uid, $loop) {
 }
 
 function htmlFooter() {
-	$htmlFooter = "<script src='js/bookmarksf.js'></script></body></html>";
+	$htmlFooter = "<script src='js/bookmarksf.min.js'></script></body></html>";
 	return $htmlFooter;
 }
 
