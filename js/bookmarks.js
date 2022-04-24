@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			});
 			folder.addEventListener('drop', function(event){
 				event.preventDefault();
-				movBookmark(event.target.htmlFor.substring(2), draggable.target.id);
+				sendRequest(bmmv, event.target.htmlFor.substring(2), draggable.target.id);
 				event.target.style = 'background-color: unset;';
 			});
 		});
@@ -147,11 +147,6 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById("save").addEventListener('click', function(event) {
 			event.preventDefault();
 			hideMenu();
-			let folder = document.getElementById('folder').value;
-			let url = encodeURIComponent(document.getElementById('url').value);
-			//var xhr = new XMLHttpRequest();
-			//var data = "action=madd&folder=" + folder + "&url=" + url;
-
 			let jsonMark = JSON.stringify({ 
 				"id": Math.random().toString(24).substring(2, 12),
 				"url": document.getElementById('url').value,
@@ -181,202 +176,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if(document.getElementById('mngusers')) document.getElementById('mngusers').addEventListener('click', function() {
 			hideMenu();
-			let xhr = new XMLHttpRequest();
-			let data = "action=getUsers";
-			xhr.onreadystatechange = function () {
-				if(this.readyState == 4 && this.status == 200) {
-					let uData = JSON.parse(xhr.responseText);
-					if(uData.indexOf('not allowed') != -1) {
-						console.warn('SyncMarks - Warning: '+uData);
-						show_noti({title:"Syncmarks - Warning", url:uData, key:""}, false);
-					} else {
-						document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
-						let mnguform = document.createElement('div');
-						mnguform.id = 'mnguform';
-						mnguform.classList.add('mbmdialog');
-						mnguform.style.display = 'block';
-						let heading = document.createElement('h6');
-						heading.appendChild(document.createTextNode('Manage Users'));
-						mnguform.appendChild(heading);
-						let userSelect = document.createElement('select');
-						userSelect.id = 'userSelect';
-						let uOptionA = document.createElement('option');
-						uOptionA.text = '-- Add new user --';
-						uOptionA.value = 0;
-						userSelect.appendChild(uOptionA);
-
-						mngUform(uData, userSelect);
-
-						let nuser = document.createElement('input');
-						nuser.id = 'nuser';
-						nuser.placeholder = 'Username';
-						nuser.type = 'text';
-						nuser.required = true;
-						nuser.autocomplete = 'username';
-
-						let npwd = document.createElement('input');
-						npwd.id = 'npwd';
-						npwd.placeholder = 'Password';
-						npwd.type = 'password';
-						npwd.autocomplete = 'password';
-
-						let userLevel = document.createElement('select');
-						userLevel.id = 'userLevel';
-
-						let uLevel0 = document.createElement('option');
-						uLevel0.text = 'Normal';
-						uLevel0.value = 1;
-						userLevel.appendChild(uLevel0);
-						let uLevel1 = document.createElement('option');
-						uLevel1.text = 'Admin';
-						uLevel1.value = 2;
-						userLevel.appendChild(uLevel1);
-
-						let dbutton = document.createElement('div');
-						dbutton.classList.add('dbutton');
-						let muadd = document.createElement('button');
-						muadd.id = 'muadd';
-						muadd.type = 'submit';
-						muadd.disabled = true;
-						muadd.innerText = 'Save';
-						let mudel = document.createElement('button');
-						mudel.id = 'mudel';
-						mudel.type = 'submit';
-						mudel.disabled = true;
-						mudel.innerText = 'Delete';
-						dbutton.appendChild(muadd);
-						dbutton.appendChild(mudel);
-
-						userSelect.addEventListener('change', function(e) {
-							if(e.target.options[e.target.selectedIndex].value != 0) {
-								nuser.value = e.target.options[e.target.selectedIndex].text;
-								userLevel.value = e.target.options[e.target.selectedIndex].dataset.lvl;
-								mudel.disabled = false;
-							} else {
-								nuser.value = '';
-								userLevel.value = 1;
-								mudel.disabled = true;
-							}
-						});
-						
-						nuser.addEventListener('input', function () {
-							muadd.disabled = (this.originalValue != this.value || this.value != '') ? false:true;
-						});
-
-						npwd.addEventListener('input', function () {
-							muadd.disabled = (this.originalValue != this.value || this.value != '') ? false:true;
-						});
-
-						userLevel.addEventListener('change', function() {
-							muadd.disabled = false;
-						});
-
-						mnguform.appendChild(userSelect);
-						mnguform.appendChild(nuser);
-						mnguform.appendChild(npwd);
-						mnguform.appendChild(userLevel);
-						mnguform.appendChild(dbutton);
-						document.querySelector('body').appendChild(mnguform);
-
-						muadd.addEventListener('click', function(e) {
-							e.preventDefault();
-							let loader = document.createElement('div');
-							loader.classList.add('db-spinner');
-							loader.id = 'db-spinner';
-							document.querySelector('body').appendChild(loader);
-							let xhrAdd = new XMLHttpRequest();
-							let type = (userSelect.selectedIndex == 0) ? 1:2;
-							let AddData = "action=muedt&type="+type+"&p="+npwd.value+"&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
-							xhrAdd.onreadystatechange = function () {
-								if(this.readyState == 4) {
-									if(this.status == 200) {
-										let response = JSON.parse(xhrAdd.responseText);
-										if(response.indexOf('failed') != -1) {
-											console.error("Syncmarks: "+response);
-											show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
-										} else if(response.indexOf('not send') != -1) {
-											console.warn("Syncmarks: "+response);
-										} else {
-											console.info("Syncmarks: "+response);
-										}
-										let xhrUpdate = new XMLHttpRequest();
-										let UpdateData = "action=getUsers";
-										xhrUpdate.onreadystatechange = function () {
-											if(this.readyState == 4) {
-												if(this.status == 200) {
-													loader.remove();
-													let uUData = JSON.parse(xhrUpdate.responseText);
-													if(uUData.indexOf('not allowed') != -1) {
-														show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
-													} else {
-														mngUform(uUData, userSelect);
-													}
-												}
-											}
-										}
-										xhrUpdate.open("POST", document.location.href, true);
-										xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-										xhrUpdate.send(UpdateData);
-									}
-								}
-							}
-							xhrAdd.open("POST", document.location.href, true);
-							xhrAdd.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-							xhrAdd.send(AddData);
-						});
-
-						mudel.addEventListener('click', function(e) {
-							e.preventDefault();
-							let loader = document.createElement('div');
-							loader.classList.add('db-spinner');
-							loader.id = 'db-spinner';
-							document.querySelector('body').appendChild(loader);
-							let xhrDel = new XMLHttpRequest();
-							let DelData = "action=muedt&type=3&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
-							xhrDel.onreadystatechange = function () {
-								if(this.readyState == 4) {
-									if(this.status == 200) {
-										let response = JSON.parse(xhrDel.responseText);
-										if(response.indexOf('failed') != -1) {
-											console.error("Syncmarks: "+response);
-											show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
-										} else if(response.indexOf('not send') != -1) {
-											console.warn("Syncmarks: "+response);
-										} else {
-											console.info("Syncmarks: "+response);
-										}
-										let xhrUpdate = new XMLHttpRequest();
-										let UpdateData = "action=getUsers";
-										xhrUpdate.onreadystatechange = function () {
-											if(this.readyState == 4) {
-												if(this.status == 200) {
-													loader.remove();
-													let uUData = JSON.parse(xhrUpdate.responseText);
-													if(uUData.indexOf('not allowed') != -1) {
-														show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
-													} else {
-														mngUform(uUData, userSelect);
-													}
-												}
-											}
-										}
-										xhrUpdate.open("POST", document.location.href, true);
-										xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-										xhrUpdate.send(UpdateData);
-									}
-								}
-							}
-							xhrDel.open("POST", document.location.href, true);
-							xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-							xhrDel.send(DelData);
-						});
-					}
-				}
-			}
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-			return false;
+			sendRequest(getUsers);
 		});
 
 		document.getElementById('muser').addEventListener('click', function(e) {
@@ -413,25 +213,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			});
 
 			mchange.addEventListener('click', function(){
-				let xhr = new XMLHttpRequest();
-				let data = "action=cmail&mail="+mput.value;
-				xhr.onreadystatechange = function () {
-					if (this.readyState == 4 && this.status == 200) {
-						let response = JSON.parse(this.responseText);
-						if(response == 1) {
-							document.getElementById('userMail').innerText = mput.value;
-							console.info("Mail changed.");
-							mailform.remove();
-						} else {
-							let message = response;
-							console.error(message);
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-						}
-					}
-				};
-				xhr.open("POST", document.location.href, true);
-				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send(data);
+				sendRequest(cmail, mput.value);
 			});
 
 			mailform.appendChild(heading);
@@ -461,26 +243,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('nmessages').addEventListener('click', function() {
 			hideMenu();
-
-			let xhr = new XMLHttpRequest();
-			let data = 'action=rmessage&lp=aNoti';
-			xhr.onreadystatechange = function () {
-				if (xhr.readyState == 4 && xhr.status == 200) {
-					const response =  new DOMParser().parseFromString(xhr.responseText, "text/html");
-					let div = document.querySelector('#aNoti .NotiTable .NotiTableBody');
-					Array.from(response.body.children).forEach((node) => {
-						node.children[1].children[0].addEventListener('click',delMessage, false);
-						div.appendChild(node); 
-					})
-				}
-			}
-
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-
-			document.getElementById('nmessagesform').style.display = 'block';
-			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+			let loader = document.createElement('div');
+			loader.classList.add('db-spinner');
+			loader.id = 'db-spinner';
+			document.querySelector('body').appendChild(loader);
+			sendRequest(rmessage, null, 'aNoti');
 		});
 
 		document.getElementById('clientedt').addEventListener('click', function() {
@@ -500,123 +267,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			loader.classList.add('db-spinner');
 			loader.id = 'db-spinner';
 			document.querySelector('body').appendChild(loader);
-			var xhr = new XMLHttpRequest();
-			var data = "action=checkdups";
-			xhr.onreadystatechange = function () {
-				if(this.readyState == 4) {
-					if(this.status == 200) {
-						let dubData = JSON.parse(this.responseText);
-						if(dubData.length > 0) {
-							let dubDIV = document.createElement('div');
-							let head = document.createElement('h6');
-							head.innerText = dubData.length + ' duplicates found';
-							let hspan = document.createElement('span');
-							hspan.innerText = 'Click on a entry to delete the duplicate';
-							dubDIV.id = 'dubDIV';
-							dubDIV.classList.add('mbmdialog');
-							dubDIV.appendChild(head);
-							dubDIV.appendChild(hspan);
-							document.querySelector('body').appendChild(dubDIV);
-							let dubMenu = document.createElement('ul');
-							dubMenu.id = 'dubMenu';
-							dubData.forEach(function(dubURL){
-								let dubSub = document.createElement('ul');
-								dubSub.classList.add('dubSub');
-								let dubLi = document.createElement('li');
-								dubLi.id = 'dub_' + dubURL.bmID;
-								dubLi.innerText = dubURL.bmTitle;
-								dubLi.dataset.url = dubURL.bmURL;
-								dubLi.title = dubURL.bmURL;
-								dubURL.subs.forEach(function(subEntry){
-									let subLi = document.createElement('li');
-									subLi.classList.add('menuitem');
-									subLi.innerText = subEntry.bmTitle;
-									subLi.dataset.bmid = subEntry.bmID;
-									subLi.addEventListener('click', function(){
-										let xhrDel = new XMLHttpRequest();
-										let dub = this;
-										let delData = "action=mdel&rc=1&id="+dub.dataset.bmid;
-										let loader = document.createElement('div');
-										loader.classList.add('db-spinner');
-										loader.id = 'db-spinner';
-										document.querySelector('body').appendChild(loader);
-										xhrDel.open("POST", document.location.href, true);
-										xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-										xhrDel.addEventListener('load', function(event){
-											if(xhrDel.status >= 200 && xhrDel.status < 300) {
-												dub.style.display = 'none';
-												document.getElementById(dub.dataset.bmid).parentNode.remove();
-												document.getElementById('db-spinner').remove();
-											}
-										});
-										xhrDel.send(delData);
-									});
-									let subSp = document.createElement('span');
-									subSp.innerHTML = subEntry.fway;
-									subSp.title = subSp.innerHTML;
-									subLi.appendChild(subSp);
-									dubSub.appendChild(subLi);
-								});
-								dubLi.appendChild(dubSub);
-								dubMenu.appendChild(dubLi);
-								dubDIV.appendChild(dubMenu);
-								dubDIV.style.display = 'block';
-							});
-							loader.remove();
-						} else {
-							loader.remove();
-							console.info("No duplicates found");
-							show_noti({title:"Syncmarks - Info", url:"No duplicates found", key:""}, false);
-						}
-					} else {
-						show_noti({title:"Syncmarks - Error", url:"Error checking for duplicates, please check server log.", key:""}, false);
-					}
-				}
-			};
-
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-			
-			return false;
+			sendRequest(checkdups);
 		});
 		
 		document.getElementById('bexport').addEventListener('click', function() {
 			hideMenu();
-			var today = new Date();
-			var dd = today.getDate();
-			var mm = today.getMonth()+1; 
-			var yyyy = today.getFullYear();
-			if(dd<10) dd='0'+dd;
-			if(mm<10) mm='0'+mm;
-			today = dd+'-'+mm+'-'+yyyy;
-
-			var xhr = new XMLHttpRequest();
-			var data = "action=bexport&type=html";
-
-			xhr.onreadystatechange = function () {
-				if (this.readyState == 4) {
-					if(this.status == 200) {
-						var blob = new Blob([this.response], { type: 'text/html' });
-						var link = document.createElement('a');
-						link.href = window.URL.createObjectURL(blob);
-						link.download = "bookmarks_" + today + ".html";
-						link.click();
-						console.info("HTML export successfully, please look in your download folder.");
-					} else {
-						let message = "Error generating export, please check server log.";
-						console.error(message);
-						show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					}
-				}
-			};
-
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.responseType = 'json';
-			xhr.send(data);
-
-			return false;
+			sendRequest(bexport, 'html');
 		});
 
 		document.getElementById('footer').addEventListener('click', function() {
@@ -636,84 +292,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			} else {
 				logfile.style.visibility = 'visible';
 				document.getElementById('close').style.visibility = 'visible';
-				let xhr = new XMLHttpRequest();
-				let data = "action=mlog";
-				xhr.onreadystatechange = function () {
-					if (this.readyState == 4) {
-						if(this.status == 200) {
-							const logger = document.getElementById("lfiletext")
-							while (logger.firstChild) {
-								logger.firstChild.remove()
-							}
-
-							let lparse = this.responseText.split("\n");
-							lparse.forEach(function(line){
-								let span = document.createElement('span');
-								if(line.indexOf('debug') > 0) {
-									span.classList.add("debug");
-								} else if (line.indexOf('notice') > 0) {
-									span.classList.add("notice");
-								} else if (line.indexOf('warn') > 0) {
-									span.classList.add("warn");
-								} else if (line.indexOf('error') > 0) {
-									span.classList.add("error");
-								}
-								span.innerText = line;
-								logger.appendChild(span);
-							});
-							moveEnd();
-						} else {
-							let message = "Error loading logfile, please check server log.";
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-							console.error(message);
-						}
-					}
-				};
-				xhr.open("POST", document.location.href, true);
-				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send(data);
+				sendRequest(mlog);
 			}
 		});
 
 		if(document.getElementById('mclear')) document.getElementById('mclear').addEventListener('click', function() {
-			let logfile = document.getElementById('logfile');
-			let xhr = new XMLHttpRequest();
-			let data = "action=mclear";
-			xhr.onreadystatechange = function () {
-				if (this.readyState == 4) {
-					if(this.status == 200) {
-						const logger = document.getElementById("lfiletext")
-						while (logger.firstChild) {
-							logger.firstChild.remove()
-						}
-
-						let lparse = this.responseText.split("\n");
-						lparse.forEach(function(line){
-							let span = document.createElement('span');
-							if(line.indexOf('debug') > 0) {
-								span.classList.add("debug");
-							} else if (line.indexOf('notice') > 0) {
-								span.classList.add("notice");
-							} else if (line.indexOf('warn') > 0) {
-								span.classList.add("warn");
-							} else if (line.indexOf('error') > 0) {
-								span.classList.add("error");
-							}
-							span.innerText = line;
-							logger.appendChild(span);
-						});
-						moveEnd();
-						console.info("Logfile should now be empty.");
-					} else {
-						let message = "Error couldnt clear logfile.";
-						console.error(message);
-						show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					}
-				}
-			};
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
+			sendRequest(mclear);
 		});
 		
 		if(document.getElementById('mrefresh')) document.getElementById('mrefresh').addEventListener('click', logRefresh);
@@ -763,56 +347,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('fsave').addEventListener('click', function(e) {
 			e.preventDefault();
-			let xhr = new XMLHttpRequest();
-			let data = 'action=cfolder&fname=' + document.getElementById('fname').value + '&fbid=' + document.getElementById('fbid').value;
-			
-			xhr.onreadystatechange = function () {
-				if (this.readyState == 4) {
-					if(this.status == 200) {
-						if(this.responseText == 1)
-							location.href = location.href;
-						else {
-							let message = "There was a problem adding the new folder.";
-							console.error(message);
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-						}
-					}
-				}
-			};
-
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-			hideMenu();
-			return false;
+			sendRequest(cfolder, document.getElementById('fname').value, document.getElementById('fbid').value);
 		});
 
 		document.getElementById('edsave').addEventListener('click', function(e) {
 			e.preventDefault();
-			let xhr = new XMLHttpRequest();
-			let data = 'action=bmedt&title=' + document.getElementById('edtitle').value + '&url=' + document.getElementById('edurl').value + '&id=' + document.getElementById('edid').value;
-			xhr.onreadystatechange = function () {
-				if (this.readyState == 4) {
-					if(this.status == 200) {
-						if(this.responseText == 1)
-							location.reload();
-						else {
-							let message = "There was a problem changing that bookmark.";
-							console.error(message);
-							show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-						}
-					}
-				}
-			};
-			xhr.open("POST", document.location.href, true);
-			xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhr.send(data);
-			return false;
+			let jsonMark = JSON.stringify({ 
+				"id": document.getElementById('edid').value,
+				"url": document.getElementById('edurl').value,
+				"title": document.getElementById('edtitle').value,
+			});
+
+			sendRequest(bmedt, jsonMark);
 		});
 		
 		document.getElementById('mvsave').addEventListener('click', function(e) {
 			e.preventDefault();
-			movBookmark(document.getElementById('mvfolder').value, document.getElementById('mvid').value);
+			sendRequest(bmmv, document.getElementById('mvfolder').value, document.getElementById('mvid').value);
 			document.getElementById('bmamove').style.display = 'none';
 		});
 	}
@@ -828,12 +379,6 @@ function sendRequest(action, data = null, addendum = null) {
 	}
 
 	const xhr = new XMLHttpRequest();
-	/*
-	if(action.name === 'addmark' && options['actions']['startup'] == false) {
-		client = 'bookmarkTab';
-		sync = options['actions']['startup'];
-	}
-	*/
 
 	xhr.open("POST", document.location.href, true);
 	xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
@@ -863,7 +408,7 @@ function sendRequest(action, data = null, addendum = null) {
 	xhr.send(qparams);
 }
 
-function getclients(response, a = '') {
+function getclients(response) {
 	let cList = response;
 	var clientListForm = document.getElementById('mngcform');
 	if(clientListForm.childNodes.length) clientListForm.removeChild(clientListForm.firstChild);
@@ -913,56 +458,444 @@ function getclients(response, a = '') {
 	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 }
 
-function addmark(response, a = '') {
+function addmark(response) {
 	document.getElementById('bookmarks').innerHTML = response;
 	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
 	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
 	console.info("Bookmark added successfully.");
 }
 
+function getUsers(response) {
+	let uData = response;
+	if(uData.indexOf('not allowed') != -1) {
+		console.warn('SyncMarks - Warning: '+uData);
+		show_noti({title:"Syncmarks - Warning", url:uData, key:""}, false);
+	} else {
+		document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
+		let mnguform = document.createElement('div');
+		mnguform.id = 'mnguform';
+		mnguform.classList.add('mbmdialog');
+		mnguform.style.display = 'block';
+		let heading = document.createElement('h6');
+		heading.appendChild(document.createTextNode('Manage Users'));
+		mnguform.appendChild(heading);
+		let userSelect = document.createElement('select');
+		userSelect.id = 'userSelect';
+		let uOptionA = document.createElement('option');
+		uOptionA.text = '-- Add new user --';
+		uOptionA.value = 0;
+		userSelect.appendChild(uOptionA);
+
+		mngUform(uData, userSelect);
+
+		let nuser = document.createElement('input');
+		nuser.id = 'nuser';
+		nuser.placeholder = 'Username';
+		nuser.type = 'text';
+		nuser.required = true;
+		nuser.autocomplete = 'username';
+
+		let npwd = document.createElement('input');
+		npwd.id = 'npwd';
+		npwd.placeholder = 'Password';
+		npwd.type = 'password';
+		npwd.autocomplete = 'password';
+
+		let userLevel = document.createElement('select');
+		userLevel.id = 'userLevel';
+
+		let uLevel0 = document.createElement('option');
+		uLevel0.text = 'Normal';
+		uLevel0.value = 1;
+		userLevel.appendChild(uLevel0);
+		let uLevel1 = document.createElement('option');
+		uLevel1.text = 'Admin';
+		uLevel1.value = 2;
+		userLevel.appendChild(uLevel1);
+
+		let dbutton = document.createElement('div');
+		dbutton.classList.add('dbutton');
+		let muadd = document.createElement('button');
+		muadd.id = 'muadd';
+		muadd.type = 'submit';
+		muadd.disabled = true;
+		muadd.innerText = 'Save';
+		let mudel = document.createElement('button');
+		mudel.id = 'mudel';
+		mudel.type = 'submit';
+		mudel.disabled = true;
+		mudel.innerText = 'Delete';
+		dbutton.appendChild(muadd);
+		dbutton.appendChild(mudel);
+
+		userSelect.addEventListener('change', function(e) {
+			if(e.target.options[e.target.selectedIndex].value != 0) {
+				nuser.value = e.target.options[e.target.selectedIndex].text;
+				userLevel.value = e.target.options[e.target.selectedIndex].dataset.lvl;
+				mudel.disabled = false;
+			} else {
+				nuser.value = '';
+				userLevel.value = 1;
+				mudel.disabled = true;
+			}
+		});
+		
+		nuser.addEventListener('input', function () {
+			muadd.disabled = (this.originalValue != this.value || this.value != '') ? false:true;
+		});
+
+		npwd.addEventListener('input', function () {
+			muadd.disabled = (this.originalValue != this.value || this.value != '') ? false:true;
+		});
+
+		userLevel.addEventListener('change', function() {
+			muadd.disabled = false;
+		});
+
+		mnguform.appendChild(userSelect);
+		mnguform.appendChild(nuser);
+		mnguform.appendChild(npwd);
+		mnguform.appendChild(userLevel);
+		mnguform.appendChild(dbutton);
+		document.querySelector('body').appendChild(mnguform);
+
+		muadd.addEventListener('click', function(e) {
+			e.preventDefault();
+			let loader = document.createElement('div');
+			loader.classList.add('db-spinner');
+			loader.id = 'db-spinner';
+			document.querySelector('body').appendChild(loader);
+			let xhrAdd = new XMLHttpRequest();
+			let type = (userSelect.selectedIndex == 0) ? 1:2;
+			let AddData = "action=muedt&type="+type+"&p="+npwd.value+"&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
+			xhrAdd.onreadystatechange = function () {
+				if(this.readyState == 4) {
+					if(this.status == 200) {
+						let response = JSON.parse(xhrAdd.responseText);
+						if(response.indexOf('failed') != -1) {
+							console.error("Syncmarks: "+response);
+							show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
+						} else if(response.indexOf('not send') != -1) {
+							console.warn("Syncmarks: "+response);
+						} else {
+							console.info("Syncmarks: "+response);
+						}
+						let xhrUpdate = new XMLHttpRequest();
+						let UpdateData = "action=getUsers";
+						xhrUpdate.onreadystatechange = function () {
+							if(this.readyState == 4) {
+								if(this.status == 200) {
+									loader.remove();
+									let uUData = JSON.parse(xhrUpdate.responseText);
+									if(uUData.indexOf('not allowed') != -1) {
+										show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
+									} else {
+										mngUform(uUData, userSelect);
+									}
+								}
+							}
+						}
+						xhrUpdate.open("POST", document.location.href, true);
+						xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+						xhrUpdate.send(UpdateData);
+					}
+				}
+			}
+			xhrAdd.open("POST", document.location.href, true);
+			xhrAdd.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			xhrAdd.send(AddData);
+		});
+
+		mudel.addEventListener('click', function(e) {
+			e.preventDefault();
+			let loader = document.createElement('div');
+			loader.classList.add('db-spinner');
+			loader.id = 'db-spinner';
+			document.querySelector('body').appendChild(loader);
+			let xhrDel = new XMLHttpRequest();
+			let DelData = "action=muedt&type=3&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
+			xhrDel.onreadystatechange = function () {
+				if(this.readyState == 4) {
+					if(this.status == 200) {
+						let response = JSON.parse(xhrDel.responseText);
+						if(response.indexOf('failed') != -1) {
+							console.error("Syncmarks: "+response);
+							show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
+						} else if(response.indexOf('not send') != -1) {
+							console.warn("Syncmarks: "+response);
+						} else {
+							console.info("Syncmarks: "+response);
+						}
+						let xhrUpdate = new XMLHttpRequest();
+						let UpdateData = "action=getUsers";
+						xhrUpdate.onreadystatechange = function () {
+							if(this.readyState == 4) {
+								if(this.status == 200) {
+									loader.remove();
+									let uUData = JSON.parse(xhrUpdate.responseText);
+									if(uUData.indexOf('not allowed') != -1) {
+										show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
+									} else {
+										mngUform(uUData, userSelect);
+									}
+								}
+							}
+						}
+						xhrUpdate.open("POST", document.location.href, true);
+						xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+						xhrUpdate.send(UpdateData);
+					}
+				}
+			}
+			xhrDel.open("POST", document.location.href, true);
+			xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			xhrDel.send(DelData);
+		});
+	}
+
+	return false;
+}
+
+function cmail(response) {
+	if(response == 1) {
+		document.getElementById('userMail').innerText = mput.value;
+		console.info("Mail changed.");
+		mailform.remove();
+	} else {
+		let message = response;
+		console.error(message);
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+	}
+}
+
+function checkdups(response) {
+	let dubData = response;
+	if(dubData.length > 0) {
+		let dubDIV = document.createElement('div');
+		let head = document.createElement('h6');
+		head.innerText = dubData.length + ' duplicates found';
+		let hspan = document.createElement('span');
+		hspan.innerText = 'Click on a entry to delete the duplicate';
+		dubDIV.id = 'dubDIV';
+		dubDIV.classList.add('mbmdialog');
+		dubDIV.appendChild(head);
+		dubDIV.appendChild(hspan);
+		document.querySelector('body').appendChild(dubDIV);
+		let dubMenu = document.createElement('ul');
+		dubMenu.id = 'dubMenu';
+		dubData.forEach(function(dubURL){
+			let dubSub = document.createElement('ul');
+			dubSub.classList.add('dubSub');
+			let dubLi = document.createElement('li');
+			dubLi.id = 'dub_' + dubURL.bmID;
+			dubLi.innerText = dubURL.bmTitle;
+			dubLi.dataset.url = dubURL.bmURL;
+			dubLi.title = dubURL.bmURL;
+			dubURL.subs.forEach(function(subEntry){
+				let subLi = document.createElement('li');
+				subLi.classList.add('menuitem');
+				subLi.innerText = subEntry.bmTitle;
+				subLi.dataset.bmid = subEntry.bmID;
+				subLi.addEventListener('click', function(){
+					let xhrDel = new XMLHttpRequest();
+					let dub = this;
+					let delData = "action=mdel&rc=1&id="+dub.dataset.bmid;
+					let loader = document.createElement('div');
+					loader.classList.add('db-spinner');
+					loader.id = 'db-spinner';
+					document.querySelector('body').appendChild(loader);
+					xhrDel.open("POST", document.location.href, true);
+					xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+					xhrDel.addEventListener('load', function(event){
+						if(xhrDel.status >= 200 && xhrDel.status < 300) {
+							dub.style.display = 'none';
+							document.getElementById(dub.dataset.bmid).parentNode.remove();
+							document.getElementById('db-spinner').remove();
+						}
+					});
+					xhrDel.send(delData);
+				});
+				let subSp = document.createElement('span');
+				subSp.innerHTML = subEntry.fway;
+				subSp.title = subSp.innerHTML;
+				subLi.appendChild(subSp);
+				dubSub.appendChild(subLi);
+			});
+			dubLi.appendChild(dubSub);
+			dubMenu.appendChild(dubLi);
+			dubDIV.appendChild(dubMenu);
+			dubDIV.style.display = 'block';
+		});
+		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+	} else {
+		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+		console.info("No duplicates found");
+		show_noti({title:"Syncmarks - Info", url:"No duplicates found", key:""}, false);
+	}
+}
+
 function logRefresh() {
 	let arefresh = document.getElementById('arefresh').checked;
 	let logfile = document.getElementById('logfile');
-	if(logfile.style.visibility === 'visible') {
-		let xhr = new XMLHttpRequest();
-		let data = "action=mrefresh";
-		xhr.onreadystatechange = function () {
-			if (this.readyState == 4) {
-				if(this.status == 200) {
-					const logger = document.getElementById("lfiletext")
-					while (logger.firstChild) {
-						logger.firstChild.remove()
-					}
+	if(logfile.style.visibility === 'visible') sendRequest(mrefresh);
+	if(arefresh === true) setTimeout(logRefresh, 30*1000);
+}
 
-					let lparse = this.responseText.split("\n");
-					lparse.forEach(function(line){
-						let span = document.createElement('span');
-						if(line.indexOf('debug') > 0) {
-							span.classList.add("debug");
-						} else if (line.indexOf('notice') > 0) {
-							span.classList.add("notice");
-						} else if (line.indexOf('warn') > 0) {
-							span.classList.add("warn");
-						} else if (line.indexOf('error') > 0) {
-							span.classList.add("error");
-						}
-						span.innerText = line;
-						logger.appendChild(span);
-					});
-					moveEnd();
-				} else {
-					let message = "Error couldnt reload logfile.";
-					console.error(message);
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-				}
-			}
-		};
-		xhr.open("POST", document.location.href, true);
-		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		xhr.send(data);
+function rmessage(r, a = 'aNoti') {
+	let noti = '#' + a,
+	response =  new DOMParser().parseFromString(r, "text/html");
+	let div = document.querySelector(noti + ' .NotiTable .NotiTableBody');
+
+	while (div.firstChild) {
+		div.removeChild(div.lastChild);
 	}
 
-	if(arefresh === true) setTimeout(logRefresh, 30*1000);
+	Array.from(response.body.children).forEach((node) => {
+		node.children[1].children[0].addEventListener('click',delMessage, false);
+		div.appendChild(node); 
+	})
+	
+	document.getElementById('nmessagesform').style.display = 'block';
+	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+}
+
+function bexport(response) {
+	let today = new Date();
+	let dd = today.getDate();
+	let mm = today.getMonth()+1; 
+
+	if(dd<10) dd='0'+dd;
+	if(mm<10) mm='0'+mm;
+	today = dd + '-' + mm + '-' + today.getFullYear();
+
+	let blob = new Blob([response], { type: 'text/html' });
+	let link = document.createElement('a');
+	link.href = window.URL.createObjectURL(blob);
+	link.download = "bookmarks_" + today + ".html";
+	link.click();
+	console.info("HTML export successfully, please look in your download folder.");
+}
+
+function mlog(response) {
+	const logger = document.getElementById("lfiletext")
+	while (logger.firstChild) {
+		logger.firstChild.remove()
+	}
+
+	let lparse = response.split("\n");
+	lparse.forEach(function(line){
+		let span = document.createElement('span');
+		if(line.indexOf('debug') > 0) {
+			span.classList.add("debug");
+		} else if (line.indexOf('notice') > 0) {
+			span.classList.add("notice");
+		} else if (line.indexOf('warn') > 0) {
+			span.classList.add("warn");
+		} else if (line.indexOf('error') > 0) {
+			span.classList.add("error");
+		}
+		span.innerText = line;
+		logger.appendChild(span);
+	});
+	moveEnd();
+}
+
+function mclear(response) {
+	const logger = document.getElementById("lfiletext")
+	while (logger.firstChild) {
+		logger.firstChild.remove()
+	}
+
+	let lparse = response.split("\n");
+	lparse.forEach(function(line){
+		let span = document.createElement('span');
+		if(line.indexOf('debug') > 0) {
+			span.classList.add("debug");
+		} else if (line.indexOf('notice') > 0) {
+			span.classList.add("notice");
+		} else if (line.indexOf('warn') > 0) {
+			span.classList.add("warn");
+		} else if (line.indexOf('error') > 0) {
+			span.classList.add("error");
+		}
+		span.innerText = line;
+		logger.appendChild(span);
+	});
+	moveEnd();
+	console.info("Logfile should now be empty.");
+}
+
+function mrefresh(response) {
+	const logger = document.getElementById("lfiletext")
+	while (logger.firstChild) {
+		logger.firstChild.remove()
+	}
+	
+	let lparse = response.split("\n");
+	lparse.forEach(function(line){
+		let span = document.createElement('span');
+		if(line.indexOf('debug') > 0) {
+			span.classList.add("debug");
+		} else if (line.indexOf('notice') > 0) {
+			span.classList.add("notice");
+		} else if (line.indexOf('warn') > 0) {
+			span.classList.add("warn");
+		} else if (line.indexOf('error') > 0) {
+			span.classList.add("error");
+		}
+		span.innerText = line;
+		logger.appendChild(span);
+	});
+	moveEnd();
+	
+}
+
+function cfolder(response) {
+	if(response == 1)
+		location.href = location.href;
+	else {
+		let message = "There was a problem adding the new folder.";
+		console.error(message);
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+	}
+	hideMenu();
+}
+
+function bmedt(response) {
+	if(response == 1) {
+		location.reload();
+	} else {
+		let message = "There was a problem changing that bookmark.";
+		console.error(message);
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+	}
+}
+
+function bmmv(response) {
+	if(response == 1) {
+		let obm = document.getElementById(bookmarkID).parentElement;
+		let nfolder = document.getElementById('f_'+folderID);
+		obm.remove();
+		nfolder.lastChild.appendChild(obm);
+	} else {
+		let message = "Error moving bookmark";
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		console.error(message);
+	}
+}
+
+function adel(response) {
+	document.getElementById('mngcform').innerHTML = response;
+	document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
+	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
+}
+
+function arename(response) {
+	document.getElementById('mngcform').innerHTML = response;
+	document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
+	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
+	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 }
 
 function mngUform(uData, userSelect) {
@@ -976,44 +909,8 @@ function mngUform(uData, userSelect) {
 	});
 }
 
-function movBookmark(folderID, bookmarkID) {
-	let data = 'action=bmmv&folder='+folderID+'&id='+bookmarkID;
-	let xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4) {
-			if(this.status == 200) {
-				if(this.responseText == 1) {
-					let obm = document.getElementById(bookmarkID).parentElement;
-					let nfolder = document.getElementById('f_'+folderID);
-					obm.remove();
-					nfolder.lastChild.appendChild(obm);
-				} else {
-					let message = "Error moving bookmark";
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					console.error(message);
-				}
-					
-			}
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
-}
-
 function delClient(element) {
-	let xhr = new XMLHttpRequest();
-	let data = 'action=adel&client=' + element.target.parentElement.id;
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState == 4 && xhr.status == 200) {
-			document.getElementById('mngcform').innerHTML = xhr.responseText;
-			document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
-			document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
+	sendRequest(adel, element.target.parentElement.id);
 }
 
 function mvClient(element) {
@@ -1021,21 +918,7 @@ function mvClient(element) {
 	loader.classList.add('db-spinner');
 	loader.id = 'db-spinner';
 	document.querySelector('body').appendChild(loader);
-	
-	let xhr = new XMLHttpRequest();
-	let data = 'action=arename&client=' + element.target.parentElement.id + '&nname=' + element.target.parentElement.children[0].children['cname'].value;
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState == 4 && xhr.status == 200) {
-			document.getElementById('mngcform').innerHTML = xhr.response;
-			document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
-			document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
-			loader.remove();
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.responseType = 'json';
-	xhr.send(data);
+	sendRequest(arename, element.target.parentElement.id, element.target.parentElement.children[0].children['cname'].value);
 }
 
 function resize(e){
@@ -1156,6 +1039,7 @@ function onClick(e){
 			document.getElementById('bmarkedt').style.left = xpos;
 			document.getElementById('bmarkedt').style.top = ypos;
 			document.getElementById('bmarkedt').style.display = 'block';
+			document.getElementById('edtitle').focus();
 			break;
 		case 'btnMove':
 			document.getElementById('mvtitle').value = document.getElementById('bmid').title;
@@ -1174,6 +1058,7 @@ function onClick(e){
 			document.getElementById('folderf').style.top = ypos;
 			document.getElementById('folderf').style.display = 'block';
 			document.getElementById('fbid').value = document.getElementById('bmid').value;
+			document.getElementById('fname').focus();
 			break;
 		default:
 			break;
@@ -1194,21 +1079,11 @@ function openMessages(element) {
 		div.removeChild(div.lastChild);
 	}
 
-	let xhr = new XMLHttpRequest();
-	let data = 'action=rmessage&lp='+element.target.dataset.val;
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState == 4 && xhr.status == 200) {
-			const response =  new DOMParser().parseFromString(xhr.responseText, "text/html");
-
-			Array.from(response.body.children).forEach((node) => {
-				node.children[1].children[0].addEventListener('click',delMessage, false);
-				div.appendChild(node);
-			})
-		}
-	}
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
+	let loader = document.createElement('div');
+	loader.classList.add('db-spinner');
+	loader.id = 'db-spinner';
+	document.querySelector('body').appendChild(loader);
+	sendRequest(rmessage, null, element.target.dataset.val);
 	
 	tablinks = document.getElementsByClassName("tablinks");
 	for (i = 0; i < tablinks.length; i++) {
@@ -1224,22 +1099,7 @@ function delMessage(message) {
 	loader.classList.add('db-spinner');
 	loader.id = 'db-spinner';
 	document.querySelector('body').appendChild(loader);
-		
-	let loop = message.target.parentElement.parentElement.parentElement.parentElement.parentElement.id;
-	let xhr = new XMLHttpRequest();
-	let data = 'action=rmessage&lp=' + loop + '&message=' + message.target.dataset['message'];
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4) {
-			if(this.status == 200) {
-				document.querySelector('#'+loop+' .NotiTable .NotiTableBody').innerHTML = this.responseText;
-				document.querySelectorAll('.NotiTableCell .fa-trash').forEach(function(element) {element.addEventListener('click', delMessage, false)});
-				loader.remove();
-			}
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
+	sendRequest(rmessage, message.target.dataset['message'], message.target.parentElement.parentElement.parentElement.parentElement.parentElement.id);
 }
 
 function eNoti(e) {
@@ -1339,14 +1199,12 @@ function getNotifications() {
 	let data = 'action=gurls';
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status == 200) {
-			//if(this.response) {
-				let notifications = this.response;
-				if(notifications[0]['nOption'] == 1) {
-					notifications.forEach(function(notification){
-						show_noti(notification);
-					});
-				}
-			//}
+			let notifications = this.response;
+			if(notifications[0]['nOption'] == 1) {
+				notifications.forEach(function(notification){
+					show_noti(notification);
+				});
+			}
 		}
 	};
 

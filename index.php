@@ -235,7 +235,7 @@ if(isset($_POST['action'])) {
 			switch($format) {
 				case "html":
 					e_log(8,"Exporting in HTML format for download");
-					die(html_export());
+					sendJSONResponse(html_export());
 					break;
 				case "json":
 					e_log(8,"Exporting in JSON format");
@@ -394,25 +394,24 @@ if(isset($_POST['action'])) {
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
 			$count = db_query($query);
 			$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID']):false;
-			
 			sendJSONResponse($response);
 			break;
 		case "cfolder":
 			$ctime = round(microtime(true) * 1000);
-			$fname = filter_var($_POST['fname'], FILTER_SANITIZE_STRING);
-			$fbid = filter_var($_POST['fbid'], FILTER_SANITIZE_STRING);
-			die(cfolder($ctime,$fname,$fbid));
+			$fname = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$fbid = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
+			sendJSONResponse(cfolder($ctime,$fname,$fbid));
 			break;
 		case "rmessage":
-			$message = isset($_POST['message']) ? filter_var($_POST['message'], FILTER_VALIDATE_INT):0;
-			$loop = filter_var($_POST['lp'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1:0;
+			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
+			$loop = filter_var($_POST['add'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1:0;
 			if($message > 0) {
 				e_log(8,"Try to delete notification $message");
 				$query = "DELETE FROM `notifications` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `id` = $message;";
 				$count = db_query($query);
 				($count === 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
-			die(notiList($_SESSION['sud']['userID'], $loop));
+			sendJSONResponse(notiList($_SESSION['sud']['userID'], $loop));
 			break;
 		case "soption":
 			$option = filter_var($_POST['option'], FILTER_SANITIZE_STRING);
@@ -462,30 +461,31 @@ if(isset($_POST['action'])) {
 			die(json_encode($tResponse));
 			break;
 		case "bmedt":
-			$title = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
-			$id = filter_var($_POST['id'], FILTER_SANITIZE_STRING);
-			e_log(8,"Edit entry '$title'");
-			$url = (isset($_POST['url']) && strlen($_POST['url']) > 4) ? '\''.validate_url($_POST['url']).'\'' : 'NULL';
+			$bookmark = json_decode($_POST['data'], true);
+			$title = filter_var($bookmark['title'], FILTER_SANITIZE_STRING);
+			$id = filter_var($bookmark['id'], FILTER_SANITIZE_STRING);
+			$url = (isset($bookmark['url']) && strlen($bookmark['url']) > 4) ? '\''.validate_url($bookmark['url']).'\'' : 'NULL';
+			e_log(8, "Edit entry '$title'");
 			$query = "UPDATE `bookmarks` SET `bmTitle` = '$title', `bmURL` = $url, `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			$count = db_query($query);
-			($count > 0) ? die(true) : die(false);
+			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
 			break;
 		case "bmmv":
-			$id = filter_var($_POST['id'], FILTER_SANITIZE_STRING);
+			$id = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
 			e_log(8,"Move bookmark $id");
-			$folder = filter_var($_POST['folder'], FILTER_SANITIZE_STRING);
-			$query = "SELECT MAX(bmIndex)+1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$folder';";
+			$folder = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$folder';";
 			$folderData = db_query($query);
 			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			$count = db_query($query);
-			($count > 0) ? die(true) : die(false);
+			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
 			break;
 		case "adel":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Delete client $client");
 			$query = "DELETE FROM `clients` WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '$client';";
 			$count = db_query($query);
-			($count > 0) ? die(bClientlist($_SESSION['sud']['userID'])) : die(false);
+			($count > 0) ? sendJSONResponse(bClientlist($_SESSION['sud']['userID'])):sendJSONResponse(false);
 			break;
 		case "cmail":
 			e_log(8,"Change e-mail for ".$_SESSION['sud']['userName']);
@@ -587,7 +587,7 @@ if(isset($_POST['action'])) {
 		case "mlog":
 			if($_SESSION['sud']['userType'] > 1) {
 			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				die(file_get_contents($lfile));
+				sendJSONResponse(file_get_contents($lfile));
 			} else {
 				$message = "Not allowed to read server logfile.";
 				e_log(2,$message);
@@ -597,11 +597,13 @@ if(isset($_POST['action'])) {
 		case "mrefresh":
 			if($_SESSION['sud']['userType'] > 1) {	
 			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				die(file_get_contents($lfile));
+				//die(file_get_contents($lfile));
+				sendJSONResponse(file_get_contents($lfile));
 			} else {
 				$message = "Not allowed to read server logfile.";
 				e_log(2,$message);
 				die($message);
+				//sendJSONResponse($message);
 			}
 			break;
 		case "mclear":
@@ -609,9 +611,8 @@ if(isset($_POST['action'])) {
 			if($_SESSION['sud']['userType'] > 1) {
 				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
 				file_put_contents($lfile,"");
-				die(file_get_contents($lfile));
+				sendJSONResponse(file_get_contents($lfile));
 			}
-				
 			die();
 			break;
 		case "mdel":
@@ -756,6 +757,20 @@ if(isset($_POST['action'])) {
 			} else {
 				die(json_encode('Editing users not allowed'));
 			}
+			break;
+		case "checkdups":
+			e_log(8,"Checking for duplicated bookmarks by url");
+			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `userID` = ".$_SESSION['sud']['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
+			$dubData = db_query($query);
+			foreach($dubData as $key => $dub) {
+				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmURL` = '".$dub['bmURL']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmParentID`, `bmIndex`;";
+				$subData = db_query($query);
+				foreach($subData as $index => $entry) {
+					$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
+				}
+				$dubData[$key]['subs'] = $subData;
+			}
+			sendJSONResponse($dubData);
 			break;
 		default:
 			die(e_log(1, "Unknown Action"));
