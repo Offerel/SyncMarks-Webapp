@@ -1,9 +1,9 @@
 /**
  * SyncMarks
  *
- * @version 1.6.7
+ * @version 1.6.8
  * @author Offerel
- * @copyright Copyright (c) 2021, Offerel
+ * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
  */	
 document.addEventListener("DOMContentLoaded", function() {
@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
 
-		if(sessionStorage.getItem('gNoti') != 1) getNotifications();
+		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
 			if (e.key === 'Escape') hideMenu();
@@ -741,16 +741,16 @@ function logRefresh() {
 	if(arefresh === true) setTimeout(logRefresh, 30*1000);
 }
 
-function rmessage(r, a = 'aNoti') {
-	let noti = '#' + a,
-	response =  new DOMParser().parseFromString(r, "text/html");
+function rmessage(response, a = 'aNoti') {
+	let noti = '#' + a;
+	let rhtm =  new DOMParser().parseFromString(response, "text/html");
 	let div = document.querySelector(noti + ' .NotiTable .NotiTableBody');
 
 	while (div.firstChild) {
 		div.removeChild(div.lastChild);
 	}
 
-	Array.from(response.body.children).forEach((node) => {
+	Array.from(rhtm.body.children).forEach((node) => {
 		node.children[1].children[0].addEventListener('click',delMessage, false);
 		div.appendChild(node); 
 	})
@@ -898,6 +898,49 @@ function arename(response) {
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 }
 
+function mdel(response) {
+	hideMenu();
+	document.getElementById('db-spinner').remove();
+	
+	if(response.length > 12) {
+		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
+		console.error(response);
+	} else {
+		document.getElementById(response).parentNode.remove();
+	}
+}
+
+function soption(response) {
+	if(response == 'true') {
+		console.info("Option saved.");
+	} else {
+		let message = "There was a problem, saving the option";
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		console.error(message);
+	}
+}
+
+function durl(response) {
+	if(response == "1") {
+		console.info("Notification removed");
+	} else {
+		let message = "Problem removing notification, please check server log.";
+		console.error(message);
+		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+	}
+}
+
+function gurls(response) {
+	let notifications = response;
+	if(notifications[0]['nOption'] == 1) {
+		notifications.forEach(function(notification){
+			show_noti(notification);
+		});
+	}
+
+	sessionStorage.setItem('gNoti', '1');
+}
+
 function mngUform(uData, userSelect) {
 	userSelect.options.length = 1;
 	uData.forEach(function(user){
@@ -918,7 +961,7 @@ function mvClient(element) {
 	loader.classList.add('db-spinner');
 	loader.id = 'db-spinner';
 	document.querySelector('body').appendChild(loader);
-	sendRequest(arename, element.target.parentElement.id, element.target.parentElement.children[0].children['cname'].value);
+	sendRequest(arename, element.target.parentElement.children[0].children['cname'].value, element.target.parentElement.id);
 }
 
 function resize(e){
@@ -933,31 +976,11 @@ function moveEnd() {
 
 function delBookmark(id, title) {
 	if(confirm("Would you like to delete \"" + title + "\"?")) {
-		let xhr = new XMLHttpRequest();
-		let data = 'action=mdel&id=' + id;
-
+		sendRequest(mdel, id);
 		let loader = document.createElement('div');
 		loader.classList.add('db-spinner');
 		loader.id = 'db-spinner';
 		document.querySelector('body').appendChild(loader);
-
-		xhr.onreadystatechange = function () {
-			if (this.readyState == 4) {
-				document.getElementById('db-spinner').remove();
-				if(this.status == 200) {
-					hideMenu();
-					document.getElementById(id).parentNode.remove();
-				}
-				else {
-					let message = "There was a problem removing that bookmark.";
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					console.error(message);
-				}
-			}
-		};
-		xhr.open("POST", document.location.href, true);
-		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		xhr.send(data);
 	}
 }
 
@@ -1107,72 +1130,27 @@ function eNoti(e) {
 	if(nval) {
 		if (!("Notification" in window)) {
 			alert("This browser does not support desktop notification");
-			setOption("notifications",0);
-		}
-		else if (Notification.permission === "granted") {
+			sendRequest(soption, "notifications", 0);
+		} else if (Notification.permission === "granted") {
 			var notification = new Notification("Syncmarks", {
 				body: "Notifications will be enabled for Syncmarks.",
 				icon: './images/bookmarks192.png'
 			});
-			setOption("notifications",1);
-		}
-		else if (Notification.permission !== "denied") {
+			sendRequest(soption, "notifications", 1);
+		} else if (Notification.permission !== "denied") {
 			Notification.requestPermission().then(function (permission) {
 				if (permission === "granted") {
 					var notification = new Notification("Syncmarks", {
 						body: "Notifications will be enabled for Syncmarks.",
 						icon: './images/bookmarks192.png'
 					});
-					setOption("notifications",1);
+					sendRequest(soption, "notifications", 1);
 				}
 			});
 		}
 	} else {
-		setOption("notifications",0);
+		sendRequest(soption, "notifications", 0);
 	}
-}
-
-function setOption(option,val) {
-	let xhr = new XMLHttpRequest();
-	let data = 'action=soption&option=' + option + '&value=' + val;
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4) {
-			if(this.status == 200) {
-				if(this.responseText === "1") {
-					console.info("Option saved.");
-				} else {
-					let message = "There was a problem, saving the option";
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-					console.error(message);
-				}
-			}
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
-}
-
-function rNot(noti) {
-	let xhr = new XMLHttpRequest();
-	let data = 'action=durl&durl=' + noti;
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4) {
-			if(this.status == 200) {
-				if(this.response === "1") {
-					console.info("Notification removed");
-				} else {
-					let message = "Problem removing notification, please check server log.";
-					console.error(message);
-					show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-				}
-			}
-		}
-	};
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.responseType = 'json';
-	xhr.send(data);
 }
 
 function show_noti(noti, rei = true) {
@@ -1188,30 +1166,8 @@ function show_noti(noti, rei = true) {
 		notification.onclick = function() {
 			if(noti.url.indexOf('http') >= 0) {
 				window.open(noti.url);
-				rNot(noti.nkey);
+				sendRequest(durl, noti.nkey);
 			}
 		};
 	}
-}
-
-function getNotifications() {
-	let xhr = new XMLHttpRequest();
-	let data = 'action=gurls';
-	xhr.onreadystatechange = function () {
-		if (this.readyState == 4 && this.status == 200) {
-			let notifications = this.response;
-			if(notifications[0]['nOption'] == 1) {
-				notifications.forEach(function(notification){
-					show_noti(notification);
-				});
-			}
-		}
-	};
-
-	xhr.open("POST", document.location.href, true);
-	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-	xhr.responseType = 'json';
-	xhr.send(data);
-
-	sessionStorage.setItem('gNoti', '1');
 }

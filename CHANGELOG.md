@@ -1,5 +1,13 @@
 ChangeLog
 =========
+1.6.8 (2022-04-25)
+-------------------------
+- Reworked actions
+- Reworked XHR requests
+- Removed unused functions
+- Small Fixes
+
+
 1.6.7 (2022-03-19)
 -------------------------
 - Fixed delete bookmarks
