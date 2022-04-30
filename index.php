@@ -900,14 +900,18 @@ function delMark($bmID) {
 	}
 
 	e_log(8,"Check for remaining entries in this folder");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." AND `bmIndex` > ".$dData['bmIndex']." ORDER BY bmIndex;";
+	//$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." AND `bmIndex` > ".$dData['bmIndex']." ORDER BY bmIndex;";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY bmIndex;";
+	
 	$fBookmarks = db_query($query);
 	$bm_count = count($fBookmarks);
 	
 	e_log(8,"Re-index folder ".$dData['bmParentID']);
 	for ($i = 0; $i < $bm_count; $i++) {
-		$query = "UPDATE `bookmarks` SET `bmIndex`= $i WHERE `bmID` = '".$fBookmarks[$i]['bmID']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
-		db_query($query);
+		if($i != $fBookmarks[$i]['bmIndex']) {
+			$query = "UPDATE `bookmarks` SET `bmIndex`= $i WHERE `bmID` = '".$fBookmarks[$i]['bmID']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			db_query($query);
+		}
 	}
 
 	return $count;
