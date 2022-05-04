@@ -303,7 +303,7 @@ if(isset($_POST['action'])) {
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
 			$stime = round(microtime(true) * 1000);
-			$bookmark['added'] = $stime;	//
+			$bookmark['added'] = $stime;
 			$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle($bookmark['url']):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 			e_log(9, print_r($bookmark, true));
@@ -370,7 +370,7 @@ if(isset($_POST['action'])) {
 			$bData = db_query($query);
 			if(count($bData) == 1) {
 				e_log(2, "Bookmark found, trying to remove it");
-				$response = delMark($bData[0]['bmID']);
+				$response = delMark(array($bData[0]['bmID']));
 			} else if (count($bData) > 1) {
 				$response = "No unique bookmark found, doing nothing";
 				e_log(2, $response);
@@ -388,7 +388,7 @@ if(isset($_POST['action'])) {
 			sendJSONResponse(db_query($query));
 			break;
 		case "arename":
-			$client = (!isset($_POST['add'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING):filter_var($_POST['add'], FILTER_SANITIZE_STRING);
+			$client = (isset($_POST['add']) && $_POST['add'] != 'null') ? filter_var($_POST['add'], FILTER_SANITIZE_STRING):filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Rename client $client to $name");
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
@@ -614,7 +614,7 @@ if(isset($_POST['action'])) {
 			die();
 			break;
 		case "mdel":
-			$bmID = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$bmID = json_decode($_POST['data'], true);
 			$delMark = delMark($bmID);
 			if($delMark != 0) {
 				if(!isset($_POST['rc'])) {
@@ -885,33 +885,35 @@ function fWay($parent, $user, $str) {
 
 function delMark($bmID) {
 	$count = 0;
-	e_log(8,"Delete bookmark '$bmID'");
+	$bms = implode(", ", $bmID);
+	e_log(8,"Delete bookmark(s) $bms");
 
-	$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".$_SESSION['sud']['userID'].";";
-	$dData = db_query($query)[0];
+	foreach ($bmID as $key => $value) {
+		$bm = $value;
+		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
+		$dData = db_query($query)[0];
 
-	$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bmID' AND `userID` = ".$_SESSION['sud']['userID'].";";
-	$count = db_query($query);
-
-	if(isset($dData['bmType']) && $dData['bmType'] === 'folder') {
-		e_log(8,"'$bmID' appeared to be a folder, delete all the contents of it");
-		$query = "DELETE FROM `bookmarks` WHERE `bmParentID` = '$bmID' AND `userID` = ".$_SESSION['sud']['userID'].";";
-		db_query($query);
-	}
-
-	e_log(8,"Check for remaining entries in this folder");
-	//$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." AND `bmIndex` > ".$dData['bmIndex']." ORDER BY bmIndex;";
-	$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY bmIndex;";
-	
-	$fBookmarks = db_query($query);
-	$bm_count = count($fBookmarks);
-	
-	e_log(8,"Re-index folder ".$dData['bmParentID']);
-	for ($i = 0; $i < $bm_count; $i++) {
-		if($i != $fBookmarks[$i]['bmIndex']) {
-			$query = "UPDATE `bookmarks` SET `bmIndex`= $i WHERE `bmID` = '".$fBookmarks[$i]['bmID']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+		if(isset($dData['bmType']) && $dData['bmType'] === 'folder') {
+			e_log(8,"'$bmID' appeared to be a folder, delete all the contents of it");
+			$query = "DELETE FROM `bookmarks` WHERE `bmParentID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			db_query($query);
 		}
+
+		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
+		$count = db_query($query);
+
+		e_log(8,"Check for remaining entries in folder");
+		$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY bmIndex;";
+		$fBookmarks = db_query($query);
+
+		$bm_count = count($fBookmarks);
+		e_log(8, "Re-index folder ".$dData['bmParentID']);
+		for ($i = 0; $i < $bm_count; $i++) {
+			$data[] = array($i, $fBookmarks[$i]['bmID']);
+		}
+
+		$query = "UPDATE `bookmarks` SET `bmIndex` = ? WHERE bmID = ?";
+		db_query($query, $data);
 	}
 
 	return $count;
@@ -1314,7 +1316,7 @@ function htmlHeader() {
 		<html lang='en'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				<script src='js/bookmarks.js'></script>
+				<script src='js/bookmarks.min.js'></script>
 				<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
@@ -2192,6 +2194,9 @@ function checkDB() {
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
+	}
+}
+?>ery);
 	}
 }
 ?>

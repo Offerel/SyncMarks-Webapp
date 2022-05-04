@@ -1,11 +1,13 @@
 ChangeLog
 =========
-1.6.8 (2022-04-30)
+1.6.8 (2022-05-04)
 -------------------------
 - Reworked actions
 - Reworked XHR requests
 - Removed unused functions
+- Added delete multiple bookmarks (Ctrl + Click > Del)
 - Fix Re-Index folder
+- Fix Rename client
 - Other Small Fixes
 
 

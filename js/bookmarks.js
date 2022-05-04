@@ -106,6 +106,9 @@ document.addEventListener("DOMContentLoaded", function() {
 			bookmark.addEventListener('dragend', function(event){
 				event.target.style.opacity = '';
 			});
+			bookmark.addEventListener('click', bmClick);
+			
+			
 		});
 		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
 
@@ -260,6 +263,8 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.getElementById('mngsform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
+		
+		document.getElementById('bookmarks').addEventListener('keyup', rmBm);
 
 		document.getElementById('duplicates').addEventListener('click', function() {
 			hideMenu();
@@ -368,6 +373,34 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	}
 }, false);
+
+var bmIDs = new Array();
+
+function bmClick(e){
+    if(e.ctrlKey) {
+    	e.preventDefault();
+		let bookmark = this.children[0];
+		if(bookmark.classList.contains('bmMarked')) {
+			bmIDs.indexOf(bookmark.id) !== -1 && bmIDs.splice(bmIDs.indexOf(bookmark.id), 1)
+			bookmark.classList.remove('bmMarked');
+		} else {
+			bookmark.classList.add('bmMarked');
+			bmIDs.push(bookmark.id);
+		}  	
+    }
+}
+
+function rmBm(key) {
+	if(key.keyCode == 46) {
+		if(confirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?")) {
+			sendRequest(mdel, JSON.stringify(bmIDs));
+			let loader = document.createElement('div');
+			loader.classList.add('db-spinner');
+			loader.id = 'db-spinner';
+			document.querySelector('body').appendChild(loader);
+		}
+	}
+}
 
 function sendRequest(action, data = null, addendum = null) {
 	const params = {
@@ -901,12 +934,14 @@ function arename(response) {
 function mdel(response) {
 	hideMenu();
 	document.getElementById('db-spinner').remove();
-	
-	if(response.length > 12) {
+
+	if(Array.isArray(response)) {
+		response.forEach(function(element) {
+			document.getElementById(element).parentNode.remove();
+		});
+	} else {
 		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
 		console.error(response);
-	} else {
-		document.getElementById(response).parentNode.remove();
 	}
 }
 
@@ -932,7 +967,7 @@ function durl(response) {
 
 function gurls(response) {
 	let notifications = response;
-	if(notifications[0]['nOption'] == 1) {
+	if(Object.keys(notifications).length > 0 && notifications[0]['nOption'] == 1) {
 		notifications.forEach(function(notification){
 			show_noti(notification);
 		});
@@ -976,7 +1011,8 @@ function moveEnd() {
 
 function delBookmark(id, title) {
 	if(confirm("Would you like to delete \"" + title + "\"?")) {
-		sendRequest(mdel, id);
+		const bookmarks = [id]
+		sendRequest(mdel, JSON.stringify(bookmarks));
 		let loader = document.createElement('div');
 		loader.classList.add('db-spinner');
 		loader.id = 'db-spinner';
@@ -1013,6 +1049,7 @@ function hideMenu(){
 
 function onContextMenu(e){
     e.preventDefault();
+    e.stopPropagation();
 	hideMenu();
 	let menu = document.querySelector('.menu');
 	menu.style.display = 'block';
