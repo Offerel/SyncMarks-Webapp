@@ -871,7 +871,7 @@ span.rdesc {
 	-ms-user-select: none !important;
 	-o-user-select: none !important;
 	user-select: none !important;
-	width: max-content;
+	max-width: fit-content;
 }
 #bookmarks li input {
     position: absolute;
@@ -1446,7 +1446,7 @@ input:checked + .slider:before {
 		-ms-user-select: none !important;
 		-o-user-select: none !important;
 		user-select: none !important;
-		width: max-content;
+		max-width: fit-content;
 	}
 	#bookmarks li.file a::before {
 		content: unset;
