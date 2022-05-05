@@ -498,12 +498,25 @@ function addmark(response) {
 	console.info("Bookmark added successfully.");
 }
 
+function muedt(response) {
+	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+	if(response.indexOf('failed') != -1) {
+		console.error("Syncmarks: "+response);
+		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
+	} else if(response.indexOf('not send') != -1) {
+		console.warn("Syncmarks: "+response);
+	}
+
+	sendRequest(getUsers);
+}
+
 function getUsers(response) {
 	let uData = response;
 	if(uData.indexOf('not allowed') != -1) {
 		console.warn('SyncMarks - Warning: '+uData);
 		show_noti({title:"Syncmarks - Warning", url:uData, key:""}, false);
 	} else {
+		if(document.getElementById('mnguform')) document.getElementById('mnguform'). remove();
 		document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
 		let mnguform = document.createElement('div');
 		mnguform.id = 'mnguform';
@@ -523,7 +536,7 @@ function getUsers(response) {
 
 		let nuser = document.createElement('input');
 		nuser.id = 'nuser';
-		nuser.placeholder = 'Username';
+		nuser.placeholder = 'E-Mail';
 		nuser.type = 'text';
 		nuser.required = true;
 		nuser.autocomplete = 'username';
@@ -598,45 +611,16 @@ function getUsers(response) {
 			loader.classList.add('db-spinner');
 			loader.id = 'db-spinner';
 			document.querySelector('body').appendChild(loader);
-			let xhrAdd = new XMLHttpRequest();
 			let type = (userSelect.selectedIndex == 0) ? 1:2;
-			let AddData = "action=muedt&type="+type+"&p="+npwd.value+"&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
-			xhrAdd.onreadystatechange = function () {
-				if(this.readyState == 4) {
-					if(this.status == 200) {
-						let response = JSON.parse(xhrAdd.responseText);
-						if(response.indexOf('failed') != -1) {
-							console.error("Syncmarks: "+response);
-							show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
-						} else if(response.indexOf('not send') != -1) {
-							console.warn("Syncmarks: "+response);
-						} else {
-							console.info("Syncmarks: "+response);
-						}
-						let xhrUpdate = new XMLHttpRequest();
-						let UpdateData = "action=getUsers";
-						xhrUpdate.onreadystatechange = function () {
-							if(this.readyState == 4) {
-								if(this.status == 200) {
-									loader.remove();
-									let uUData = JSON.parse(xhrUpdate.responseText);
-									if(uUData.indexOf('not allowed') != -1) {
-										show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
-									} else {
-										mngUform(uUData, userSelect);
-									}
-								}
-							}
-						}
-						xhrUpdate.open("POST", document.location.href, true);
-						xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-						xhrUpdate.send(UpdateData);
-					}
-				}
-			}
-			xhrAdd.open("POST", document.location.href, true);
-			xhrAdd.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhrAdd.send(AddData);
+
+			let data = JSON.stringify({
+				"type":type,
+				"p":npwd.value,
+				"userLevel":userLevel.value,
+				"nuser":nuser.value,
+				"userSelect":userSelect.options[userSelect.selectedIndex].value
+			});
+			sendRequest(muedt, data);
 		});
 
 		mudel.addEventListener('click', function(e) {
@@ -645,44 +629,13 @@ function getUsers(response) {
 			loader.classList.add('db-spinner');
 			loader.id = 'db-spinner';
 			document.querySelector('body').appendChild(loader);
-			let xhrDel = new XMLHttpRequest();
-			let DelData = "action=muedt&type=3&userLevel="+userLevel.value+"&nuser="+nuser.value+"&userSelect="+userSelect.options[userSelect.selectedIndex].value;
-			xhrDel.onreadystatechange = function () {
-				if(this.readyState == 4) {
-					if(this.status == 200) {
-						let response = JSON.parse(xhrDel.responseText);
-						if(response.indexOf('failed') != -1) {
-							console.error("Syncmarks: "+response);
-							show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
-						} else if(response.indexOf('not send') != -1) {
-							console.warn("Syncmarks: "+response);
-						} else {
-							console.info("Syncmarks: "+response);
-						}
-						let xhrUpdate = new XMLHttpRequest();
-						let UpdateData = "action=getUsers";
-						xhrUpdate.onreadystatechange = function () {
-							if(this.readyState == 4) {
-								if(this.status == 200) {
-									loader.remove();
-									let uUData = JSON.parse(xhrUpdate.responseText);
-									if(uUData.indexOf('not allowed') != -1) {
-										show_noti({title:"Syncmarks - Warning", url:uUData, key:""}, false);
-									} else {
-										mngUform(uUData, userSelect);
-									}
-								}
-							}
-						}
-						xhrUpdate.open("POST", document.location.href, true);
-						xhrUpdate.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-						xhrUpdate.send(UpdateData);
-					}
-				}
-			}
-			xhrDel.open("POST", document.location.href, true);
-			xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-			xhrDel.send(DelData);
+			let data = JSON.stringify({
+				"type":3,
+				"userLevel":userLevel.value,
+				"nuser":nuser.value,
+				"userSelect":userSelect.options[userSelect.selectedIndex].value
+			});
+			sendRequest(muedt, data);
 		});
 	}
 
@@ -730,23 +683,12 @@ function checkdups(response) {
 				subLi.innerText = subEntry.bmTitle;
 				subLi.dataset.bmid = subEntry.bmID;
 				subLi.addEventListener('click', function(){
-					let xhrDel = new XMLHttpRequest();
 					let dub = this;
-					let delData = "action=mdel&rc=1&id="+dub.dataset.bmid;
+					sendRequest(mdel, JSON.stringify([dub.dataset.bmid]), 1);
 					let loader = document.createElement('div');
 					loader.classList.add('db-spinner');
 					loader.id = 'db-spinner';
 					document.querySelector('body').appendChild(loader);
-					xhrDel.open("POST", document.location.href, true);
-					xhrDel.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-					xhrDel.addEventListener('load', function(event){
-						if(xhrDel.status >= 200 && xhrDel.status < 300) {
-							dub.style.display = 'none';
-							document.getElementById(dub.dataset.bmid).parentNode.remove();
-							document.getElementById('db-spinner').remove();
-						}
-					});
-					xhrDel.send(delData);
 				});
 				let subSp = document.createElement('span');
 				subSp.innerHTML = subEntry.fway;
@@ -934,7 +876,6 @@ function arename(response) {
 function mdel(response) {
 	hideMenu();
 	document.getElementById('db-spinner').remove();
-
 	if(Array.isArray(response)) {
 		response.forEach(function(element) {
 			document.getElementById(element).parentNode.remove();

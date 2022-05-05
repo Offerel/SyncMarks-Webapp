@@ -508,10 +508,13 @@ if(isset($_POST['action'])) {
 			$del = false;
 			$headers = "From: SyncMarks <".CONFIG['sender'].">";
 			$url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
-			$variant = filter_var($_POST['type'], FILTER_VALIDATE_INT);
-			$password = (isset($_POST['p']) && $_POST['p'] != '') ? filter_var($_POST['p'], FILTER_SANITIZE_STRING):gpwd(16);
-			$userLevel = filter_var($_POST['userLevel'], FILTER_VALIDATE_INT);
-			$user = filter_var($_POST['nuser'], FILTER_SANITIZE_STRING);
+
+			$data = json_decode($_POST['data'], true);
+
+			$variant = filter_var($data['type'], FILTER_VALIDATE_INT);
+			$password = (isset($data['p']) && $data['p'] != '') ? filter_var($data['p'], FILTER_SANITIZE_STRING):gpwd(16);
+			$userLevel = filter_var($data['userLevel'], FILTER_VALIDATE_INT);
+			$user = filter_var($data['nuser'], FILTER_SANITIZE_STRING);
 			$mail = filter_var($user, FILTER_VALIDATE_EMAIL) ? $user:null;
 
 			switch($variant) {
@@ -523,7 +526,7 @@ if(isset($_POST['action'])) {
 					if($nuid > 0) {
 						if(filter_var($mail, FILTER_VALIDATE_EMAIL)) {
 							$response = $nuid;
-							$message = "Hello,\r\na new account with the following credentials is created and stored encrypted on for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at $url";
+							$message = "Hello,\r\na new account with the following credentials is created for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at $url";
 							if(!mail ($mail, "Account created",$message,$headers)) {
 								e_log(1,"Error sending data for created user account to user");
 								$response = "User created successful, E-Mail could not send";
@@ -539,12 +542,10 @@ if(isset($_POST['action'])) {
 					} else {
 						$response = "User creation failed";
 					}
-					header("Content-Type: application/json");
-					die(json_encode($response));
 					break;
 				case 2:
 					e_log(8,"Updating user $user");
-					$uID = filter_var($_POST['userSelect'], FILTER_VALIDATE_INT);
+					$uID = filter_var($data['userSelect'], FILTER_VALIDATE_INT);
 					$query = "UPDATE `users` SET `userName`= '$user', `userType`= '$userLevel' WHERE `userID` = $uID;";
 					if(db_query($query) == 1) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
@@ -557,12 +558,10 @@ if(isset($_POST['action'])) {
 					} else {
 						$response = "User change failed";
 					}
-					header("Content-Type: application/json");
-					die(json_encode($response));
 					break;
 				case 3:
 					e_log(8,"Delete user $user");
-					$uID = filter_var($_POST['userSelect'], FILTER_VALIDATE_INT);
+					$uID = filter_var($data['userSelect'], FILTER_VALIDATE_INT);
 					$query = "DELETE FROM `users` WHERE `userID` = $uID;";
 					if(db_query($query) == 1) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
@@ -575,14 +574,12 @@ if(isset($_POST['action'])) {
 					} else {
 						$response = "Delete user failed";
 					}
-					header("Content-Type: application/json");
-					die(json_encode($response));
 					break;
 				default:
-					$message = "Unknown action for managing users";
-					e_log(1,$message);
-					die($message);
+					$response = "Unknown action for managing users";
+					e_log(1,$response);
 			}
+			sendJSONResponse($response);
 			break;
 		case "mlog":
 			if($_SESSION['sud']['userType'] > 1) {
@@ -617,7 +614,7 @@ if(isset($_POST['action'])) {
 			$bmID = json_decode($_POST['data'], true);
 			$delMark = delMark($bmID);
 			if($delMark != 0) {
-				if(!isset($_POST['rc'])) {
+				if(!isset($_POST['add'])) {
 					e_log(8,"Bookmark $bmID removed");
 					sendJSONResponse($bmID);
 				} else {
@@ -645,6 +642,7 @@ if(isset($_POST['action'])) {
 				</div>";
 				echo htmlFooter();
 			}
+			session_destroy();
 			exit;
 			break;
 		case "pbupdate":
@@ -2155,13 +2153,13 @@ function checkDB() {
 		e_log(8,"Database update needed. Starting DB update...");
 		if(CONFIG['db']['type'] == "sqlite") {
 			db_query(file_get_contents("./sql/sqlite_update_$dbv.sql"));
-		} elseif(CONFIG['db']['type'] == "mysql") {
+		} elseif (CONFIG['db']['type'] == "mysql") {
 			db_query(file_get_contents("./sql/mysql_update_$dbv.sql"));
 		}
 		$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
 	    $aversion = substr($aversion,0,strpos($aversion, " "));
 		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
-	} elseif($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
+	} elseif ($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
 		if($olddate <> $newdate) db_query("UPDATE `system` SET `updated` = '$newdate' WHERE `updated` = '$olddate';");
 	} else {
 		e_log(2,"Database not ready. Initialize database now");
@@ -2181,7 +2179,7 @@ function checkDB() {
 				e_log(8,"Initialise new SQLite database");
 				db_query(file_get_contents("./sql/sqlite_init.sql"));
 			}
-		} elseif(CONFIG['db']['type'] == "mysql") {
+		} elseif (CONFIG['db']['type'] == "mysql") {
 			e_log(8,"Initialise new MySQL database");
 			db_query(file_get_contents("./sql/mysql_init.sql"));
 		}
@@ -2194,9 +2192,6 @@ function checkDB() {
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
-	}
-}
-?>ery);
 	}
 }
 ?>
