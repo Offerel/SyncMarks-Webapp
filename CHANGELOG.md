@@ -1,6 +1,6 @@
 ChangeLog
 =========
-1.6.8 (2022-05-04)
+1.7.8 (2022-05-06)
 -------------------------
 - Reworked actions
 - Reworked XHR requests
