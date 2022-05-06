@@ -367,9 +367,10 @@ if(isset($_POST['action'])) {
 			} else {
 				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bookmark['title']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			}
+			$response = 1;
 			$bData = db_query($query);
 			if(count($bData) == 1) {
-				e_log(2, "Bookmark found, trying to remove it");
+				e_log(8, "Bookmark found, trying to remove it");
 				$response = delMark(array($bData[0]['bmID']));
 			} else if (count($bData) > 1) {
 				$response = "No unique bookmark found, doing nothing";
