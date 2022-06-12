@@ -245,7 +245,7 @@ if(isset($_POST['action'])) {
 						file_put_contents($filename,$bookmarks,true);
 						e_log(8,"Export file is saved to $filename");
 					}
-					$bcount = count(json_decode($bookmarks)) + 1;
+					$bcount = count(json_decode($bookmarks));
 					e_log(8,"Send $bcount bookmarks to '$client'");
 					$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
 					updateClient($client, $ctype, $ctime, true);
