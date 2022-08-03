@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.7.0
+ * @version 1.7.1
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -479,7 +479,8 @@ if(isset($_POST['action'])) {
 			$folderData = db_query($query);
 			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			$count = db_query($query);
-			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
+			$response = array("id" => $id, "folder" => $folder);
+			($count > 0) ? sendJSONResponse($response):sendJSONResponse(false);
 			break;
 		case "adel":
 			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
@@ -1307,7 +1308,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
 	$query = "DELETE FROM `bookmarks` WHERE `UserID`=".$uid;
-	db_query($query);
+	db_query($query); 
 }
 
 function htmlHeader() {

@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.7.0
+ * @version 1.7.1
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -848,9 +848,9 @@ function bmedt(response) {
 }
 
 function bmmv(response) {
-	if(response == 1) {
-		let obm = document.getElementById(bookmarkID).parentElement;
-		let nfolder = document.getElementById('f_'+folderID);
+	if(response !== false) {
+		let obm = document.getElementById(response.id).parentElement;
+		let nfolder = document.getElementById('f_' + response.folder);
 		obm.remove();
 		nfolder.lastChild.appendChild(obm);
 	} else {
