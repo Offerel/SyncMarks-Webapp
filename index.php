@@ -432,34 +432,45 @@ if(isset($_POST['action'])) {
 			break;
 		case "tl":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			e_log(8,"Token request from client '$client'");
+			$tbt = filter_var($_POST['tbt'], FILTER_VALIDATE_BOOLEAN);
+			e_log(8, $tbt);
+			$tm = ($tbt) ? "First login from client '$client'":"Token request from client '$client'";
+			e_log(8, $tm);
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
 			$tResponse['message'] = updateClient($client, $type, $ctime);
 			$userID = $_SESSION['sud']['userID'];
-			$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
-			$tData = db_query($query);
-			$expireTime = time()+60*60*24*7;
-			$token = bin2hex(openssl_random_pseudo_bytes(32));
-			$thash = password_hash($token, PASSWORD_DEFAULT);
-			if(count($tData) > 0) {
-				$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
-				$tResponse['cname'] = $tData[0]['cname'];
+
+			if(!$tbt) {
+				$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
+				$tData = db_query($query);
+				$expireTime = time()+60*60*24*7;
+				$token = bin2hex(openssl_random_pseudo_bytes(32));
+				$thash = password_hash($token, PASSWORD_DEFAULT);
+				if(count($tData) > 0) {
+					$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+					$tResponse['cname'] = $tData[0]['cname'];
+				} else {
+					$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+					$tResponse['cname'] = '';
+				}
+				db_query($query);
+				$tResponse['token'] = $token;
+
+				header("Content-Type: application/json");
+				e_log(8, "Send new token to client $client");
+				echo(json_encode($tResponse));
 			} else {
-				$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
-				$tResponse['cname'] = '';
+				e_log(8, "Send response to client $client");
+				header("Content-Type: application/json");
+				echo(json_encode($tResponse));
 			}
-			db_query($query);
-			$tResponse['token'] = $token;
-			
+
 			e_log(8, "Logout $client");
 			unset($_SESSION['sauth']);
-			session_destroy();
-
-			header("Content-Type: application/json");
-			e_log(8, "Send new token to client $client");
-			die(json_encode($tResponse));
+			session_destroy();			
+			die();
 			break;
 		case "bmedt":
 			$bookmark = json_decode($_POST['data'], true);
@@ -617,10 +628,10 @@ if(isset($_POST['action'])) {
 			$delMark = delMark($bmID);
 			if($delMark != 0) {
 				if(!isset($_POST['add'])) {
-					e_log(8,"Bookmark $bmID removed");
+					e_log(8,"Bookmark removed");
 					sendJSONResponse($bmID);
 				} else {
-					e_log(8,"Bookmark $bmID deleted by Roundcube");
+					e_log(8,"Bookmark deleted");
 					sendJSONResponse($bmID);
 				}
 			} else {
@@ -1879,7 +1890,7 @@ function checkLogin() {
 
 		if($ctoken && isset($cdata)) {
 			$client = $cdata['client'];
-			e_log(8,"Try login $client");
+			e_log(8,"Try token login $client");
 			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '$client';";
 			$dbdata = db_query($query);
 			
@@ -1935,6 +1946,7 @@ function checkLogin() {
 			echo htmlFooter();
 			exit;
 		} else {
+			e_log(8,"Try basic login $client");
 			$query = "SELECT * FROM `users` WHERE `userName`= '$user';";
 			$udata = db_query($query);
 			if(count($udata) == 1) {
