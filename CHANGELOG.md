@@ -1,5 +1,12 @@
 ChangeLog
 =========
+1.7.2 (2022-09-03)
+-------------------------
+- Token change
+- Empty search field
+- Fixed Keyboard shortcuts
+
+
 1.7.1 (2022-08-11)
 -------------------------
 - Fixed move bookmark

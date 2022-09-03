@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.7.1
+ * @version 1.7.2
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function() {
 				document.querySelector('#menu input').classList.add('isform');
 				document.getElementById('mprofile').style.display = 'block';
 			}
-			else {
+			else {				
 				document.querySelector('#menu button').innerHTML = '\u00D7';
 				document.querySelector('#menu button').classList.add('asform');
 				document.querySelector('#menu input').classList.remove('isform');
@@ -50,11 +50,13 @@ document.addEventListener("DOMContentLoaded", function() {
 				document.getElementById('mprofile').style.display = 'none';
 				document.querySelector('#menu input').focus();
 			}
+			document.querySelector('#menu input').value = '';
 			hideMenu();
 		});
 
 		document.getElementById('mprofile').addEventListener('click', function() {
-			if(document.querySelector('#menu button').innerHTML == '\u00D7') {
+			document.querySelector('#menu input').value = '';
+			if(document.querySelector('#menu button').innerHTML == '\u00D7') {				
 				document.querySelector('#menu input').blur();
 				document.querySelector('#menu button').innerHTML = '\u2315';
 				document.querySelector('#menu button').classList.remove('asform');
@@ -373,6 +375,20 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	}
 }, false);
+
+window.addEventListener("keydown",function (e) {
+	if ((e.ctrlKey && e.code === 'KeyF')) { 
+        e.preventDefault();
+		document.getElementById('bmsearch').focus();
+		document.querySelector('#menu button').innerHTML = '\u00D7';
+		document.querySelector('#menu input').value = '';
+		document.querySelector('#menu button').classList.add('asform');
+		document.querySelector('#menu input').classList.remove('isform');
+		document.querySelector('#menu input').classList.add('asform');
+		document.getElementById('mprofile').style.display = 'none';
+		document.querySelector('#menu input').focus();
+    }
+})
 
 var bmIDs = new Array();
 

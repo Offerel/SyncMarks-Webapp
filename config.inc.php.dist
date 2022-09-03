@@ -15,4 +15,5 @@ $spwd = 'mypass'; // Used for firstime login
 $cexpjson = false; // if set to true (and loglevel >= 9), this creates a json file which is send to browser on import, containing your bookmarks
 $enckey = 'Cu1815ZRtooY9SYX'; // random key for encryption
 $enchash = '2EOkV9DPTndhcAU7'; // random hash for encryption
+$expireDays = 7; // Login expires x days in future, defaults to 7
 ?>

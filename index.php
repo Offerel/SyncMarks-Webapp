@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.7.1
+ * @version 1.7.2
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -21,7 +21,8 @@ define("CONFIG", [
 	'spwd'		=> $spwd,
 	'cexp'		=> $cexpjson,
 	'enckey'	=> $enckey,
-	'enchash'	=> $enchash
+	'enchash'	=> $enchash,
+	'expireDays'=> (!isset($expireDays)) ? 7:$expireDays
 ]);
 
 set_error_handler("e_log");
@@ -316,7 +317,7 @@ if(isset($_POST['action'])) {
 				$response = addBookmark($bookmark);
 
 				if($_POST['add'] === '2') {
-					if($response === 1) {
+					if($response === 0) {
 						e_log(8,"Bookmark added");
 						sendJSONResponse(bmTree());
 					} else {
@@ -445,7 +446,7 @@ if(isset($_POST['action'])) {
 			if(!$tbt) {
 				$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
 				$tData = db_query($query);
-				$expireTime = time()+60*60*24*7;
+				$expireTime = time()+60*60*24*CONFIG['expireDays'];
 				$token = bin2hex(openssl_random_pseudo_bytes(32));
 				$thash = password_hash($token, PASSWORD_DEFAULT);
 				if(count($tData) > 0) {
@@ -823,7 +824,7 @@ if(isset($_GET['link'])) {
 	}
 	
 	$res = addBookmark($bookmark);
-	if($res == 1) {
+	if($res == 0) {
 		if ($so) {
 			echo("URL added.");
 		} else {
@@ -1179,7 +1180,7 @@ function addBookmark($bm) {
 	$bmExistData = db_query($query);
 	if($bmExistData[0]["bmcount"] > 0) {
 		$message = "Bookmark not added at server, it already exists";
-		e_log(2,$message);
+		e_log(2, $message);
 		return $message;
 	}
 	e_log(8,"Identify folder for new bookmark");
@@ -1194,10 +1195,10 @@ function addBookmark($bm) {
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".$bm['title']."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].");";
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
-		e_log(1,$message);
+		e_log(1, $message);
 		return $message;
 	} else {
-		return 1;
+		return 0;
 	}
 }
 
@@ -1813,6 +1814,7 @@ function clearAuthCookie() {
 
 function checkLogin() {
 	e_log(8,"Check login...");
+
 	$headers = null;
 	if (isset($_SERVER['Authorization'])) {
 		$headers = trim($_SERVER["Authorization"]);
@@ -1851,7 +1853,7 @@ function checkLogin() {
 			$oTime = $tkdata[0]['userLastLogin'];
 			$_SESSION['sauth'] = $tkdata[0]['userName'];
 			
-			$expireTime = time()+60*60*24*7;
+			$expireTime = time()+60*60*24*CONFIG['expireDays'];
 			$rtkn = unique_code(32);
 			
 			$cOptions = array (
@@ -1896,24 +1898,40 @@ function checkLogin() {
 			
 			if(count($dbdata) === 1) {
 				$pverify = (password_verify($cdata['token'], $dbdata[0]['tHash'])) ? "true":"false";
-				$zeit = ($dbdata[0]['exDate'] > time()) ? "dbzeit":"actzeit";
-				if(password_verify($cdata['token'], $dbdata[0]['tHash']) && $dbdata[0]['exDate'] > time()) {
-					$_SESSION['sauth'] = $dbdata[0]['userName'];
-					e_log(8,"$client login successful");
-					$expireTime = time()+60*60*24*7;
-					$token = bin2hex(openssl_random_pseudo_bytes(32));
-					$thash = password_hash($token, PASSWORD_DEFAULT);
-					$userID = $dbdata[0]['userID'];
-					$ipjson = json_encode(ip_info());
-					$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
-					db_query($query);
-					header("X-Request-Info: $token");
+				if(password_verify($cdata['token'], $dbdata[0]['tHash'])) {
+					e_log(8,"$client token is valid. checking time.");
+					if($dbdata[0]['exDate'] > time()) {
+						e_log(8,"$client login successful");
+						$_SESSION['sauth'] = $dbdata[0]['userName'];
+						$expireTime = time()+60*60*24*CONFIG['expireDays'];
+						$token = bin2hex(openssl_random_pseudo_bytes(32));
+						$thash = password_hash($token, PASSWORD_DEFAULT);
+						$userID = $dbdata[0]['userID'];
+						$ipjson = json_encode(ip_info());
+						$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
+						db_query($query);
+						header("X-Request-Info: $token");
+						e_log(8,"New token send to $client and saved in DB, set new expireTime");
+					} else {
+						e_log(2,"$client login failed, expireTime reached");
+						$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
+						$cInfo = db_query($query)[0];
+						$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
+						db_query($query);
+						e_log(2,"Removed token for client $client");
+						unset($_SESSION['sauth']);
+						session_destroy();
+						header("X-Request-Info: 0");
+						header("Content-Type: application/json");
+						die(json_encode($cInfo));
+					}
 				} else {
-					e_log(2,"Client login failed");
+					e_log(2,"$client login failed, token invalid");
 					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
 					$cInfo = db_query($query)[0];
 					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
 					db_query($query);
+					e_log(2,"Removed token for client $client");
 					unset($_SESSION['sauth']);
 					session_destroy();
 					header("X-Request-Info: 0");
@@ -1959,7 +1977,7 @@ function checkLogin() {
 					
 					if(isset($_POST['remember']) && $_POST['remember'] == true) {
 						e_log(8,'Set login Cookie');
-						$expireTime = time()+60*60*24*7;
+						$expireTime = time()+60*60*24*CONFIG['expireDays'];
 						$rtkn = unique_code(32);
 						
 						$cOptions = array (
