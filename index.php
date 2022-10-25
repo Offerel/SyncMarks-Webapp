@@ -2184,7 +2184,7 @@ function checkDB() {
 	
 	$olddate = $vInfo['updated'];
 	$newdate = filemtime(__FILE__);
-	$dbv = 7;
+	$dbv = 8;
 
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
 		e_log(8,"Database update needed. Starting DB update...");
