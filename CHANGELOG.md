@@ -1,9 +1,10 @@
 ChangeLog
 =========
-1.7.2 (2022-09-03)
+1.7.2 (2022-10-25)
 -------------------------
-- Token change
-- Empty search field
+- Added trigger for delete bookmark
+- Added empty search field
+- Adden Token exchange
 - Fixed Keyboard shortcuts
 
 

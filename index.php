@@ -358,7 +358,8 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($response);
 			break;
 		case "delmark":
-			$bookmark = json_decode(rawurldecode($_POST['data']), true);
+			//$bookmark = json_decode(rawurldecode($_POST['data']), true);
+			$bookmark = json_decode($_POST['data'], true);
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$ctime = round(microtime(true) * 1000);
 			e_log(8,"Try to identify bookmark to delete");
@@ -2160,6 +2161,10 @@ function db_query($query, $data=null) {
 			}
 			$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
 		} else {
+			if (strpos($query, 'DELETE FROM `bookmarks` WHERE `bmID`') === 0) {
+				$db->exec("PRAGMA recursive_triggers = ON;");
+			}
+
 			try {
 				$queryData = $db->exec($query);
 				if(strpos($query, 'INSERT') === 0) $queryData = $db->lastInsertId();
