@@ -1,14 +1,15 @@
 -- Create users table
-CREATE TABLE IF NOT EXISTS `users` (
-	`userID` INT AUTO_INCREMENT PRIMARY KEY,
-	`userName` VARCHAR(255) NOT NULL UNIQUE,
-	`userType` INT(11) NOT NULL,
-	`userHash` TEXT NOT NULL,
-	`userLastLogin` INT(11) NULL DEFAULT NULL,
-	`sessionID` VARCHAR(255) NULL DEFAULT NULL,
-	`userOldLogin` INT(11) NULL DEFAULT NULL,
-	`uOptions` TEXT NULL DEFAULT NULL,
-	`userMail` VARCHAR(255) NULL DEFAULT NULL
+CREATE TABLE `users` (
+	`userID`	INTEGER NOT NULL UNIQUE,
+	`userName`	TEXT NOT NULL UNIQUE,
+	`userType`	INTEGER NOT NULL,
+	`userHash`	TEXT NOT NULL,
+	`userLastLogin`	INT(11),
+	`sessionID`	VARCHAR(255) UNIQUE,
+	`userOldLogin`	INT(11),
+	`uOptions`	TEXT,
+	`userMail`	VARCHAR(255),
+	PRIMARY KEY(`userID`)
 );
 
 -- Create bookmark table
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `bookmarks` (
 
 -- Create clients table
 CREATE TABLE IF NOT EXISTS `clients` (
-	`cid`	VARCHAR(255) NOT NULL UNIQUE,
+	`cid`	VARCHAR(255) DEFAULT NULL UNIQUE,
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
@@ -49,7 +50,8 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 	`publish_date`	VARCHAR(250) NOT NULL,
 	`userID`	INTEGER NOT NULL,
 	PRIMARY KEY(`id`),
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
+	FOREIGN KEY(`client`) REFERENCES `clients`(`cid`) ON DELETE SET NULL
 );
 
 -- Create reset table
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS `reset` (
 	`userID` INTEGER NOT NULL,
 	`tokenTime` VARCHAR(255) NOT NULL,
 	`token` VARCHAR(255) NOT NULL,
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	PRIMARY KEY (`tokenID`),
 	UNIQUE INDEX `autoindex_reset_2` (`token`),
 	UNIQUE INDEX `autoindex_reset_1` (`tokenID`)
@@ -76,7 +79,8 @@ CREATE TABLE IF NOT EXISTS "auth_token" (
 	`userName`	TEXT NOT NULL,
 	`pHash`	VARCHAR(255) NOT NULL,
 	`tHash`	VARCHAR(255) NOT NULL,
-	`exDate`	VARCHAR(255) NOT NULL
+	`exDate`	VARCHAR(255) NOT NULL,
+	FOREIGN KEY(`userName`) REFERENCES `users`(`userName`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- CREATE ctokens table
@@ -87,7 +91,9 @@ CREATE TABLE IF NOT EXISTS "c_token" (
 	`exDate`	VARCHAR(255) NOT NULL,
 	`userID`	INTEGER NOT NULL,
 	`cInfo`	TEXT,
-	PRIMARY KEY(`tID` AUTOINCREMENT)
+	PRIMARY KEY(`tID` AUTOINCREMENT),
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
+	FOREIGN KEY(`cid`) REFERENCES `clients`(`cid`) ON DELETE CASCADE
 );
 
 -- Create index
@@ -97,56 +103,21 @@ CREATE INDEX IF NOT EXISTS `i3` ON `clients` (`cid`);
 
 -- Create triggers
 DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `on_delete_set_default` AFTER DELETE
-ON `clients` FOR EACH ROW
+CREATE TRIGGER IF NOT EXISTS `update_tokenchange` 
+	UPDATE ON `auth_token`
+	FOR EACH ROW
 BEGIN
-UPDATE `notifications` SET `client`='0' WHERE `client`= old.cid;
-END$$  
+	DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP();
+	END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `delete_userclients` AFTER DELETE
-ON `users` FOR EACH ROW
+CREATE TRIGGER IF NOT EXISTS `delete_subbm`
+	AFTER DELETE ON `bookmarks`
+	FOR EACH ROW
 BEGIN
-DELETE FROM `clients` WHERE `uid` = OLD.userID;
-END$$  
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `delete_usermarks` AFTER DELETE
-ON `users` FOR EACH ROW
-BEGIN
-DELETE FROM `bookmarks` WHERE `userID` = OLD.userID;
-END$$  
-DELIMITER ;
---
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `update_tokenchange` UPDATE ON `auth_token` FOR EACH ROW
-BEGIN
-DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP();
+	DELETE FROM `bookmarks` WHERE `bmParentID` = OLD.bmID;
 END$$
 DELIMITER ;
 
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `delete_usertokens` AFTER DELETE ON `users`
-BEGIN
-DELETE FROM `auth_token` WHERE `userName` = OLD.userName;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `update_usertoken` UPDATE OF `userName`, `userHash`, `userType` ON `users`
-BEGIN
-DELETE FROM `auth_token` WHERE `userName` = OLD.userName;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS  `delete_clientokens` AFTER DELETE 
-ON `clients` FOR EACH ROW
-BEGIN
-DELETE FROM `c_token` WHERE `cid` = OLD.cid;
-END$$
-DELIMITER ;
-
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.6.6', '7', '1646766932');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
