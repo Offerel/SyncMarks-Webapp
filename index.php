@@ -200,7 +200,7 @@ if(isset($_POST['action'])) {
 		case "getpurl":
 			$url = validate_url($_POST['data']);
 			e_log(8,"Received new pushed URL: ".$url);
-			$target = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING) : '0';
+			$target = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING) : NULL;
 			$res = newNotification($url, $target);
 			$message = ($res == 1) ? "URL successful pushed":"Failed to push URL";
 			
@@ -840,7 +840,7 @@ if(isset($_GET['link'])) {
 if(isset($_GET['push'])) {
 	$url = validate_url($_GET['push']);
 	e_log(8,"Received new pushed URL from bookmarklet: ".$url);
-	$target = (isset($_GET['tg'])) ? filter_var($_GET['tg'], FILTER_SANITIZE_STRING) : '0';
+	$target = (isset($_GET['tg'])) ? filter_var($_GET['tg'], FILTER_SANITIZE_STRING) : NULL;
 	
 	if(newNotification($url, $target) !== 0) die('Pushed');
 }
@@ -1569,7 +1569,7 @@ function notiList($uid, $loop) {
 	$aNotitData = db_query($query);
 	$notiList = "";
 	foreach($aNotitData as $key => $aNoti) {
-		$cl = ($aNoti['client'] == "0") ? "All":$aNoti['client'];
+		$cl = ($aNoti['client'] == NULL) ? "All":$aNoti['client'];
 		$title = html_entity_decode($aNoti['title'],ENT_QUOTES,'UTF-8');
 
 		$notiList.= "<div class='NotiTableRow'>
