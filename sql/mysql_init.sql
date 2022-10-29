@@ -15,7 +15,7 @@ CREATE TABLE `users` (
 -- Create bookmark table
 CREATE TABLE IF NOT EXISTS `bookmarks` (
 	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT NOT NULL,
+	`bmParentID`	TEXT,
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS `bookmarks` (
 	`bmModified`	TEXT,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
+	PRIMARY KEY(`bmID`,`userID`),
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
+	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES "bookmarks"(`bmID`,`userID`) ON DELETE CASCADE
 );
 
 -- Create clients table
@@ -111,13 +113,4 @@ BEGIN
 	END$$
 DELIMITER ;
 
-DELIMITER $$
-CREATE TRIGGER IF NOT EXISTS `delete_subbm`
-	AFTER DELETE ON `bookmarks`
-	FOR EACH ROW
-BEGIN
-	DELETE FROM `bookmarks` WHERE `bmParentID` = OLD.bmID;
-END$$
-DELIMITER ;
-
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1646766932');

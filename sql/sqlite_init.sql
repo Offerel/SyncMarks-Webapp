@@ -31,11 +31,7 @@ CREATE TABLE "bookmarks" (
 
 -- Create clients table
 CREATE TABLE `clients` (
-<<<<<<< HEAD
-	`cid`	TEXT NOT NULL DEFAULT NULL UNIQUE,
-=======
 	`cid`	TEXT DEFAULT NULL UNIQUE,
->>>>>>> v1.7.3
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
@@ -55,11 +51,7 @@ CREATE TABLE `notifications` (
 	`nloop`	INTEGER NOT NULL DEFAULT 1,
 	`publish_date`	varchar(250) NOT NULL,
 	`userID`	INTEGER NOT NULL,
-<<<<<<< HEAD
-	PRIMARY KEY(`id`),
-=======
 	PRIMARY KEY(`id` AUTOINCREMENT),
->>>>>>> v1.7.3
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`client`) REFERENCES `clients`(`cid`) ON DELETE SET NULL
 );
@@ -117,17 +109,6 @@ BEGIN
 	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
 END;
 
-<<<<<<< HEAD
-CREATE TRIGGER `delete_subbm`
-	AFTER DELETE ON `bookmarks`
-	FOR EACH ROW
-BEGIN
-	DELETE FROM `bookmarks` WHERE `bmParentID` = OLD.bmID;
-END;
-
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
-=======
 INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1667062229');
->>>>>>> v1.7.3
 
-PRAGMA user_version = 8;
+PRAGMA user_version = 9;
