@@ -13,9 +13,9 @@ CREATE TABLE `users` (
 );
 
 -- Create bookmark table
-CREATE TABLE "bookmarks" (
+CREATE TABLE IF NOT EXISTS `bookmarks` (
 	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT,
+	`bmParentID`	TEXT NOT NULL,
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -24,18 +24,12 @@ CREATE TABLE "bookmarks" (
 	`bmModified`	TEXT,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
-	PRIMARY KEY(`bmID`,`userID`),
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
-	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES "bookmarks"(`bmID`,`userID`) ON DELETE CASCADE
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
 );
 
 -- Create clients table
-CREATE TABLE `clients` (
-<<<<<<< HEAD
-	`cid`	TEXT NOT NULL DEFAULT NULL UNIQUE,
-=======
-	`cid`	TEXT DEFAULT NULL UNIQUE,
->>>>>>> v1.7.3
+CREATE TABLE IF NOT EXISTS `clients` (
+	`cid`	VARCHAR(255) DEFAULT NULL UNIQUE,
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
@@ -46,88 +40,84 @@ CREATE TABLE `clients` (
 );
 
 -- Create notifications table
-CREATE TABLE `notifications` (
-	`id`	INTEGER NOT NULL,
-	`title`	varchar(250) NOT NULL,
+CREATE TABLE IF NOT EXISTS `notifications` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`title`	VARCHAR(255) NOT NULL,
 	`message`	TEXT NOT NULL,
-	`ntime`	varchar(250) NOT NULL DEFAULT NULL,
-	`client`	TEXT DEFAULT NULL,
+	`ntime`	VARCHAR(255) NOT NULL DEFAULT 0,
+	`client`	TEXT NOT NULL DEFAULT 0,
 	`nloop`	INTEGER NOT NULL DEFAULT 1,
-	`publish_date`	varchar(250) NOT NULL,
+	`publish_date`	VARCHAR(250) NOT NULL,
 	`userID`	INTEGER NOT NULL,
-<<<<<<< HEAD
 	PRIMARY KEY(`id`),
-=======
-	PRIMARY KEY(`id` AUTOINCREMENT),
->>>>>>> v1.7.3
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`client`) REFERENCES `clients`(`cid`) ON DELETE SET NULL
 );
 
 -- Create reset table
-CREATE TABLE `reset` (
-	`tokenID`	INTEGER NOT NULL UNIQUE,
-	`userID`	INTEGER NOT NULL,
-	`tokenTime`	VARCHAR(255) NOT NULL,
-	`token`	VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE IF NOT EXISTS `reset` (
+	`tokenID` INTEGER NOT NULL AUTO_INCREMENT,
+	`userID` INTEGER NOT NULL,
+	`tokenTime` VARCHAR(255) NOT NULL,
+	`token` VARCHAR(255) NOT NULL,
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
-	PRIMARY KEY(`tokenID` AUTOINCREMENT)
+	PRIMARY KEY (`tokenID`),
+	UNIQUE INDEX `autoindex_reset_2` (`token`),
+	UNIQUE INDEX `autoindex_reset_1` (`tokenID`)
 );
 
 -- Create system table
-CREATE TABLE `system` (
+CREATE TABLE IF NOT EXISTS `system` (
 	`app_version`	varchar(10),
 	`db_version`	varchar(10),
 	`updated`	varchar(250)
 );
 
 -- CREATE tokens table
-CREATE TABLE `auth_token` (
-	`tID`	INTEGER UNIQUE,
+CREATE TABLE IF NOT EXISTS "auth_token" (
+	`tID`	INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`userName`	TEXT NOT NULL,
-	`pHash`	VARCHAR(255),
+	`pHash`	VARCHAR(255) NOT NULL,
 	`tHash`	VARCHAR(255) NOT NULL,
 	`exDate`	VARCHAR(255) NOT NULL,
-	FOREIGN KEY(`userName`) REFERENCES `users`(`userName`) ON UPDATE CASCADE ON DELETE CASCADE,
-	PRIMARY KEY(`tID` AUTOINCREMENT)
+	FOREIGN KEY(`userName`) REFERENCES `users`(`userName`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- CREATE ctokens table
-CREATE TABLE `c_token` (
+CREATE TABLE IF NOT EXISTS "c_token" (
 	`tID`	INTEGER UNIQUE,
 	`cid`	TEXT NOT NULL UNIQUE,
 	`tHash`	VARCHAR(255) NOT NULL,
 	`exDate`	VARCHAR(255) NOT NULL,
 	`userID`	INTEGER NOT NULL,
 	`cInfo`	TEXT,
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	PRIMARY KEY(`tID` AUTOINCREMENT),
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`cid`) REFERENCES `clients`(`cid`) ON DELETE CASCADE
 );
 
 -- Create index
-CREATE INDEX `i1` ON `bookmarks` (`bmURL`, `bmTitle`);
-CREATE INDEX `i2` ON `users` ( `userID`);
-CREATE INDEX `i3` ON `clients` (`cid`);
+CREATE INDEX IF NOT EXISTS `i1` ON `bookmarks` (`bmURL`(255), `bmTitle`(255));
+CREATE INDEX IF NOT EXISTS `i2` ON `users` ( `userID`);
+CREATE INDEX IF NOT EXISTS `i3` ON `clients` (`cid`);
 
 -- Create triggers
-CREATE TRIGGER IF NOT EXISTS `update_tokenchange`
+DELIMITER $$
+CREATE TRIGGER IF NOT EXISTS `update_tokenchange` 
 	UPDATE ON `auth_token`
+	FOR EACH ROW
 BEGIN
-	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
-END;
+	DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP();
+	END$$
+DELIMITER ;
 
-<<<<<<< HEAD
-CREATE TRIGGER `delete_subbm`
+DELIMITER $$
+CREATE TRIGGER IF NOT EXISTS `delete_subbm`
 	AFTER DELETE ON `bookmarks`
 	FOR EACH ROW
 BEGIN
 	DELETE FROM `bookmarks` WHERE `bmParentID` = OLD.bmID;
-END;
+END$$
+DELIMITER ;
 
 INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
-=======
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1667062229');
->>>>>>> v1.7.3
-
-PRAGMA user_version = 8;
