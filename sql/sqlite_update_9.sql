@@ -1,7 +1,6 @@
 PRAGMA foreign_keys = OFF;
-ALTER TABLE `users` RENAME TO `users_old`;
 -- Change users table
-CREATE TABLE "users" (
+CREATE TABLE "users_tmp" (
 	`userID`	INTEGER NOT NULL UNIQUE,
 	`userName`	TEXT NOT NULL UNIQUE,
 	`userType`	INTEGER NOT NULL,
@@ -13,13 +12,14 @@ CREATE TABLE "users" (
 	`userMail`	VARCHAR(255),
 	PRIMARY KEY(`userID`)
 );
-INSERT INTO `users` SELECT `userID`,`userName`,`userType`,`userHash`,`userLastLogin`,NULL,NULL,NULL,NULL FROM `users_old`;
-DROP TABLE `users_old`;
+INSERT INTO `users_tmp` SELECT `userID`,`userName`,`userType`,`userHash`,`userLastLogin`,NULL,NULL,NULL,NULL FROM `users`;
+DROP TABLE `users`;
+ALTER TABLE `users_tmp` RENAME TO `users`;
 
 -- Change bookmark table
 CREATE TABLE `bookmarks_tmp` (
 	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT NOT NULL,
+	`bmParentID`	TEXT,
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -28,8 +28,11 @@ CREATE TABLE `bookmarks_tmp` (
 	`bmModified`	TEXT,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
+	PRIMARY KEY(`bmID`,`userID`),
+	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
+	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES "bookmarks"(`bmID`,`userID`) ON DELETE CASCADE
 );
+INSERT OR IGNORE INTO `bookmarks_tmp` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) SELECT 'root________', 0,'folder',0, `userID` FROM users;
 INSERT INTO `bookmarks_tmp` SELECT * FROM `bookmarks`;
 DROP TABLE `bookmarks`;
 ALTER TABLE `bookmarks_tmp` RENAME TO `bookmarks`;
@@ -129,13 +132,6 @@ BEGIN
 	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
 END;
 
-CREATE TRIGGER `delete_subbm`
-	AFTER DELETE ON `bookmarks`
-	FOR EACH ROW
-BEGIN
-	DELETE FROM `bookmarks` WHERE `bmParentID` = OLD.bmID;
-END;
-
 DROP TRIGGER IF EXISTS `delete_userreset`;
 DROP TRIGGER IF EXISTS `delete_usernotifications`;
 DROP TRIGGER IF EXISTS `on_delete_set_default`;
@@ -144,7 +140,8 @@ DROP TRIGGER IF EXISTS `delete_usermarks`;
 DROP TRIGGER IF EXISTS `delete_usertokens`;
 DROP TRIGGER IF EXISTS `update_usertoken`;
 DROP TRIGGER IF EXISTS `delete_clientokens`;
+DROP TRIGGER IF EXISTS `delete_subbm`;
 
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1667062229');
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 8;
+PRAGMA user_version = 9;
