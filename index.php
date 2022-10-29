@@ -1588,7 +1588,7 @@ function htmlFooter() {
 
 function getUserFolders($uid) {
 	e_log(8,"Get bookmark folders for user");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' and `userID` = ".$uid.";";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmID` <> 'root________' AND `bmType` = 'folder' and `userID` = ".$uid.";";
 	$folders = db_query($query);
 	return $folders;
 }
@@ -1746,7 +1746,7 @@ function parseJSON($arr) {
 }
 
 function getBookmarks() {
-	$query = "SELECT * FROM `bookmarks` WHERE `userID` = ".$_SESSION['sud']['userID'].";";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID'].";";
 	e_log(8,"Get bookmarks");
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
