@@ -1,17 +1,10 @@
 ChangeLog
 =========
-1.8.0 (2022-10-29)
--------------------------
-- Added Foreign Key for bookmarks
-- Reworked Move bookmarks
-- Reworked Delete bookmarks
-
-
 1.7.2 (2022-10-25)
 -------------------------
 - Added trigger for delete bookmark
 - Added empty search field
-- Added Token exchange
+- Adden Token exchange
 - Fixed Keyboard shortcuts
 
 

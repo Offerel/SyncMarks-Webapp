@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.0
+ * @version 1.7.2
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -550,11 +550,9 @@ if(isset($_POST['action'])) {
 							$response = $nuid;
 						}
 						$bmAdded = round(microtime(true) * 1000);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', $bmAdded, $nuid);";
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", $nuid)";
 						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, $bmAdded, $nuid)";
-						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', $bmAdded, $nuid)";
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', ".$bmAdded.", $nuid)";
 						db_query($query);
 					} else {
 						$response = "User creation failed";
@@ -908,6 +906,12 @@ function delMark($bmID) {
 		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
 		$dData = db_query($query)[0];
 
+		if(isset($dData['bmType']) && $dData['bmType'] === 'folder') {
+			e_log(8,"'$bmID' appeared to be a folder, delete all the contents of it");
+			$query = "DELETE FROM `bookmarks` WHERE `bmParentID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			db_query($query);
+		}
+
 		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
 		$count = db_query($query);
 
@@ -1124,11 +1128,10 @@ function moveBookmark($bm) {
 		if (!empty($folderData) && !empty($oldData)) {
 			if(($folderData['bmParentID'] != $oldData['bmParentID']) || ($oldData['bmIndex'] != $bm['index'])) {
 				e_log(8,"Folder or Position changed, moving bookmark");
-				$nfolder = $bm['folder'];
-				$bid = $oldData["bmID"];
-				$bindex = $bm['index'];
-				$bAdded = round(microtime(true) * 1000);
-				$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = `$bAdded` =  WHERE `bmID` = '$bid' AND `userID` = ".$_SESSION['sud']["userID"];
+				$query = "DELETE FROM `bookmarks` WHERE `bmID` = '".$oldData["bmID"]."'";
+				db_query($query);
+				e_log(8,"Re-Add bookmark on new position");
+				$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$oldData["bmID"]."', '".$bm['folder']."', ".$bm['index'].", '".$oldData['bmTitle']."', '".$oldData['bmType']."', '".$oldData['bmURL']."', ".$oldData['bmAdded'].", ".$_SESSION['sud']["userID"].")";
 				db_query($query);
 				return true;
 			}
@@ -1138,7 +1141,7 @@ function moveBookmark($bm) {
 			}
 		}
 		else {
-			return "Can't move bookmark, data not found.";
+			return "Cant move bookmark, data not found.";
 		}
 	}
 	else {
@@ -1317,7 +1320,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
-	$query = "DELETE FROM `bookmarks` WHERE `userID` = $uid AND `bmID` <> 'root________'";
+	$query = "DELETE FROM `bookmarks` WHERE `UserID`=".$uid;
 	db_query($query); 
 }
 
@@ -2158,6 +2161,10 @@ function db_query($query, $data=null) {
 			}
 			$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
 		} else {
+			if (strpos($query, 'DELETE FROM `bookmarks` WHERE `bmID`') === 0) {
+				$db->exec("PRAGMA recursive_triggers = ON;");
+			}
+
 			try {
 				$queryData = $db->exec($query);
 				if(strpos($query, 'INSERT') === 0) $queryData = $db->lastInsertId();
@@ -2177,7 +2184,7 @@ function checkDB() {
 	
 	$olddate = $vInfo['updated'];
 	$newdate = filemtime(__FILE__);
-	$dbv = 9;
+	$dbv = 8;
 
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
 		e_log(8,"Database update needed. Starting DB update...");
@@ -2216,9 +2223,7 @@ function checkDB() {
 
 		$bmAdded = round(microtime(true) * 1000);
 		$userPWD = password_hash(CONFIG['spwd'],PASSWORD_DEFAULT);
-		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".CONFIG['suser']."',2,'$userPWD');";		
-		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
+		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".CONFIG['suser']."',2,'$userPWD');";
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
 		db_query($query);

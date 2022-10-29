@@ -13,15 +13,9 @@ CREATE TABLE `users` (
 );
 
 -- Create bookmark table
-<<<<<<< HEAD
-CREATE TABLE "bookmarks" (
-	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT,
-=======
 CREATE TABLE `bookmarks` (
 	`bmID`	TEXT NOT NULL,
 	`bmParentID`	TEXT NOT NULL,
->>>>>>> parent of 5210cc9 („sql/sqlite_init.sql“ löschen)
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -30,22 +24,12 @@ CREATE TABLE `bookmarks` (
 	`bmModified`	TEXT,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
-<<<<<<< HEAD
-	PRIMARY KEY(`bmID`,`userID`),
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
-	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES "bookmarks"(`bmID`,`userID`) ON DELETE CASCADE
-=======
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
->>>>>>> parent of 5210cc9 („sql/sqlite_init.sql“ löschen)
 );
 
 -- Create clients table
 CREATE TABLE `clients` (
-<<<<<<< HEAD
-	`cid`	TEXT DEFAULT NULL UNIQUE,
-=======
 	`cid`	TEXT NOT NULL DEFAULT NULL UNIQUE,
->>>>>>> parent of 5210cc9 („sql/sqlite_init.sql“ löschen)
 	`cname`	TEXT,
 	`ctype`	TEXT NOT NULL,
 	`uid`	INTEGER NOT NULL,
@@ -65,11 +49,7 @@ CREATE TABLE `notifications` (
 	`nloop`	INTEGER NOT NULL DEFAULT 1,
 	`publish_date`	varchar(250) NOT NULL,
 	`userID`	INTEGER NOT NULL,
-<<<<<<< HEAD
-	PRIMARY KEY(`id` AUTOINCREMENT),
-=======
 	PRIMARY KEY(`id`),
->>>>>>> parent of 5210cc9 („sql/sqlite_init.sql“ löschen)
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`client`) REFERENCES `clients`(`cid`) ON DELETE SET NULL
 );
@@ -127,9 +107,6 @@ BEGIN
 	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
 END;
 
-<<<<<<< HEAD
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1667062229');
-=======
 CREATE TRIGGER `delete_subbm`
 	AFTER DELETE ON `bookmarks`
 	FOR EACH ROW
@@ -138,6 +115,5 @@ BEGIN
 END;
 
 INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.7.2', '8', '1646766932');
->>>>>>> parent of 5210cc9 („sql/sqlite_init.sql“ löschen)
 
 PRAGMA user_version = 8;
