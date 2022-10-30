@@ -17,7 +17,8 @@ DROP TABLE `users`;
 ALTER TABLE `users_tmp` RENAME TO `users`;
 
 -- Change bookmark table
-CREATE TABLE `bookmarks_tmp` (
+ALTER TABLE `bookmarks` RENAME TO `bookmarks_tmp`;
+CREATE TABLE `bookmarks` (
 	`bmID`	TEXT NOT NULL,
 	`bmParentID`	TEXT,
 	`bmIndex`	INTEGER NOT NULL,
@@ -30,12 +31,11 @@ CREATE TABLE `bookmarks_tmp` (
 	`bmAction`	INTEGER,
 	PRIMARY KEY(`bmID`,`userID`),
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
-	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES "bookmarks"(`bmID`,`userID`) ON DELETE CASCADE
+	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES `bookmarks`(`bmID`,`userID`) ON DELETE CASCADE
 );
-INSERT OR IGNORE INTO `bookmarks_tmp` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) SELECT 'root________', 0,'folder',0, `userID` FROM users;
-INSERT INTO `bookmarks_tmp` SELECT * FROM `bookmarks`;
-DROP TABLE `bookmarks`;
-ALTER TABLE `bookmarks_tmp` RENAME TO `bookmarks`;
+INSERT OR IGNORE INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) SELECT 'root________', 0,'folder',0, `userID` FROM users;
+INSERT INTO `bookmarks` SELECT * FROM `bookmarks_tmp`;
+DROP TABLE `bookmarks_tmp`;
 
 -- Change clients table
 CREATE TABLE `clients_tmp` (

@@ -358,7 +358,6 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($response);
 			break;
 		case "delmark":
-			//$bookmark = json_decode(rawurldecode($_POST['data']), true);
 			$bookmark = json_decode($_POST['data'], true);
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$ctime = round(microtime(true) * 1000);
