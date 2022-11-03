@@ -1,5 +1,13 @@
 ChangeLog
 =========
+1.8.2 (2022-11-03)
+-------------------------
+- Added Foreign Key for bookmarks
+- Added sync for tabs
+- Fix for undisplayed bookmarks
+- Updated SQL update
+
+
 1.8.0 (2022-10-29)
 -------------------------
 - Added Foreign Key for bookmarks

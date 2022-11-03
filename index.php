@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.1
+ * @version 1.8.2
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -141,6 +141,27 @@ if(!isset($_SESSION['sud'])) getUserdataS();
 
 if(isset($_POST['action'])) {
 	switch($_POST['action']) {
+		case "sendTabs":
+			$jtabs = json_decode($_POST['data'], true);
+			$user = $_SESSION['sud']['userID'];
+			$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user;";
+			$res = db_query($query);
+			foreach ($jtabs as $key => $tab) {
+				$tID = unique_code(12);
+				$title = $tab['title'];
+				$url = $tab['url'];
+				$added = round(microtime(true) * 1000);
+				$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `userID`) VALUES ('$tID', $key, '$title', 'tab', '$url', '$added', $user);";
+				$res = db_query($query);
+			}
+			sendJSONResponse(1);
+			break;
+		case "getTabs":
+			$user = $_SESSION['sud']['userID'];
+			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user";
+			$tabs = db_query($query);
+			sendJSONResponse($tabs);
+			break;
 		case "getclients":
 			e_log(8,"Try to get list of clients");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
@@ -775,10 +796,10 @@ if(isset($_POST['action'])) {
 			break;
 		case "checkdups":
 			e_log(8,"Checking for duplicated bookmarks by url");
-			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `userID` = ".$_SESSION['sud']['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
+			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = ".$_SESSION['sud']['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
 			$dubData = db_query($query);
 			foreach($dubData as $key => $dub) {
-				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmURL` = '".$dub['bmURL']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmParentID`, `bmIndex`;";
+				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '".$dub['bmURL']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmParentID`, `bmIndex`;";
 				$subData = db_query($query);
 				foreach($subData as $index => $entry) {
 					$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
@@ -1117,7 +1138,7 @@ function moveBookmark($bm) {
 
 	if(array_key_exists("url", $bm)) {
 		e_log(8,"Checking bookmark data before moving it");
-		$query = "SELECT * FROM `bookmarks` WHERE `userID`= ".$_SESSION['sud']["userID"]." AND `bmURL` = '".$bm["url"]."';";
+		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= ".$_SESSION['sud']["userID"]." AND `bmURL` = '".$bm["url"]."';";
 		$oldData = db_query($query)[0];
 		
 		if (!empty($folderData) && !empty($oldData)) {
@@ -1316,7 +1337,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
-	$query = "DELETE FROM `bookmarks` WHERE `userID` = $uid AND `bmID` <> 'root________'";
+	$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = $uid AND `bmID` <> 'root________'";
 	db_query($query); 
 }
 
@@ -1745,7 +1766,7 @@ function parseJSON($arr) {
 }
 
 function getBookmarks() {
-	$query = "SELECT * FROM `bookmarks` WHERE `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID'].";";
 	e_log(8,"Get bookmarks");
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
