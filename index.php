@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.2
+ * @version 1.8.3
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -143,16 +143,27 @@ if(isset($_POST['action'])) {
 	switch($_POST['action']) {
 		case "sendTabs":
 			$jtabs = json_decode($_POST['data'], true);
+			$urls = [];
+			foreach ($jtabs as $tab) {
+				$urls[] = $tab['url'];
+			}
+			$jurls = trim(json_encode($urls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), '[]');
 			$user = $_SESSION['sud']['userID'];
-			$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user;";
+			$query = "DELETE FROM `bookmarks` WHERE `bmID` IN (SELECT `bmID` FROM `bookmarks` WHERE `bmURL` NOT IN ($jurls) AND `bmType` = 'tab' AND `userID` = $user);";
 			$res = db_query($query);
+			
 			foreach ($jtabs as $key => $tab) {
+				
 				$tID = unique_code(12);
 				$title = $tab['title'];
 				$url = $tab['url'];
+				$query = "SELECT count(*) AS count FROM `bookmarks` WHERE `bmType` = 'tab' AND `bmURL` = '$url' AND `userID` = $user;";
+				$res = db_query($query)[0]['count'];
 				$added = round(microtime(true) * 1000);
-				$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `userID`) VALUES ('$tID', $key, '$title', 'tab', '$url', '$added', $user);";
-				$res = db_query($query);
+				if($res == 0) {
+					$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `userID`) VALUES ('$tID', $key, '$title', 'tab', '$url', '$added', $user);";
+					$res = db_query($query);
+				}
 			}
 			sendJSONResponse(1);
 			break;
@@ -165,7 +176,7 @@ if(isset($_POST['action'])) {
 		case "getclients":
 			e_log(8,"Try to get list of clients");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = ".$_SESSION['sud']['userID']." AND NOT `cid` = '$client';";
+			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = ".$_SESSION['sud']['userID']." AND NOT `cid` = '$client';";
 			$clientList = db_query($query);
 			e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
 			
@@ -200,7 +211,7 @@ if(isset($_POST['action'])) {
 		case "gurls":
 			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
 			e_log(8,"Request pushed sites for '$client'");
-			$query = "SELECT * FROM `notifications` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']." AND `client` IN ('".$client."','0');";
+			$query = "SELECT * FROM `pages` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']." AND `client` IN ('".$client."','0');";
 			$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
 			$notificationData = db_query($query);
 			if (!empty($notificationData)) {
@@ -235,7 +246,7 @@ if(isset($_POST['action'])) {
 		case "cinfo":
 			e_log(8,"Request client info");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `uid` = ".$_SESSION['sud']['userID'].";";
+			$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			$clientData = db_query($query)[0];
 			if(count($clientData) > 0) {
 				e_log(8,"Send client info to '$client'");
@@ -406,15 +417,15 @@ if(isset($_POST['action'])) {
 			break;
 		case "durl":
 			e_log(8,"Hide notification");
-			$notification = filter_var($_POST['data'], FILTER_VALIDATE_INT);
-			$query = "UPDATE `notifications` SET `nloop`= 0, `ntime`= '".time()."' WHERE `id` = $notification AND `userID` = ".$_SESSION['sud']['userID'];
+			$page = filter_var($_POST['data'], FILTER_VALIDATE_INT);
+			$query = "UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $page AND `userID` = ".$_SESSION['sud']['userID'];
 			sendJSONResponse(db_query($query));
 			break;
 		case "arename":
 			$client = (isset($_POST['add']) && $_POST['add'] != 'null') ? filter_var($_POST['add'], FILTER_SANITIZE_STRING):filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Rename client $client to $name");
-			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
+			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
 			$count = db_query($query);
 			$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID']):false;
 			sendJSONResponse($response);
@@ -429,8 +440,8 @@ if(isset($_POST['action'])) {
 			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
 			$loop = filter_var($_POST['add'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1:0;
 			if($message > 0) {
-				e_log(8,"Try to delete notification $message");
-				$query = "DELETE FROM `notifications` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `id` = $message;";
+				e_log(8,"Try to delete page $message");
+				$query = "DELETE FROM `pages` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `pid` = $message;";
 				$count = db_query($query);
 				($count === 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
@@ -518,7 +529,7 @@ if(isset($_POST['action'])) {
 		case "adel":
 			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Delete client $client");
-			$query = "DELETE FROM `clients` WHERE `uid` = ".$_SESSION['sud']['userID']." AND `cid` = '$client';";
+			$query = "DELETE FROM `clients` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '$client';";
 			$count = db_query($query);
 			($count > 0) ? sendJSONResponse(bClientlist($_SESSION['sud']['userID'])):sendJSONResponse(false);
 			break;
@@ -883,7 +894,7 @@ function newNotification($url, $target) {
 	$ctime = time();
 	$uidd = $_SESSION['sud']['userID'];
 
-	$query = "INSERT INTO `notifications` (`title`,`message`,`ntime`,`client`,`nloop`,`publish_date`,`userID`) VALUES ('$title', '$url', $ctime, '$target', 1, $ctime, $uidd);";
+	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`cid`,`nloop`,`publish_date`,`userID`) VALUES ('$title', '$url', $ctime, '$target', 1, $ctime, $uidd);";
 	$erg = db_query($query);
 	
 	$options = json_decode($_SESSION['sud']['uOptions'],true);
@@ -1225,7 +1236,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	if(in_array($cl, $fclients)) return 0;
 
 	$uid = $_SESSION['sud']["userID"];
-	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND uid = ".$uid.";";
+	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND `userID` = ".$uid.";";
 	$clientData = db_query($query);
 	$message = "";
 
@@ -1235,7 +1246,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 		$message = (db_query($query)) ? "Client updated.":"Failed update client";
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
-		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`uid`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
+		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
 		$message = (db_query($query)) ? "Client updated/registered.":"Failed to register client";
 	} elseif(!empty($clientData)) {
 		$message = "Client updated";
@@ -1562,7 +1573,7 @@ function showBookmarks($mode) {
 }
 
 function bClientlist($uid) {
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `uid` = $uid;";
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid;";
 	$clientData = db_query($query);
 	
 	uasort($clientData, function($a, $b) {
@@ -1582,7 +1593,7 @@ function bClientlist($uid) {
 }
 
 function notiList($uid, $loop) {
-	$query = "SELECT n.id, n.title, n.message, n.publish_date, IFNULL(c.cname, n.client) AS client FROM notifications n LEFT JOIN clients c ON c.cid = n.client WHERE n.userID = $uid AND n.nloop = $loop ORDER BY n.publish_date;";
+	$query = "SELECT n.pid, n.ptitle, n.purl, n.publish_date, IFNULL(c.cname, n.cid) AS client FROM pages n LEFT JOIN clients c ON c.cid = n.cid WHERE n.userID = $uid AND n.nloop = $loop ORDER BY n.publish_date;";
 	$aNotitData = db_query($query);
 	$notiList = "";
 	foreach($aNotitData as $key => $aNoti) {
@@ -2138,8 +2149,10 @@ function db_query($query, $data=null) {
 	try {
 		if(CONFIG['db']['type'] == 'mysql') {
 			$db = new PDO(CONFIG['db']['type'].':host='.CONFIG['db']['host'].';dbname='.CONFIG['db']['dbname'], CONFIG['db']['user'], CONFIG['db']['pwd'], $options);
+			$db->exec( 'PRAGMA foreign_keys = ON;' );
 		} elseif(CONFIG['db']['type'] == 'sqlite') {
 			$db = new PDO(CONFIG['db']['type'].':'.CONFIG['db']['dbname'], null, null, $options);
+			$db->exec( 'PRAGMA foreign_keys = ON;' );
 		}
 	} catch (PDOException $e) {
 		e_log(1,'DB connection failed: '.$e->getMessage());
@@ -2202,9 +2215,9 @@ function checkDB() {
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
 		e_log(8,"Database update needed. Starting DB update...");
 		if(CONFIG['db']['type'] == "sqlite") {
-			db_query(file_get_contents("./sql/sqlite_update_$dbv.sql"));
+			db_query(file_get_contents("./sql/sqlite_update.sql"));
 		} elseif (CONFIG['db']['type'] == "mysql") {
-			db_query(file_get_contents("./sql/mysql_update_$dbv.sql"));
+			db_query(file_get_contents("./sql/mysql_update.sql"));
 		}
 		$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
 	    $aversion = substr($aversion,0,strpos($aversion, " "));
