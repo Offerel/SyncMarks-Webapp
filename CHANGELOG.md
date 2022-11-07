@@ -1,5 +1,12 @@
 ChangeLog
 =========
+1.8.3 (2022-11-07)
+-------------------------
+- Updated foreign keys
+- Reworked pages
+- Added view
+
+
 1.8.2 (2022-11-03)
 -------------------------
 - Added Foreign Key for bookmarks
