@@ -1,5 +1,11 @@
 ChangeLog
 =========
+1.8.4 (2022-12-09)
+-------------------------
+- Fixed bookmark sort order
+- Fixed bookmark move
+
+
 1.8.3 (2022-11-07)
 -------------------------
 - Updated foreign keys
