@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.3
+ * @version 1.8.4
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -1159,7 +1159,7 @@ function moveBookmark($bm) {
 				$bid = $oldData["bmID"];
 				$bindex = $bm['index'];
 				$bAdded = round(microtime(true) * 1000);
-				$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = `$bAdded` =  WHERE `bmID` = '$bid' AND `userID` = ".$_SESSION['sud']["userID"];
+				$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = ".$_SESSION['sud']["userID"];
 				db_query($query);
 				return true;
 			}
@@ -1777,7 +1777,7 @@ function parseJSON($arr) {
 }
 
 function getBookmarks() {
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmAdded` ASC, `bmType` DESC;";
 	e_log(8,"Get bookmarks");
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
