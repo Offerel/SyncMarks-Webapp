@@ -1,10 +1,11 @@
 ChangeLog
 =========
-1.8.4 (2022-12-09)
+1.8.4 (2022-12-10)
 -------------------------
 - Fixed bookmark sort order
 - Fixed bookmark move
 - Fixed pushed sites
+- Fixed index on move
 
 
 1.8.3 (2022-11-07)
