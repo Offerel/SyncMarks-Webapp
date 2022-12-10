@@ -4,6 +4,7 @@ ChangeLog
 -------------------------
 - Fixed bookmark sort order
 - Fixed bookmark move
+- Fixed pushed sites
 
 
 1.8.3 (2022-11-07)

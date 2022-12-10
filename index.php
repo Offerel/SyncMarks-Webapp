@@ -211,7 +211,7 @@ if(isset($_POST['action'])) {
 		case "gurls":
 			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
 			e_log(8,"Request pushed sites for '$client'");
-			$query = "SELECT * FROM `pages` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']." AND `client` IN ('".$client."','0');";
+			$query = "SELECT *, ifnull(cid, '0') as client FROM `pages` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']." AND `client` IN ('".$client."','0');";
 			$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
 			$notificationData = db_query($query);
 			if (!empty($notificationData)) {
