@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('hmenu').classList.add('inlogin1');
 		document.querySelector('#menu button').classList.add('inlogin2');
 	}
+
 	if(document.getElementById('bookmarks')) {
 		document.querySelector('#menu input').addEventListener('keyup', function(e) {
 			var sfilter = this.value;
@@ -127,7 +128,9 @@ document.addEventListener("DOMContentLoaded", function() {
 			});
 			folder.addEventListener('drop', function(event){
 				event.preventDefault();
-				sendRequest(bmmv, event.target.htmlFor.substring(2), draggable.target.id);
+				let tFolder = event.target.htmlFor.substring(2);
+				if (bmIDs.length === 0) bmIDs.push(draggable.target.id);
+				bmIDs.forEach(bmID => sendRequest(bmmv, tFolder, bmID));
 				event.target.style = 'background-color: unset;';
 			});
 		});
@@ -869,6 +872,8 @@ function bmmv(response) {
 		let nfolder = document.getElementById('f_' + response.folder);
 		obm.remove();
 		nfolder.lastChild.appendChild(obm);
+		obm.children[0].classList.remove('bmMarked');
+		bmIDs.shift();
 	} else {
 		let message = "Error moving bookmark";
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);

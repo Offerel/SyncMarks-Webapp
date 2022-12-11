@@ -6,6 +6,7 @@ ChangeLog
 - Fixed bookmark move
 - Fixed pushed sites
 - Fixed index on move
+- Fixed move multiple bookmarks
 
 
 1.8.3 (2022-11-07)
