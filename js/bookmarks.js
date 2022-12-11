@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.4
+ * @version 1.8.5
  * @author Offerel
  * @copyright Copyright (c) 2022, Offerel
  * @license GNU General Public License, version 3
@@ -1007,6 +1007,12 @@ function hideMenu(){
 	document.querySelectorAll('.mbmdialog').forEach(function(item) {item.style.display = 'none'});
 	if(document.getElementById('dubDIV')) document.querySelector('body').removeChild(document.getElementById('dubDIV'));
 	if(document.getElementById('mnguform')) document.getElementById('mnguform').remove();
+
+	let bmMarked = document.querySelectorAll(".bmMarked");
+	for (let i = 0; i < bmMarked.length; i++) {
+		bmMarked[i].classList.remove("bmMarked");
+	}
+	bmIDs.length = 0;
 }
 
 function onContextMenu(e){
