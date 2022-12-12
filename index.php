@@ -476,7 +476,7 @@ if(isset($_POST['action'])) {
 			$userID = $_SESSION['sud']['userID'];
 
 			if(!$tbt) {
-				$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `userID` = $userID;";
+				$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `c_token`.`userID` = $userID;";
 				$tData = db_query($query);
 				$expireTime = time()+60*60*24*CONFIG['expireDays'];
 				$token = bin2hex(openssl_random_pseudo_bytes(32));
@@ -946,19 +946,6 @@ function delMark($bmID) {
 		$count = db_query($query);
 
 		reIndex($dData['bmParentID']);
-
-		//e_log(8,"Check for remaining entries in folder");
-		//$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '".$dData['bmParentID']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY bmIndex;";
-		//$fBookmarks = db_query($query);
-
-		//$bm_count = count($fBookmarks);
-		//e_log(8, "Re-index folder ".$dData['bmParentID']);
-		//for ($i = 0; $i < $bm_count; $i++) {
-		//	$data[] = array($i, $fBookmarks[$i]['bmID']);
-		//}
-
-		//$query = "UPDATE `bookmarks` SET `bmIndex` = ? WHERE bmID = ?";
-		//db_query($query, $data);
 	}
 
 	return $count;
