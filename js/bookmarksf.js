@@ -1,9 +1,9 @@
 /**
  * SyncMarks
  *
- * @version 1.8.5
+ * @version 1.8.6
  * @author Offerel
- * @copyright Copyright (c) 2022, Offerel
+ * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */
 if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){

@@ -1,9 +1,9 @@
 /**
  * SyncMarks
  *
- * @version 1.8.5
+ * @version 1.8.6
  * @author Offerel
- * @copyright Copyright (c) 2022, Offerel
+ * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */	
 document.addEventListener("DOMContentLoaded", function() {
@@ -113,9 +113,10 @@ document.addEventListener("DOMContentLoaded", function() {
 			
 			
 		});
-		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
+		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
 
 		document.querySelectorAll('.lbl').forEach(function(folder) {
+			folder.addEventListener('mouseup', openFolderBookmarks, false);
 			folder.addEventListener('dragover', function(event){
 				event.preventDefault();
 				event.dataTransfer.dropEffect = "move"
@@ -394,6 +395,19 @@ window.addEventListener("keydown",function (e) {
 })
 
 var bmIDs = new Array();
+
+function openFolderBookmarks(event) {
+	if ((event.ctrlKey && event.button == 0) || event.button == 1) {
+		let pID = this.htmlFor.substring(2);
+		let subs = this.parentElement.children[2].childNodes;
+		subs.forEach(function(element) {
+			if(element.className != undefined && element.className.indexOf('file') > -1) {
+				let bm = element.children[0];
+				bm.click();
+			}
+		});
+	}
+}
 
 function bmClick(e){
     if(e.ctrlKey) {

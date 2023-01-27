@@ -2,9 +2,9 @@
 /**
  * SyncMarks
  *
- * @version 1.8.5
+ * @version 1.8.6
  * @author Offerel
- * @copyright Copyright (c) 2022, Offerel
+ * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */
 session_start();
@@ -395,7 +395,7 @@ if(isset($_POST['action'])) {
 			$ctime = round(microtime(true) * 1000);
 			e_log(8,"Try to identify bookmark to delete");
 			if(isset($bookmark['url'])) {
-				$url = prepare_url($bookmark['url']);
+				$url = $bookmark['url'];
 				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '$url' AND `userID` = ".$_SESSION['sud']['userID'].";";
 			} else {
 				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bookmark['title']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
