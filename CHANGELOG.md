@@ -1,10 +1,13 @@
 ChangeLog
 =========
+1.8.6 (2023-06-28)
+-------------------------
+- Open folders in tabs
+
 1.8.5 (2022-12-12)
 -------------------------
 - Remove mark on esc
 - Fixed login error
-
 
 1.8.4 (2022-12-10)
 -------------------------
@@ -14,13 +17,11 @@ ChangeLog
 - Fixed index on move
 - Fixed move multiple bookmarks
 
-
 1.8.3 (2022-11-07)
 -------------------------
 - Updated foreign keys
 - Reworked pages
 - Added view
-
 
 1.8.2 (2022-11-03)
 -------------------------
@@ -29,13 +30,11 @@ ChangeLog
 - Fix for undisplayed bookmarks
 - Updated SQL update
 
-
 1.8.0 (2022-10-29)
 -------------------------
 - Added Foreign Key for bookmarks
 - Reworked Move bookmarks
 - Reworked Delete bookmarks
-
 
 1.7.2 (2022-10-25)
 -------------------------
@@ -44,12 +43,10 @@ ChangeLog
 - Added Token exchange
 - Fixed Keyboard shortcuts
 
-
 1.7.1 (2022-08-11)
 -------------------------
 - Fixed move bookmark
 - Response first login 
-
 
 1.7.0 (2022-05-06)
 -------------------------
@@ -61,18 +58,15 @@ ChangeLog
 - Fix Rename client
 - Other Small Fixes
 
-
 1.6.7 (2022-03-19)
 -------------------------
 - Fixed delete bookmarks
 - Fixed search
 - Added colorize of logfile
 
-
 1.6.6 (2022-03-08)
 -------------------------
 - Added token based login
-
 
 1.6.5 (2022-02-24)
 -------------------------
@@ -81,11 +75,9 @@ ChangeLog
 - Fix updateclient
 - Minor Fixes
 
-
 1.6.4 (2022-02-13)
 -------------------------
 - Send lastseen with pre-request
-
 
 1.6.3 (2022-01-25)
 -------------------------
@@ -95,7 +87,6 @@ ChangeLog
 - Fix client sort order
 - Fix constants
 
-
 1.6.2 (2021-11-24)
 -------------------------
 - Rework generate Chromium ID
@@ -103,13 +94,11 @@ ChangeLog
 - Set lastseen date only for startup sync
 - Changed some requests
 
-
 1.6.1 (2021-10-23)
 -------------------------
 - Fix notification not opening in new tab
 - Fix adding bookmark
 - Fix moving bookmark
-
 
 1.6.0 (2021-07-29)
 -------------------------
@@ -125,14 +114,12 @@ ChangeLog
 - Removed unused session vars
 - Moved assets
 
-
 1.5.2 (2021-05-10)
 -------------------------
 - Write clientlist to disk, for debugging
 - Rebuilding clientlist serverside
 - Relocating log and debug files
 - Fixed encoding issue
-
 
 1.5.1 (2021-03-31)
 -------------------------
@@ -141,18 +128,15 @@ ChangeLog
 - Fix encoding site title
 - Fix get personal options
 
-
 1.5.0 (2021-03-24)
 -------------------------
 - Added support for MySQL
 - Re-Added back optional manual password
 
-
 1.4.2 (2021-03-22)
 -------------------------
 - Changed feedback to client, when cant be registered
 - Filter IP address for logfile
-
 
 1.4.1 (2021-03-20)
 -------------------------
@@ -160,7 +144,6 @@ ChangeLog
 - Fixed bug user delete
 - Fixed login bug
 - Changed Export behavior
-
 
 1.4.0 (2021-03-17)
 -------------------------
@@ -171,7 +154,6 @@ ChangeLog
 - Changed login behavior
 - Updated DB
 
-
 1.3.7 (2021-03-05)
 -------------------------
 - Added drag&drop for bookmarks move
@@ -181,22 +163,18 @@ ChangeLog
 - Fixed delete notifications
 - Replaced alerts with notifications
 
-
 1.3.6 (2021-02-25)
 -------------------------
 - Added duplicates checker
 - Fix contextmenu when manually adding bookmark
 
-
 1.3.5 (2021-02-21)
 -------------------------
 - Fix for startup sync
 
-
 1.3.4 (2021-02-11)
 -------------------------
 - Fix for js error
-
 
 1.3.3 (2021-01-15)
 -------------------------
@@ -205,11 +183,9 @@ ChangeLog
 - Check database update only on new version
 - Fix for import from Chromium
 
-
 1.3.2 (2021-01-11)
 -------------------------
 - Added login/logout form
-
 
 1.3.1 (2021-01-06)
 -------------------------
@@ -221,7 +197,6 @@ ChangeLog
 - Fix not opening duplicate foldernames
 - Fix login/logout
 - Reworked logout
-
 
 1.3.0 (2021-01-02)
 -------------------------
@@ -235,17 +210,14 @@ ChangeLog
 - Reworked Actions
 - Small fixes
 
-
 1.2.17 (2020-12-12)
 -------------------------
 - Fix XHR response
 - Changed tesfile creation
 
-
 1.2.16 (2020-12-12)
 -------------------------
 - Fix for folder selection
-
 
 1.2.15 (2020-12-09)
 -------------------------
@@ -253,7 +225,6 @@ ChangeLog
 - Changes in include files
 - Fix for import bookmark with quote
 - Fix for encoding
-
 
 1.2.14 (2020-12-05)
 -------------------------
@@ -264,12 +235,10 @@ ChangeLog
 - Fixed folder variable
 - Added client id as hint
 
-
 1.2.13 (2020-11-30)
 -------------------------
 - Fixed adding new folder
 - Fixed adding new folder from browser
-
 
 1.2.12 (2020-10-19)
 -------------------------
@@ -286,7 +255,6 @@ ChangeLog
 - Changed usage of srcElement
 - Fixed export error with malformed JSON
 - Fixed display of lastlogin
-
 
 1.2.11 (2020-09-09)
 -------------------------
