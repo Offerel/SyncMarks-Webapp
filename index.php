@@ -1361,8 +1361,10 @@ function delUsermarks($uid) {
 }
 
 function htmlHeader() {
-	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
-	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
+	$hjs = hash_file('crc32','js/bookmarks.js');
+	$hcs = hash_file('crc32','css/bookmarks.css');
+	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js?h=$hjs'></script>":"<script src='js/bookmarks.js?h=$hjs'></script>";
+	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css?h=$hcs'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css?h=$hcs'>";
 	$htmlHeader = "<!DOCTYPE html>
 		<html lang='en'>
 			<head>
@@ -1678,8 +1680,7 @@ function makeHTMLTree($arr) {
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
 			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bm['bmTitle'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			//$bookmark = "\n<li class='file'><a id='".$bm['bmID']."' title='".$title."' rel='noopener' target='_blank' href='".$bm['bmURL']."'>".$title."</a></li>%ID".$bm['bmParentID'];
-			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title."' href='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
+			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title."' data-url='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
 

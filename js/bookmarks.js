@@ -10,8 +10,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
 		e.preventDefault();
 		let data = "reset=request&u="+e.target.dataset.reset;
-		let xhr = new XMLHttpRequest();
-		let url = document.location.href.substr(0, document.location.href.indexOf('?'))
+		let url = location.protocol + '//' + location.host + location.pathname;
 		
 		xhr.open("GET", url+"?"+data, true);
 		xhr.onreadystatechange = function() {
@@ -40,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			bdiv.innerHTML = '';
 			allmarks.forEach(bookmark => {
 				bdiv.appendChild(bookmark);
-				if(bookmark.innerText.toUpperCase().includes(sfilter.toUpperCase()) || bookmark.firstChild.attributes.href.nodeValue.toUpperCase().includes(sfilter.toUpperCase())) {
+				if(bookmark.innerText.toUpperCase().includes(sfilter.toUpperCase()) || bookmark.firstChild.dataset.url.toUpperCase().includes(sfilter.toUpperCase())) {
 					bookmark.style.display = 'block';
 					bookmark.style.paddingLeft = '20px';
 				} else {
@@ -423,11 +422,13 @@ window.addEventListener("keydown",function (e) {
 var bmIDs = new Array();
 
 function addBD() {
-	var elemDiv = document.createElement('div');
-	elemDiv.style.cssText = 'position:absolute;width:100%;height:100%;opacity:0.3;z-index:99;background:#000;left:0;top:0';
-	elemDiv.addEventListener('click', function() {hideMenu()});
-	elemDiv.id = 'mnubg';
-	document.body.appendChild(elemDiv);
+	if(!document.getElementById('mnubg')) {
+		let mnubg = document.createElement('div');
+		mnubg.style.cssText = 'position:absolute;width:100%;height:100%;opacity:0.3;z-index:99;background:#000;left:0;top:0';
+		mnubg.addEventListener('click', function() {hideMenu()});
+		mnubg.id = 'mnubg';
+		document.body.appendChild(mnubg);
+	}
 }
 
 function openFolderBookmarks(event) {
@@ -453,9 +454,9 @@ function bmClick(e){
 		} else {
 			bookmark.classList.add('bmMarked');
 			bmIDs.push(bookmark.id);
-		}  	
-    } else {
-		if (typeof e.srcElement.attributes.href !== 'undefined') window.open(e.srcElement.attributes.href.value, '_blank', 'noopener,noreferrer');
+		}
+	} else {
+		if (typeof e.srcElement.dataset.url !== 'undefined') window.open(e.srcElement.dataset.url, '_blank', 'noopener,noreferrer');
 	}
 }
 
@@ -1113,7 +1114,7 @@ function onClick(e){
 			document.getElementById('edid').value = document.getElementById('bmid').value;
 
 			if(document.getElementById(document.getElementById('bmid').value)) {
-				document.getElementById('edurl').value = document.getElementById(document.getElementById('bmid').value).attributes.href.value;
+				document.getElementById('edurl').value = document.getElementById(document.getElementById('bmid').value).dataset.url;
 				document.getElementById('bmarkedt').firstChild.innerText = 'Edit Bookmark';
 				document.getElementById('edurl').type = 'text';
 			} else {
@@ -1137,7 +1138,8 @@ function onClick(e){
 			document.getElementById('bmamove').style.display = 'block';
 			break;
 		case 'btnDelete':
-			delBookmark(document.getElementById('bmid').value, document.getElementById('bmid').title);
+			hideMenu();
+			setTimeout(delBookmark, 5, document.getElementById('bmid').value, document.getElementById('bmid').title);
 			break;
 		case 'btnFolder':
 			hideMenu();
