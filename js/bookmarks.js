@@ -1,11 +1,11 @@
 /**
  * SyncMarks
  *
- * @version 1.8.6
+ * @version 1.8.7
  * @author Offerel
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
- */	
+ */
 document.addEventListener("DOMContentLoaded", function() {
 	if(document.getElementById("uf")) document.getElementById("uf").focus();
 	if(document.getElementById('loginbody')) {
@@ -146,6 +146,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
+//			console.log('test');
 			if (e.key === 'Escape') hideMenu();
 		});
 
@@ -420,7 +421,9 @@ function bmClick(e){
 			bookmark.classList.add('bmMarked');
 			bmIDs.push(bookmark.id);
 		}  	
-    }
+    } else {
+		if (typeof e.srcElement.attributes.href !== 'undefined') window.open(e.srcElement.attributes.href.value, '_blank', 'noopener,noreferrer');
+	}
 }
 
 function rmBm(key) {
@@ -1033,6 +1036,8 @@ function onContextMenu(e){
     e.preventDefault();
     e.stopPropagation();
 	hideMenu();
+	e.cancelBubble = true;
+	e.returnValue = false;
 	let menu = document.querySelector('.menu');
 	menu.style.display = 'block';
 	if(e.target.attributes.id){
@@ -1052,6 +1057,7 @@ function onContextMenu(e){
 	document.querySelector('#btnMove').addEventListener('click', onClick, false);
 	document.querySelector('#btnDelete').addEventListener('click', onClick, false);
 	document.querySelector('#btnFolder').addEventListener('click', onClick, false);
+	return false;
 }
 
 function onClick(e){

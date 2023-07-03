@@ -1,5 +1,9 @@
 ChangeLog
 =========
+1.8.7 (2023-07-03)
+-------------------------
+- Fixed right click Firefox Android
+  
 1.8.6 (2023-06-28)
 -------------------------
 - Open folders in tabs

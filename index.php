@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.6
+ * @version 1.8.7
  * @author Offerel
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
@@ -842,7 +842,7 @@ if(isset($_GET['link'])) {
 
 	$uas = array(
 		"HttpShortcuts",
-		"Irix"
+		"Tasker"
 	);
 
 	$so = false;
@@ -1681,7 +1681,8 @@ function makeHTMLTree($arr) {
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
 			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bm['bmTitle'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			$bookmark = "\n<li class='file'><a id='".$bm['bmID']."' title='".$title."' rel='noopener' target='_blank' href='".$bm['bmURL']."'>".$title."</a></li>%ID".$bm['bmParentID'];
+			//$bookmark = "\n<li class='file'><a id='".$bm['bmID']."' title='".$title."' rel='noopener' target='_blank' href='".$bm['bmURL']."'>".$title."</a></li>%ID".$bm['bmParentID'];
+			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title."' href='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
 
