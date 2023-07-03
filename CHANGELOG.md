@@ -3,6 +3,9 @@ ChangeLog
 1.8.7 (2023-07-03)
 -------------------------
 - Fixed right click Firefox Android
+- Fixed dataset.url
+- Fixed bookmark edit
+- Added background to dialogs/menus
   
 1.8.6 (2023-06-28)
 -------------------------
