@@ -1105,6 +1105,7 @@ function onClick(e){
 	var ypos = e.pageY;
 	if(xpos <= minleft) xpos = minleft;
 	if(ypos >= minbot) ypos = minbot;
+	addBD();
 	
 	switch(this.id) {
 		case 'btnEdit':
@@ -1112,7 +1113,7 @@ function onClick(e){
 			document.getElementById('edid').value = document.getElementById('bmid').value;
 
 			if(document.getElementById(document.getElementById('bmid').value)) {
-				document.getElementById('edurl').value = document.getElementById(document.getElementById('bmid').value).href;
+				document.getElementById('edurl').value = document.getElementById(document.getElementById('bmid').value).attributes.href.value;
 				document.getElementById('bmarkedt').firstChild.innerText = 'Edit Bookmark';
 				document.getElementById('edurl').type = 'text';
 			} else {
@@ -1124,7 +1125,6 @@ function onClick(e){
 			hideMenu();
 			document.getElementById('bmarkedt').style.left = xpos;
 			document.getElementById('bmarkedt').style.top = ypos;
-			addBD();
 			document.getElementById('bmarkedt').style.display = 'block';
 			document.getElementById('edtitle').focus();
 			break;
