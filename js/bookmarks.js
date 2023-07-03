@@ -7,6 +7,25 @@
  * @license GNU General Public License, version 3
  */
 document.addEventListener("DOMContentLoaded", function() {
+	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
+		e.preventDefault();
+		let data = "reset=request&u="+e.target.dataset.reset;
+		let xhr = new XMLHttpRequest();
+		let url = document.location.href.substr(0, document.location.href.indexOf('?'))
+		
+		xhr.open("GET", url+"?"+data, true);
+		xhr.onreadystatechange = function() {
+			if(this.readyState == 4 && this.status == 200) {
+				if(JSON.parse(this.responseText) == 1) {
+					let div = document.getElementById('loginformt');
+					div.classList.toggle('info');
+					div.innerText = 'Password request confirmation is send to your E-Mail. Request is valid for 5 minutes.';
+				}
+			}
+		}
+		xhr.send(null);
+	});
+
 	if(document.getElementById("uf")) document.getElementById("uf").focus();
 	if(document.getElementById('loginbody')) {
 		document.getElementById('hmenu').classList.add('inlogin1');
@@ -146,7 +165,6 @@ document.addEventListener("DOMContentLoaded", function() {
 		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
-//			console.log('test');
 			if (e.key === 'Escape') hideMenu();
 		});
 
@@ -180,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
 				mainmenu.style.display = 'none';
 			} else {
 				hideMenu();
+				addBD();
 				mainmenu.style.display = 'block';
 			}
 		});
@@ -192,6 +211,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('muser').addEventListener('click', function(e) {
 			e.preventDefault();
 			hideMenu();
+			addBD();
 			document.getElementById('userform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
@@ -231,6 +251,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			mailform.appendChild(dbutton);
 
 			document.querySelector('body').appendChild(mailform);
+			addBD();
 			document.getElementById('mailform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
@@ -241,12 +262,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('mpassword').addEventListener('click', function() {
 			hideMenu();
+			addBD();
 			document.getElementById('passwordform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
 		document.getElementById('pbullet').addEventListener('click', function() {
 			hideMenu();
+			addBD();
 			document.getElementById('pbulletform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
@@ -267,6 +290,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('psettings').addEventListener('click', function() {
 			hideMenu();
+			addBD();
 			document.getElementById('mngsform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
@@ -290,6 +314,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('footer').addEventListener('click', function() {
 			hideMenu();
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+			addBD();
 			document.getElementById('bmarkadd').style.display = 'block';
 			url.focus();
 			url.addEventListener('input', enableSave);
@@ -396,6 +421,14 @@ window.addEventListener("keydown",function (e) {
 })
 
 var bmIDs = new Array();
+
+function addBD() {
+	var elemDiv = document.createElement('div');
+	elemDiv.style.cssText = 'position:absolute;width:100%;height:100%;opacity:0.3;z-index:99;background:#000;left:0;top:0';
+	elemDiv.addEventListener('click', function() {hideMenu()});
+	elemDiv.id = 'mnubg';
+	document.body.appendChild(elemDiv);
+}
 
 function openFolderBookmarks(event) {
 	if ((event.ctrlKey && event.button == 0) || event.button == 1) {
@@ -522,7 +555,7 @@ function getclients(response) {
 		}
 	});
 	clientListForm.appendChild(ulClients);
-
+	addBD();
 	document.getElementById('mngcform').style.display = 'block';
 	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 }
@@ -639,6 +672,7 @@ function getUsers(response) {
 		mnguform.appendChild(npwd);
 		mnguform.appendChild(userLevel);
 		mnguform.appendChild(dbutton);
+		addBD();
 		document.querySelector('body').appendChild(mnguform);
 
 		muadd.addEventListener('click', function(e) {
@@ -735,6 +769,7 @@ function checkdups(response) {
 			dubLi.appendChild(dubSub);
 			dubMenu.appendChild(dubLi);
 			dubDIV.appendChild(dubMenu);
+			addBD();
 			dubDIV.style.display = 'block';
 		});
 		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
@@ -765,7 +800,7 @@ function rmessage(response, a = 'aNoti') {
 		node.children[1].children[0].addEventListener('click',delMessage, false);
 		div.appendChild(node); 
 	})
-	
+	addBD();
 	document.getElementById('nmessagesform').style.display = 'block';
 	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
@@ -1014,6 +1049,7 @@ function showMenu(x, y){
 	menu.style.top = y + 'px';
 	menu.style.opacity = 1;
     menu.classList.add('show-menu');
+	addBD();
 }
 
 function hideMenu(){
@@ -1022,6 +1058,7 @@ function hideMenu(){
 	menu.style.display = 'none';
 	document.querySelectorAll('.mmenu').forEach(function(item) {item.style.display = 'none'});
 	document.querySelectorAll('.mbmdialog').forEach(function(item) {item.style.display = 'none'});
+	if(document.getElementById('mnubg')) document.getElementById('mnubg').remove();
 	if(document.getElementById('dubDIV')) document.querySelector('body').removeChild(document.getElementById('dubDIV'));
 	if(document.getElementById('mnguform')) document.getElementById('mnguform').remove();
 
@@ -1040,6 +1077,7 @@ function onContextMenu(e){
 	e.returnValue = false;
 	let menu = document.querySelector('.menu');
 	menu.style.display = 'block';
+
 	if(e.target.attributes.id){
 		document.getElementById('bmid').value = e.target.attributes.id.value;
 		document.getElementById('bmid').title = e.target.attributes.title.value;
@@ -1086,6 +1124,7 @@ function onClick(e){
 			hideMenu();
 			document.getElementById('bmarkedt').style.left = xpos;
 			document.getElementById('bmarkedt').style.top = ypos;
+			addBD();
 			document.getElementById('bmarkedt').style.display = 'block';
 			document.getElementById('edtitle').focus();
 			break;

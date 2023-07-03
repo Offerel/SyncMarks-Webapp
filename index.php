@@ -30,7 +30,7 @@ set_error_handler("e_log");
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
 if(!isset($_SESSION['sauth'])) checkDB();
-
+$htmlFooter = "</body></html>";
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
 	$headers = "From: SyncMarks <".CONFIG['sender'].">";
@@ -81,7 +81,7 @@ if(isset($_GET['reset'])){
 					<div id='loginformt'>Password reset canceled. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
 				</div>
 			</div>";
-			echo htmlFooter();
+			echo $htmlFooter;
 			die();
 			break;
 		case "confirm":
@@ -114,7 +114,7 @@ if(isset($_GET['reset'])){
 						<div id='loginformt'>Password reset successful, please check your mail. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
 					</div>
 				</div>";
-				echo htmlFooter();
+				echo $htmlFooter;
 			} else {
 				echo htmlHeader();
 				echo "<div id='loginbody'>
@@ -123,7 +123,7 @@ if(isset($_GET['reset'])){
 						<div id='loginformt'>Token expired, Password reset failed. You can try to <a data-reset='".$result['userName']."' id='preset' href='#'>reset</a> it again.</div>
 					</div>
 				</div>";
-				echo htmlFooter();
+				echo $htmlFooter;
 				e_log(1,"Token expired, Password reset failed");
 				$query = "DELETE FROM `reset` WHERE `token` = '$token';";
 				db_query($query);
@@ -691,7 +691,7 @@ if(isset($_POST['action'])) {
 						<div id='loginformt'>User logged out. <a href='?'>Login</a> again</div>
 					</div>
 				</div>";
-				echo htmlFooter();
+				echo $htmlFooter;
 			}
 			session_destroy();
 			exit;
@@ -762,7 +762,7 @@ if(isset($_POST['action'])) {
 					<div id='loginformt'>User logged out. <a href='".$_SERVER['SCRIPT_NAME']."'>Login</a> again</div>
 				</div>
 			</div>";
-			echo htmlFooter();
+			echo $htmlFooter;
 
 			die();
 			break;
@@ -795,7 +795,7 @@ if(isset($_POST['action'])) {
 					<div id='loginformt'>User logged out. <a href='?'>Login</a> again</div>
 				</div>
 			</div>";
-			echo htmlFooter();
+			echo $htmlFooter;
 			die();
 			break;
 		case "getUsers":
@@ -884,7 +884,7 @@ if(isset($_GET['push'])) {
 echo htmlHeader();
 echo htmlForms();
 echo showBookmarks(2);
-echo htmlFooter();
+echo $htmlFooter;
 
 function sendJSONResponse($response) {
 	header("Content-Type: application/json");
@@ -1361,12 +1361,14 @@ function delUsermarks($uid) {
 }
 
 function htmlHeader() {
+	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
+	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
 	$htmlHeader = "<!DOCTYPE html>
 		<html lang='en'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				<script src='js/bookmarks.min.js'></script>
-				<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>
+				$js
+				$css
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
 				<meta name='theme-color' content='#0879D9'>
@@ -1618,11 +1620,6 @@ function notiList($uid, $loop) {
 				</div>";
 	}
 	return $notiList;
-}
-
-function htmlFooter() {
-	$htmlFooter = "<script src='js/bookmarksf.min.js'></script></body></html>";
-	return $htmlFooter;
 }
 
 function getUserFolders($uid) {
@@ -1999,7 +1996,7 @@ function checkLogin() {
 					<div id='loginformt'>Access denied. You must <a href='?'>login</a> to use this tool.</div>
 				</div>
 			</div>";
-			echo htmlFooter();
+			echo $htmlFooter;
 			exit;
 		} else {
 			e_log(8,"Try basic login $client");
@@ -2060,7 +2057,7 @@ function checkLogin() {
 					$lform.= "</div></div>
 					</div>";
 					echo $lform;
-					echo htmlFooter();
+					echo $htmlFooter;
 					exit;
 				}
 			} else {
@@ -2078,7 +2075,7 @@ function checkLogin() {
 								<div id='loginformt'>You must <a href='?'>authenticate</a> to use this tool.</div>
 							</div>
 						</div>";
-					echo htmlFooter();
+					echo $htmlFooter;
 				}
 				e_log(2,"Login failed. Credential missmatch");
 				exit;
@@ -2101,7 +2098,7 @@ function checkLogin() {
 			</div>
 			</form>
 		</div>";
-		echo htmlFooter();
+		echo $htmlFooter;
 		exit;
 	}
 }
