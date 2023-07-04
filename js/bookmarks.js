@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.7
+ * @version 1.8.8
  * @author Offerel
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
@@ -321,6 +321,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if(document.getElementById('mlog')) document.getElementById('mlog').addEventListener('click', function() {
 			hideMenu();
+			addBD();
 			let logfile = document.getElementById('logfile');
 			if(logfile.style.visibility === 'visible') {
 				logfile.style.visibility = 'hidden';
@@ -344,6 +345,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			if(document.getElementById('logfile').style.visibility === 'visible') {
 				document.getElementById('logfile').style.visibility = 'hidden';
 				document.getElementById('close').style.visibility = 'hidden';
+				hideMenu();
 			}
 		}); 
 

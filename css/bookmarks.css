@@ -706,7 +706,7 @@ input[type="submit"]:disabled {
 	border: 0;
 	font-family: consolas, courier new;
 	font-size: 0.8em;
-	z-index: 10;
+	z-index: 100;
 	background: whitesmoke;
 	color: black;
 	visibility: hidden;
