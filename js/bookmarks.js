@@ -119,18 +119,18 @@ document.addEventListener("DOMContentLoaded", function() {
 		}, false);
 		var draggable;
 		document.querySelectorAll('.file').forEach(function(bookmark){
-			bookmark.addEventListener('contextmenu',onContextMenu,false);
+			bookmark.addEventListener('contextmenu', onContextMenu, false);
+			bookmark.addEventListener('mouseup', clicCheck, false);
 			bookmark.addEventListener('dragstart', function(event){
 				event.target.style.opacity = '.3';
 				event.dataTransfer.effectAllowed = "move";
 			});
 			bookmark.addEventListener('dragend', function(event){
 				event.target.style.opacity = '';
-			});
-			bookmark.addEventListener('click', bmClick);
-			
-			
+			});			
 		});
+		
+		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
 
 		document.querySelectorAll('.lbl').forEach(function(folder) {
@@ -404,6 +404,8 @@ document.addEventListener("DOMContentLoaded", function() {
 			sendRequest(bmmv, document.getElementById('mvfolder').value, document.getElementById('mvid').value);
 			document.getElementById('bmamove').style.display = 'none';
 		});
+
+		document.getElementById('mnubg').addEventListener('click', function() {hideMenu()});
 	}
 }, false);
 
@@ -423,14 +425,35 @@ window.addEventListener("keydown",function (e) {
 
 var bmIDs = new Array();
 
-function addBD() {
-	if(!document.getElementById('mnubg')) {
-		let mnubg = document.createElement('div');
-		mnubg.style.cssText = 'position:absolute;width:100%;height:100%;opacity:0.3;z-index:99;background:#000;left:0;top:0';
-		mnubg.addEventListener('click', function() {hideMenu()});
-		mnubg.id = 'mnubg';
-		document.body.appendChild(mnubg);
+function clicCheck(e) {
+	e.preventDefault();
+	let bookmark = this.children[0];
+
+	switch(e.button) {
+		case 0:
+			if(e.ctrlKey) {
+				if(bookmark.classList.contains('bmMarked')) {
+					bmIDs.indexOf(bookmark.id) !== -1 && bmIDs.splice(bmIDs.indexOf(bookmark.id), 1)
+					bookmark.classList.remove('bmMarked');
+				} else {
+					bookmark.classList.add('bmMarked');
+					bmIDs.push(bookmark.id);
+				}
+			} else {
+				if (typeof e.srcElement.dataset.url !== 'undefined') window.open(e.srcElement.dataset.url, '_blank', 'noopener,noreferrer');
+			}
+			break;
+		case 1:
+			//console.log(this);
+			if (typeof e.srcElement.dataset.url !== 'undefined') window.open(e.srcElement.dataset.url, '_blank', 'noopener,noreferrer');
+			break;
 	}
+}
+
+function addBD() {
+	menubg = document.getElementById('mnubg');
+	menubg.style.visibility = "visible";
+	document.getElementById('mnubg').style.visibility = "visible";
 }
 
 function openFolderBookmarks(event) {
@@ -443,22 +466,6 @@ function openFolderBookmarks(event) {
 				bm.click();
 			}
 		});
-	}
-}
-
-function bmClick(e){
-    if(e.ctrlKey) {
-    	e.preventDefault();
-		let bookmark = this.children[0];
-		if(bookmark.classList.contains('bmMarked')) {
-			bmIDs.indexOf(bookmark.id) !== -1 && bmIDs.splice(bmIDs.indexOf(bookmark.id), 1)
-			bookmark.classList.remove('bmMarked');
-		} else {
-			bookmark.classList.add('bmMarked');
-			bmIDs.push(bookmark.id);
-		}
-	} else {
-		if (typeof e.srcElement.dataset.url !== 'undefined') window.open(e.srcElement.dataset.url, '_blank', 'noopener,noreferrer');
 	}
 }
 
@@ -565,8 +572,10 @@ function getclients(response) {
 
 function addmark(response) {
 	document.getElementById('bookmarks').innerHTML = response;
-	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
-	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu',onContextMenu,false));
+	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
 	console.info("Bookmark added successfully.");
 }
 
@@ -1050,8 +1059,7 @@ function showMenu(x, y){
 	if(y >= minbot) y = minbot;
     menu.style.left = x + 'px';
 	menu.style.top = y + 'px';
-	menu.style.opacity = 1;
-    menu.classList.add('show-menu');
+	menu.style.visibility = "visible";
 	addBD();
 }
 
@@ -1061,7 +1069,7 @@ function hideMenu(){
 	menu.style.display = 'none';
 	document.querySelectorAll('.mmenu').forEach(function(item) {item.style.display = 'none'});
 	document.querySelectorAll('.mbmdialog').forEach(function(item) {item.style.display = 'none'});
-	if(document.getElementById('mnubg')) document.getElementById('mnubg').remove();
+	document.getElementById('mnubg').style.visibility = "hidden";
 	if(document.getElementById('dubDIV')) document.querySelector('body').removeChild(document.getElementById('dubDIV'));
 	if(document.getElementById('mnguform')) document.getElementById('mnguform').remove();
 
@@ -1075,9 +1083,10 @@ function hideMenu(){
 function onContextMenu(e){
     e.preventDefault();
     e.stopPropagation();
-	hideMenu();
 	e.cancelBubble = true;
 	e.returnValue = false;
+	hideMenu();
+	
 	let menu = document.querySelector('.menu');
 	menu.style.display = 'block';
 
@@ -1094,14 +1103,14 @@ function onContextMenu(e){
 	}
 
 	showMenu(e.pageX, e.pageY);
-	document.querySelector('#btnEdit').addEventListener('click', onClick, false);
-	document.querySelector('#btnMove').addEventListener('click', onClick, false);
-	document.querySelector('#btnDelete').addEventListener('click', onClick, false);
-	document.querySelector('#btnFolder').addEventListener('click', onClick, false);
+	document.querySelector('#btnEdit').addEventListener('click', onMenuClick, false);
+	document.querySelector('#btnMove').addEventListener('click', onMenuClick, false);
+	document.querySelector('#btnDelete').addEventListener('click', onMenuClick, false);
+	document.querySelector('#btnFolder').addEventListener('click', onMenuClick, false);
 	return false;
 }
 
-function onClick(e){
+function onMenuClick(e){
 	var minleft = 155;
 	var minbot = window.innerHeight - 200;
 	var xpos = e.pageX;
@@ -1155,7 +1164,7 @@ function onClick(e){
 			break;
 	}
 
-    document.removeEventListener('click', onClick);
+    document.removeEventListener('click', onMenuClick);
 }
 
 function openMessages(element) {
