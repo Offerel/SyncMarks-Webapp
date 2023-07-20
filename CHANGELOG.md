@@ -1,5 +1,9 @@
 ChangeLog
 =========
+1.8.8 (2023-07-20)
+-------------------------
+- Added mouse niddle click
+  
 1.8.7 (2023-07-03)
 -------------------------
 - Fixed right click Firefox Android
