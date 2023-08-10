@@ -421,12 +421,13 @@ window.addEventListener("keydown",function (e) {
 		document.getElementById('mprofile').style.display = 'none';
 		document.querySelector('#menu input').focus();
     }
+
+	rmBm(e);
 })
 
 var bmIDs = new Array();
 
 function clicCheck(e) {
-	e.preventDefault();
 	let bookmark = this.children[0];
 
 	switch(e.button) {
@@ -444,7 +445,6 @@ function clicCheck(e) {
 			}
 			break;
 		case 1:
-			//console.log(this);
 			if (typeof e.srcElement.dataset.url !== 'undefined') window.open(e.srcElement.dataset.url, '_blank', 'noopener,noreferrer');
 			break;
 	}
@@ -1061,6 +1061,7 @@ function showMenu(x, y){
 	menu.style.top = y + 'px';
 	menu.style.visibility = "visible";
 	addBD();
+	return false;
 }
 
 function hideMenu(){
@@ -1102,11 +1103,11 @@ function onContextMenu(e){
 		document.getElementById('btnFolder').setAttribute('style','display:none !important');
 	}
 
-	showMenu(e.pageX, e.pageY);
 	document.querySelector('#btnEdit').addEventListener('click', onMenuClick, false);
 	document.querySelector('#btnMove').addEventListener('click', onMenuClick, false);
 	document.querySelector('#btnDelete').addEventListener('click', onMenuClick, false);
 	document.querySelector('#btnFolder').addEventListener('click', onMenuClick, false);
+	showMenu(e.pageX, e.pageY);
 	return false;
 }
 

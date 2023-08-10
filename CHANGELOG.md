@@ -2,7 +2,7 @@ ChangeLog
 =========
 1.8.8 (2023-07-20)
 -------------------------
-- Added mouse niddle click
+- Added mouse middle click
   
 1.8.7 (2023-07-03)
 -------------------------
