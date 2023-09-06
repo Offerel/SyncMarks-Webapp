@@ -14,23 +14,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `userName` (`userName`),
   UNIQUE KEY `sessionID` (`sessionID`),
   KEY `i2` (`userID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
-CREATE TABLE `pages` (
-  `pid` int(11) NOT NULL,
-  `ptitle` varchar(250) NOT NULL,
-  `purl` text NOT NULL,
-  `ntime` int(11) NOT NULL,
-  `cid` varchar(255) DEFAULT NULL,
-  `nloop` int(11) NOT NULL DEFAULT 1,
-  `publish_date` int(11) NOT NULL,
-  `userID` int(11) NOT NULL,
-  PRIMARY KEY (`pid`),
-  KEY `userID` (`userID`),
-  KEY `cid` (`cid`),
-  CONSTRAINT `pages_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
-  CONSTRAINT `pages_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create bookmark table
 CREATE TABLE `bookmarks` (
@@ -50,7 +34,7 @@ CREATE TABLE `bookmarks` (
   KEY `i1` (`bmURL`(255),`bmTitle`(255)),
   CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
   CONSTRAINT `bookmarks_ibfk_2` FOREIGN KEY (`bmParentID`, `userID`) REFERENCES `bookmarks` (`bmID`, `userID`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create clients table
 CREATE TABLE `clients` (
@@ -65,7 +49,23 @@ CREATE TABLE `clients` (
   KEY `uid` (`userID`),
   KEY `i3` (`cid`),
   CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `pages` (
+  `pid` int(11) NOT NULL AUTO_INCREMENT,
+  `ptitle` varchar(250) NOT NULL,
+  `purl` text NOT NULL,
+  `ntime` int(11) NOT NULL,
+  `cid` varchar(255) DEFAULT NULL,
+  `nloop` int(11) NOT NULL DEFAULT 1,
+  `publish_date` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
+  PRIMARY KEY (`pid`),
+  KEY `userID` (`userID`),
+  KEY `cid` (`cid`),
+  CONSTRAINT `pages_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `pages_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create reset table
 CREATE TABLE `reset` (
@@ -78,14 +78,14 @@ CREATE TABLE `reset` (
   UNIQUE KEY `autoindex_reset_1` (`tokenID`),
   KEY `userID` (`userID`),
   CONSTRAINT `reset_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create system table
 CREATE TABLE `system` (
   `app_version` varchar(10) DEFAULT NULL,
   `db_version` varchar(10) DEFAULT NULL,
   `updated` varchar(250) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- CREATE tokens table
 CREATE TABLE IF NOT EXISTS `auth_token` (
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `auth_token` (
   PRIMARY KEY (`tID`),
   KEY `authtoken_fk1` (`userName`),
   CONSTRAINT `authtoken_fk1` FOREIGN KEY (`userName`) REFERENCES `users` (`userName`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- CREATE ctokens table
 CREATE TABLE `c_token` (
@@ -113,7 +113,7 @@ CREATE TABLE `c_token` (
   KEY `userID` (`userID`),
   CONSTRAINT `c_token_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
   CONSTRAINT `c_token_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create index
 CREATE INDEX IF NOT EXISTS `i1` ON `bookmarks` (`bmURL`(255), `bmTitle`(255));
