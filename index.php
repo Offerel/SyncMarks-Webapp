@@ -2155,8 +2155,9 @@ function db_query($query, $data=null) {
 	];
 	try {
 		if(CONFIG['db']['type'] == 'mysql') {
-			$db = new PDO(CONFIG['db']['type'].':host='.CONFIG['db']['host'].';dbname='.CONFIG['db']['dbname'], CONFIG['db']['user'], CONFIG['db']['pwd'], $options);
-			$db->exec( 'PRAGMA foreign_keys = ON;' );
+			$hs = (substr(CONFIG['db']['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = CONFIG['db']['type'].':'.$hs.'='.CONFIG['db']['host'].';dbname='.CONFIG['db']['dbname'];
+			$db = new PDO($constr, CONFIG['db']['user'], CONFIG['db']['pwd'], $options);
 		} elseif(CONFIG['db']['type'] == 'sqlite') {
 			$db = new PDO(CONFIG['db']['type'].':'.CONFIG['db']['dbname'], null, null, $options);
 			$db->exec( 'PRAGMA foreign_keys = ON;' );

@@ -1,6 +1,6 @@
 -- Create users table
 CREATE TABLE `users` (
-  `userID` int(11) NOT NULL,
+  `userID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(255) NOT NULL,
   `userType` int(11) NOT NULL,
   `userHash` text NOT NULL,
@@ -14,6 +14,22 @@ CREATE TABLE `users` (
   UNIQUE KEY `userName` (`userName`),
   UNIQUE KEY `sessionID` (`sessionID`),
   KEY `i2` (`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+CREATE TABLE `pages` (
+  `pid` int(11) NOT NULL,
+  `ptitle` varchar(250) NOT NULL,
+  `purl` text NOT NULL,
+  `ntime` int(11) NOT NULL,
+  `cid` varchar(255) DEFAULT NULL,
+  `nloop` int(11) NOT NULL DEFAULT 1,
+  `publish_date` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
+  PRIMARY KEY (`pid`),
+  KEY `userID` (`userID`),
+  KEY `cid` (`cid`),
+  CONSTRAINT `pages_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `pages_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- Create bookmark table
@@ -41,31 +57,14 @@ CREATE TABLE `clients` (
   `cid` varchar(255) NOT NULL,
   `cname` text DEFAULT NULL,
   `ctype` text NOT NULL,
-  `uid` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
   `lastseen` text NOT NULL DEFAULT 0,
   `fs` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`cid`),
   UNIQUE KEY `cid` (`cid`),
-  KEY `uid` (`uid`),
+  KEY `uid` (`userID`),
   KEY `i3` (`cid`),
-  CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `users` (`userID`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- Create notifications table
-CREATE TABLE `notifications` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `message` text NOT NULL,
-  `ntime` varchar(255) NOT NULL DEFAULT '0',
-  `client` varchar(255) DEFAULT NULL,
-  `nloop` int(11) NOT NULL DEFAULT 1,
-  `publish_date` varchar(250) NOT NULL,
-  `userID` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `userID` (`userID`),
-  KEY `client` (`client`),
-  CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
-  CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`client`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
+  CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- Create reset table
@@ -90,7 +89,7 @@ CREATE TABLE `system` (
 
 -- CREATE tokens table
 CREATE TABLE IF NOT EXISTS `auth_token` (
-  `tID` int(11) NOT NULL,
+  `tID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(255) NOT NULL,
   `pHash` varchar(255) NOT NULL,
   `tHash` varchar(255) NOT NULL,
@@ -102,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `auth_token` (
 
 -- CREATE ctokens table
 CREATE TABLE `c_token` (
-  `tID` int(11) NOT NULL,
+  `tID` int(11) NOT NULL AUTO_INCREMENT,
   `cid` varchar(255) DEFAULT NULL,
   `tHash` varchar(255) NOT NULL,
   `exDate` varchar(255) NOT NULL,
