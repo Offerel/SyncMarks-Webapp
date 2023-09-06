@@ -153,8 +153,9 @@ if(isset($_POST['action'])) {
 			$res = db_query($query);
 			
 			foreach ($jtabs as $key => $tab) {
+				
 				$tID = unique_code(12);
-				$title = isset($tab['title']) ? $tab['title']:'unknown';
+				$title = $tab['title'];
 				$url = $tab['url'];
 				$query = "SELECT count(*) AS count FROM `bookmarks` WHERE `bmType` = 'tab' AND `bmURL` = '$url' AND `userID` = $user;";
 				$res = db_query($query)[0]['count'];
@@ -1228,7 +1229,6 @@ function addBookmark($bm) {
 	$nindex = db_query($query)[0]['nindex'];
 	
 	e_log(8,"Add bookmark '".$bm['title']."'");
-	$title = (isset($bm['title']) && $bm['title'] != '') ? $bm['title']:'Unknown title';
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".$bm['title']."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].");";
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
@@ -1636,8 +1636,7 @@ function makeHTMLExport($arr) {
 	
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
-			$title = (isset($bm['title']) && $bm['title'] != '') ? $bm['title']:'Unknown title';
-			$bookmark = "\r\n\t<DT><A HREF=\"".$bm['bmURL']."\" bid=\"".$bm['bmID']."\" ADD_DATE=\"".round($bm['bmAdded']/1000)."\">$title</A>%ID".$bm['bmParentID'];
+			$bookmark = "\r\n\t<DT><A HREF=\"".$bm['bmURL']."\" bid=\"".$bm['bmID']."\" ADD_DATE=\"".round($bm['bmAdded']/1000)."\">".$bm['bmTitle']."</A>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
 		
@@ -1680,7 +1679,7 @@ function makeHTMLTree($arr) {
 	
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
-			$title = (isset($bm['title']) && $bm['title'] != '') ? $bm['title']:'Unknown title';
+			$title = ($bm['bmTitle'] != "") ? $bm['bmTitle']:'unknown title';
 			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title."' data-url='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
@@ -1715,8 +1714,7 @@ function cid($id) {
 function importMarks($bookmarks, $uid) {
 	e_log(8,"Starting bookmark import");
 	foreach ($bookmarks as $bookmark) {
-		$title = (isset($bookmark['bmTitle']) && $bookmark['bmTitle'] != '') ? $bookmark['bmTitle']:'Unknown title';
-		$title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+		$title = htmlspecialchars($bookmark['bmTitle'], ENT_QUOTES, 'UTF-8');
 		$dateGroupModified = strlen($bookmark['dateGroupModified']) == 0 ? NULL : $bookmark['dateGroupModified'];
 		$url = strlen($bookmark['bmURL']) == 0 ? NULL : $bookmark['bmURL'];
 
@@ -1792,6 +1790,7 @@ function getBookmarks() {
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
 		$element['bmTitle'] = html_entity_decode($element['bmTitle'],ENT_QUOTES,'UTF-8');
+		$element['bmTitle'] = ($element['bmTitle'] == "") ? 'unknown title':$element['bmTitle'];
 	}
 	return $userMarks;
 }
