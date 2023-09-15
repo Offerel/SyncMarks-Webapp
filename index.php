@@ -234,7 +234,7 @@ if(isset($_POST['action'])) {
 			e_log(8,"Received new pushed URL: ".$url);
 			$target = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING) : NULL;
 			$res = newNotification($url, $target);
-			$message = ($res == 1) ? "URL successful pushed":"Failed to push URL";
+			$message = ($res != 0) ? "URL successful pushed":"Failed to push URL";
 			
 			$myObj = (object) [
 			    "state" => $res,
