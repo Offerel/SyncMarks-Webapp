@@ -1875,7 +1875,7 @@ function checkLogin() {
 
 	if(isset($cookieArr) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
 		e_log(8,"Cookie found. Try to login via authToken...");
-		$query = "SELECT t.*, u.userlastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = '".$cookieArr['user']."' ORDER BY t.exDate DESC;";
+		$query = "SELECT t.*, u.userLastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = '".$cookieArr['user']."' ORDER BY t.exDate DESC;";
 		$tkdata = db_query($query);
 
 		foreach($tkdata as $key => $token) {
@@ -2002,7 +2002,7 @@ function checkLogin() {
 			echo $htmlFooter;
 			exit;
 		} else {
-			$client = $cdata['client'];
+			$client = isset($cdata['client']) ? $cdata['client']:'';
 			e_log(8,"Try basic login $client");
 			$query = "SELECT * FROM `users` WHERE `userName`= '$user';";
 			$udata = db_query($query);
