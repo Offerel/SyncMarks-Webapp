@@ -7,6 +7,10 @@
  * @license GNU General Public License, version 3
  */
 document.addEventListener("DOMContentLoaded", function() {
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.register("./js/smsw.js");
+	}
+	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
 		e.preventDefault();
 		let data = "reset=request&u="+e.target.dataset.reset;

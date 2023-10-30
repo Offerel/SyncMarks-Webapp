@@ -29,6 +29,27 @@ set_error_handler("e_log");
 
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
+if(isset($_GET['title']) && isset($_GET['text'])) {
+	if(!isset($_SESSION['sud'])) {
+		$message = "UserID unknown, stop adding bookmark";
+		e_log(2, $message);
+		die();
+	} else {
+		e_log(8, 'Add bookmark');
+		//$url = validate_url($_GET['text']);
+		//$title = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
+
+		$bookmark['url'] = validate_url($_GET['text']);
+		$bookmark['folder'] = 'unfiled_____';
+		$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
+		$bookmark['id'] = unique_code(12);
+		$bookmark['type'] = 'bookmark';
+		$bookmark['added'] = round(microtime(true) * 1000);
+	}
+	
+	die();
+}
+
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div></body></html>";
 if(isset($_GET['reset'])){

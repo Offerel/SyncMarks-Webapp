@@ -1,6 +1,6 @@
 {
-   "short_name":"SyncMarks",
-   "name":"SyncMarks",
+	"short_name":"SyncMarks",
+	"name":"SyncMarks",
    "description":"Synchronize Bookmarks with your Browser",
    "start_url":".",
    "icons":[
@@ -20,8 +20,28 @@
          "sizes":"512x512"
       }
    ],
+   "edge_side_panel": {
+      "preferred_width": 420
+  },
+  "shortcuts": [
+   {
+     "name": "Add Bookmark",
+     "url": ".?addb=true",
+     "description": "Add a new bookmark",
+     "icons": [{"src": "./images/bookmarks192.png", "sizes": "96x96"}]
+   }
+],
    "background_color":"#0879D9",
    "display":"standalone",
    "orientation":"portrait-primary",
-   "theme_color":"#0879D9"
+   "theme_color":"#0879D9",
+   "share_target": {
+    "action": ".?getlink=true",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title":"title",
+      "text": "text"
+    }
+  }
 }
