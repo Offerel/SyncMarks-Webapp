@@ -798,7 +798,7 @@ span.error {
 	position: fixed;
 	right: 30px;
 	bottom: 30px;
-	z-index: 1;
+	z-index: 2;
 	box-shadow: 8px 8px 10px -5px rgba(0,0,0,0.5);
 }
 #footer::before {
@@ -808,14 +808,16 @@ span.error {
 	background: #05589D;
 }
 #menu {
-	position: absolute;
-	height: 51px;
-	background: #0879D9;
-	left: 0;
-	right: 0;
-	top: 0;
-	font-family: Roboto,Helvetica Neue,sans-serif,Segoe UI;
-	text-align: left;
+    position: absolute;
+    height: 51px;
+    background: #0879d9;
+    left: 0;
+    right: 0;
+    top: 0;
+    font-family: Roboto,Helvetica Neue,sans-serif,Segoe UI;
+    text-align: left;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
+    z-index: 2;
 }
 #mprofile {
 	color: #fff;
@@ -834,19 +836,20 @@ span.rdesc {
     display: block;
 }
 #bookmarks {
-	display: block;
-	position: absolute;
-	width: 100%;
-	overflow: auto;
-	background-color: #EEF3FA;
-	right: 0;
-	white-space: nowrap;
-	padding: 4px;
-	font-family: Segoe UI;
-	bottom: 0;
-	top: 51px;
-	font-size: 0.9em;
-	font-family: system-ui;
+    display: block;
+    position: absolute;
+    width: 100%;
+    overflow: auto;
+    background-color: #eef3fa;
+    right: 0;
+    white-space: nowrap;
+    padding: 4px;
+    font-family: Segoe UI;
+    bottom: 0;
+    top: 51px;
+    font-size: .9em;
+    font-family: system-ui;
+    z-index: 1;
 }
 #bookmarks ol.tree {
     padding: 0 0 0 20px;
