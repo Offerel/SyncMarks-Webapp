@@ -831,8 +831,6 @@ if(isset($_GET['link'])) {
 	$url = validate_url($_GET["link"]);
 	e_log(9,"URL add request: " . $url);
 	
-	//$title = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
-
 	$bookmark['url'] = $url;
 	$bookmark['folder'] = 'unfiled_____';
 	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
@@ -1568,7 +1566,7 @@ function htmlForms() {
 			</div>
 			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>Save</button></div>
 		</form>
-	</div>
+	</div><button id='install' hidden>Install</button>
 	<div id='footer'></div>";
 
 	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$logform.$mainmenu.$userform.$passwordform.$pbulletform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
