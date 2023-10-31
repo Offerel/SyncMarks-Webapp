@@ -44,5 +44,15 @@
       "text": "link",
       "url": "link"
     }
-  }
+  },
+  "web_share_target":{
+      "action": "?getlink=true",
+      "method": "GET",
+      "enctype": "application/x-www-form-urlencoded",
+      "params": {
+         "title":"title",
+         "text": "link",
+         "url": "link"
+      }
+   }
 }
