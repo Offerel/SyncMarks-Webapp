@@ -1,7 +1,13 @@
 const CACHE_NAME = "SyncMarksPWA-v1";
 const urlsToCache = [
 		'../js/bookmarks.js',
-		'../images/bookmarks.png'
+		'../js/bookmarks.min.js',
+		'../images/bookmarks.ico',
+		'../images/bookmarks.png',
+		'../images/bookmarks192.png',
+		'../images/bookmarks512.png',
+		'../css/bookmarks.css',
+		'../css/bookmarks.min.css',
 ];
 
 self.addEventListener('install', event => {
@@ -14,22 +20,9 @@ self.addEventListener('install', event => {
 	console.log("SyncMarks worker installed");
 });
 
-self.addEventListener('fetch', event => {
-	console.log(event.request.url);
-	console.log(event.request.method);
-	event.respondWith(
-		caches.match(event.request).then(function(response) {
-			if (response) {
-				alert(response);
-				return response;
-			}
-			return fetch(event.request);
-		})
-	);
-});
-
 self.addEventListener("activate", event => {
 	var cacheWhitelist = ['SyncMarksPWA-v1'];
+	clients.claim();
 	event.waitUntil(
 		caches.keys().then(function(cacheNames) {
 			return Promise.all(
@@ -44,6 +37,18 @@ self.addEventListener("activate", event => {
 	console.log("SyncMarks worker activated");
 });
 
+self.addEventListener('fetch', event => {
+	event.respondWith(
+		caches.match(event.request).then(function(response) {
+			if (response) {
+				return response;
+			}
+			return fetch(event.request);
+		})
+	);
+
+});
+
 self.addEventListener("push", event => {
 	let notification = event.data.json();
 	//Test JSON for push: {"title":"Test title","url":"https://developers.google.com/learn/pathways/pwa-push-notifications"}
@@ -53,9 +58,7 @@ self.addEventListener("push", event => {
 			icon: './images/bookmarks192.png',
 			requireInteraction: true
 		}),
-		
 	);
-	
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -65,7 +68,7 @@ self.addEventListener('notificationclick', (event) => {
 	}).then((clientList) => {
 		for (const client of clientList) {
 			if (client.url === event.notification.body && "focus" in client) return client.focus();
-    }
+    	}
 		if (clients.openWindow) return clients.openWindow(event.notification.body);
 	}))
 });

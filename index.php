@@ -1251,7 +1251,8 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
-		$message = (db_query($query)) ? "Client updated/registered.":"Failed to register client";
+		$message = (db_query($query)) ? "Failed to register client":"Client registered";
+		e_log(8, $message);
 	} elseif(!empty($clientData)) {
 		$message = "Client updated";
 	}
@@ -1566,7 +1567,7 @@ function htmlForms() {
 			</div>
 			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>Save</button></div>
 		</form>
-	</div><button id='install' hidden>Install</button>
+	</div>
 	<div id='footer'></div>";
 
 	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$logform.$mainmenu.$userform.$passwordform.$pbulletform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	

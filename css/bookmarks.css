@@ -1,20 +1,14 @@
 /* @media screen and (orientation:portrait) */
-#install {
-    position: absolute;
-    bottom: 75px;
-    z-index: 10;
-    display: block;
-}
 #mnubg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: .3;
-    z-index: 99;
-    background: #000;
-    left: 0;
-    top: 0;
-    visibility: hidden;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: .3;
+	z-index: 99;
+	background: #000;
+	left: 0;
+	top: 0;
+	visibility: hidden;
 }
 #loginform label {
 	display: block;
@@ -34,15 +28,15 @@
 	margin-right: 10px;
 }
 .nlink {
-    float: left;
-    font-size: 12px;
-    color: #b1b1b3;
-    display: block;
-    width: 100%;
-    font-style: italic;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
+	float: left;
+	font-size: 12px;
+	color: #b1b1b3;
+	display: block;
+	width: 100%;
+	font-style: italic;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 .appv {
 	position: absolute;
@@ -331,10 +325,10 @@
 	font-size: 1.2em;
 }
 .mbmdialog .dbutton {
-    margin-top: 5px;
-    text-align: right;
-    margin-right: -4px;
-    margin-bottom: -20px;
+	margin-top: 5px;
+	text-align: right;
+	margin-right: -4px;
+	margin-bottom: -20px;
 }
 .mbmdialog .dialogdescr {
 	opacity: 0.85;
@@ -342,19 +336,19 @@
 	margin: 5px 0;
 }
 .mbmdialog button {
-    background-color: rgb(33,150,243);
-    border: none;
-    text-transform: uppercase;
-    color: white;
-    font-weight: 501;
-    margin-inline-start: 5px;
-    padding: 3px 6px;
-    border-radius: 4px;
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-    font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
-    line-height: 20px;
-    outline: none;
-    cursor: pointer;
+	background-color: rgb(33,150,243);
+	border: none;
+	text-transform: uppercase;
+	color: white;
+	font-weight: 501;
+	margin-inline-start: 5px;
+	padding: 3px 6px;
+	border-radius: 4px;
+	box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+	font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
+	line-height: 20px;
+	outline: none;
+	cursor: pointer;
 }
 .mbmdialog button:hover {
 	background-color: #0879D9;
@@ -641,9 +635,9 @@ hr {
 	margin-left: 3px;
 }
 #mngsform h6 {
-    margin: 0;
-    font-size: 1em;
-    font-family: Roboto,Arial,Helvetica,sans-serif;
+	margin: 0;
+	font-size: 1em;
+	font-family: Roboto,Arial,Helvetica,sans-serif;
 }
 #mngsform table {
 	width: 100%;
@@ -664,19 +658,19 @@ hr {
 	width: calc(100% - 20px);
 }
 #mngsform button {
-    background-color: rgb(33,150,243);
-    border: none;
-    text-transform: uppercase;
-    color: white;
-    font-weight: 501;
-    margin-inline-start: 3px;
-    padding: 3px 6px;
-    border-radius: 4px;
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-    font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
-    line-height: 20px;
-    outline: none;
-    cursor: pointer;
+	background-color: rgb(33,150,243);
+	border: none;
+	text-transform: uppercase;
+	color: white;
+	font-weight: 501;
+	margin-inline-start: 3px;
+	padding: 3px 6px;
+	border-radius: 4px;
+	box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+	font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
+	line-height: 20px;
+	outline: none;
+	cursor: pointer;
 }
 #mngsform button:hover {
 	background-color: #0879d9;
@@ -734,27 +728,27 @@ input[type="submit"]:disabled {
 	bottom: 0;
 }
 #close {
-    position: absolute;
-    right: 0;
-    padding: 3px 5px;
-    background: #e1e1e1;
-    top: 0px;
-    z-index: 1;
-    visibility: hidden;
-    width: calc(100% - 14px);
-    text-align: right;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #ccc;
+	position: absolute;
+	right: 0;
+	padding: 3px 5px;
+	background: #e1e1e1;
+	top: 0px;
+	z-index: 1;
+	visibility: hidden;
+	width: calc(100% - 14px);
+	text-align: right;
+	padding-bottom: 5px;
+	border-bottom: 1px solid #ccc;
 }
 #lfiletext {
-    top: 36px;
-    display: block;
-    position: absolute;
-    width: calc(100% - 10px);
-    overflow: auto;
-    bottom: 0;
-    padding-left: 10px;
-    outline: 0;
+	top: 36px;
+	display: block;
+	position: absolute;
+	width: calc(100% - 10px);
+	overflow: auto;
+	bottom: 0;
+	padding-left: 10px;
+	outline: 0;
 }
 #lfiletext span {
 	display: block;
@@ -775,22 +769,22 @@ span.error {
 	background-color: bisque;
 }
 #close button {
-    border-radius: 4px;
-    border: none;
-    background-color: rgb(33,150,243);
-    color: white;
-    text-transform: uppercase;
-    font-weight: 501;
-    margin-inline-start: 3px;
-    padding: 3px 6px;
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-    font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
-    line-height: 20px;
-    outline: none;
-    cursor: pointer;
+	border-radius: 4px;
+	border: none;
+	background-color: rgb(33,150,243);
+	color: white;
+	text-transform: uppercase;
+	font-weight: 501;
+	margin-inline-start: 3px;
+	padding: 3px 6px;
+	box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+	font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
+	line-height: 20px;
+	outline: none;
+	cursor: pointer;
 }
 #close button:hover {
-    background-color: #0879d9;
+	background-color: #0879d9;
 }
 #footer {
 	height: 70px;
@@ -814,16 +808,16 @@ span.error {
 	background: #05589D;
 }
 #menu {
-    position: absolute;
-    height: 51px;
-    background: #0879d9;
-    left: 0;
-    right: 0;
-    top: 0;
-    font-family: Roboto,Helvetica Neue,sans-serif,Segoe UI;
-    text-align: left;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
-    z-index: 2;
+	position: absolute;
+	height: 51px;
+	background: #0879d9;
+	left: 0;
+	right: 0;
+	top: 0;
+	font-family: Roboto,Helvetica Neue,sans-serif,Segoe UI;
+	text-align: left;
+	box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
+	z-index: 2;
 }
 #mprofile {
 	color: #fff;
@@ -836,41 +830,41 @@ span.error {
 	font-weight: bolder;
 }
 span.rdesc {
-    font-size: 0.75em;
-    color: darkgrey;
-    width: 100%;
-    display: block;
+	font-size: 0.75em;
+	color: darkgrey;
+	width: 100%;
+	display: block;
 }
 #bookmarks {
-    display: block;
-    position: absolute;
-    width: 100%;
-    overflow: auto;
-    background-color: #eef3fa;
-    right: 0;
-    white-space: nowrap;
-    padding: 4px;
-    font-family: Segoe UI;
-    bottom: 0;
-    top: 51px;
-    font-size: .9em;
-    font-family: system-ui;
-    z-index: 1;
+	display: block;
+	position: absolute;
+	width: 100%;
+	overflow: auto;
+	background-color: #eef3fa;
+	right: 0;
+	white-space: nowrap;
+	padding: 4px;
+	font-family: Segoe UI;
+	bottom: 0;
+	top: 51px;
+	font-size: .9em;
+	font-family: system-ui;
+	z-index: 1;
 }
 #bookmarks ol.tree {
-    padding: 0 0 0 20px;
+	padding: 0 0 0 20px;
 	width: 90%
 }
 #bookmarks > li.file {
-    margin-left: 29px !important;
+	margin-left: 29px !important;
 }
 #bookmarks li {
-    position: relative;
-    margin-left: 5px;
-    list-style: none;
+	position: relative;
+	margin-left: 5px;
+	list-style: none;
 }
 #bookmarks li.file {
-    margin-left: -5px !important;
+	margin-left: -5px !important;
 }
 #bookmarks li.file span {
 	background-size: 25px;
@@ -895,25 +889,25 @@ span.rdesc {
 	max-width: fit-content;
 }
 #bookmarks li input {
-    position: absolute;
-    left: 0;
-    margin-left: 0;
-    opacity: 0;
-    z-index: 2;
-    cursor: pointer;
-    height: 1em;
-    width: 1em;
-    top: 0;
+	position: absolute;
+	left: 0;
+	margin-left: 0;
+	opacity: 0;
+	z-index: 2;
+	cursor: pointer;
+	height: 1em;
+	width: 1em;
+	top: 0;
 }
 #bookmarks li input + ol {
-    background: transparent;
-    margin: -.938em 0 0 -44px;
-    height: 1em;
-    text-overflow: ellipsis;
+	background: transparent;
+	margin: -.938em 0 0 -44px;
+	height: 1em;
+	text-overflow: ellipsis;
 }
 #bookmarks li input + ol > li {
-    display: none;
-    margin-left: -14px !important;
+	display: none;
+	margin-left: -14px !important;
 	padding-left: 1px;
 }
 #bookmarks li label {
@@ -953,11 +947,11 @@ span.rdesc {
 	height: auto;
 }
 #bookmarks li input:checked + ol > li {
-    display: block;
-    margin: 0 0 .025em;
+	display: block;
+	margin: 0 0 .025em;
 }
 #bookmarks li input:checked + ol > li:last-child {
-    margin: 0 0 .063em;
+	margin: 0 0 .063em;
 }
 .menu {
 	position: absolute;
@@ -1348,22 +1342,22 @@ input:checked + .slider:before {
 	z-index: 100;
 }
 @-webkit-keyframes spin {
-    from {
-        -webkit-transform: rotate(0deg);
-        transform: rotate(0deg);
-    } to {
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
+	from {
+		-webkit-transform: rotate(0deg);
+		transform: rotate(0deg);
+	} to {
+		-webkit-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
 }
 @keyframes spin {
-    from {
-        -webkit-transform: rotate(0deg);
-        transform: rotate(0deg);
-    } to {
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
+	from {
+		-webkit-transform: rotate(0deg);
+		transform: rotate(0deg);
+	} to {
+		-webkit-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
 }
 @media screen and (min-device-width: 1024px) {
 	#meheader {
