@@ -8,7 +8,31 @@
  */
 document.addEventListener("DOMContentLoaded", function() {
 	if ('serviceWorker' in navigator) {
-		navigator.serviceWorker.register("./js/smsw.js");
+		navigator.serviceWorker.register("./js/smsw.js").then((registration) => {
+			console.log('SyncMarks worker Registered')
+			return registration.pushManager.getSubscription().then(async (subscription) => {
+				if (subscription) {
+					return subscription;
+				} else {
+					const response = await fetch(".?getVapidPublicKey");
+					const vapidPublicKey = await response.text();
+					const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+					registration.pushManager.subscribe({
+						userVisibleOnly: true,
+						applicationServerKey: convertedVapidKey,
+					});
+				}
+			});
+		}).then((subscription) => {
+			fetch("./register", {
+				method: "post",
+				headers: {
+					"Content-type": "application/json",
+				},
+				body: JSON.stringify({ subscription }),
+			  });
+		});
 	}
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){

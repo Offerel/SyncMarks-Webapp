@@ -1,6 +1,6 @@
 {
 	"short_name":"SyncMarks",
-	"name":"SyncMarks",
+	"name":"SyncMarks - WebApp",
    "description":"Synchronize Bookmarks with your Browser",
    "start_url":".",
    "icons":[
@@ -36,12 +36,13 @@
    "orientation":"portrait-primary",
    "theme_color":"#0879D9",
    "share_target": {
-    "action": ".?getlink=true",
+    "action": "?getlink=true",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {
       "title":"title",
-      "text": "text"
+      "text": "link",
+      "url": "link"
     }
   }
 }

@@ -29,27 +29,6 @@ set_error_handler("e_log");
 
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
-if(isset($_GET['title']) && isset($_GET['text'])) {
-	if(!isset($_SESSION['sud'])) {
-		$message = "UserID unknown, stop adding bookmark";
-		e_log(2, $message);
-		die();
-	} else {
-		e_log(8, 'Add bookmark');
-		//$url = validate_url($_GET['text']);
-		//$title = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
-
-		$bookmark['url'] = validate_url($_GET['text']);
-		$bookmark['folder'] = 'unfiled_____';
-		$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
-		$bookmark['id'] = unique_code(12);
-		$bookmark['type'] = 'bookmark';
-		$bookmark['added'] = round(microtime(true) * 1000);
-	}
-	
-	die();
-}
-
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div></body></html>";
 if(isset($_GET['reset'])){
@@ -852,18 +831,19 @@ if(isset($_GET['link'])) {
 	$url = validate_url($_GET["link"]);
 	e_log(9,"URL add request: " . $url);
 	
-	$title = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
+	//$title = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);
 
 	$bookmark['url'] = $url;
 	$bookmark['folder'] = 'unfiled_____';
-	$bookmark['title'] = $title;
+	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
 	$bookmark['id'] = unique_code(12);
 	$bookmark['type'] = 'bookmark';
 	$bookmark['added'] = round(microtime(true) * 1000);
 
 	$uas = array(
 		"HttpShortcuts",
-		"Tasker"
+		"Tasker",
+		"Android"
 	);
 
 	$so = false;
@@ -883,15 +863,12 @@ if(isset($_GET['link'])) {
 	
 	$res = addBookmark($bookmark);
 	if($res == 0) {
-		if ($so) {
-			echo("URL added.");
-		} else {
-			echo "<script>window.onload = function() { window.close();}</script>";
-		}
+		$message = ($so) ? "URL added.":"<script>window.onload = function() { window.close();}</script>";
 	} else {
-		echo $res;
+		$message = $res;
 	}
-	die();
+	e_log(8, $message);
+	die($message);
 }
 
 if(isset($_GET['push'])) {
