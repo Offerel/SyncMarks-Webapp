@@ -250,6 +250,11 @@ if(isset($_POST['action'])) {
 			$clientData = db_query($query)[0];
 			if(count($clientData) > 0) {
 				e_log(8,"Send client info to '$client'");
+				if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+					$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cinfo_".time().".json":"cinfo_".time().".json";
+					e_log(8,"Write client info to $filename");
+					file_put_contents($filename,json_encode($clientData),true);
+				}
 			} else {
 				e_log(2,"Client not found.");
 				$clientData['lastseen'] = 0;
