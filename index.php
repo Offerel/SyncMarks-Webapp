@@ -497,10 +497,10 @@ if(isset($_POST['action'])) {
 				$tResponse['token'] = $token;
 
 				header("Content-Type: application/json");
-				e_log(8, "Send new token to client $client");
+				e_log(8, "Send new token to $client");
 				echo(json_encode($tResponse));
 			} else {
-				e_log(8, "Send response to client $client");
+				e_log(8, "Send response to $client");
 				header("Content-Type: application/json");
 				echo(json_encode($tResponse));
 			}
