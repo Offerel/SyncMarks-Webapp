@@ -7,6 +7,7 @@
  * @license GNU General Public License, version 3
  */
 document.addEventListener("DOMContentLoaded", function() {
+	/*
 	if ('serviceWorker' in navigator) {
 		navigator.serviceWorker.register("./js/smsw.js").then((registration) => {
 			console.log('SyncMarks worker Registered')
@@ -34,6 +35,19 @@ document.addEventListener("DOMContentLoaded", function() {
 			  });
 		});
 	}
+	*/
+	if ("serviceWorker" in navigator) {
+		navigator.serviceWorker.register("./js/smsw.js").then(
+		  registration => {
+			console.log("SyncMarks worker registered:", registration);
+		  },
+		  error => {
+			console.error(`SyncMarks worker registration failed: ${error}`);
+		  },
+		);
+	  } else {
+		console.error("Service workers are not supported.");
+	  }
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
 		e.preventDefault();

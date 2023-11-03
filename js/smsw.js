@@ -1,4 +1,4 @@
-const CACHE_NAME = "SyncMarksPWA-v1";
+const CACHE_NAME = "SyncMarksPWA-v2";
 const urlsToCache = [
 		'../js/bookmarks.js',
 		'../js/bookmarks.min.js',
@@ -38,6 +38,7 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener('fetch', event => {
+	alert('fetch');
 	event.respondWith(
 		caches.match(event.request).then(function(response) {
 			if (response) {
