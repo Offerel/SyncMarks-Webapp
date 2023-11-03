@@ -1,26 +1,32 @@
-const CACHE_NAME = "SyncMarksPWA-v2";
+const CACHE_NAME = 'SyncMarksPWA-v1';
 const urlsToCache = [
-		'../js/bookmarks.js',
-		'../js/bookmarks.min.js',
-		'../images/bookmarks.ico',
-		'../images/bookmarks.png',
-		'../images/bookmarks192.png',
-		'../images/bookmarks512.png',
-		'../css/bookmarks.css',
-		'../css/bookmarks.min.css',
+		'js/bookmarks.js',
+		'js/bookmarks.min.js',
+		'smsw.js',
+		'images/bookmarks.ico',
+		'images/bookmarks.png',
+		'images/bookmarks48.png',
+		'images/bookmarks72.png',
+		'images/bookmarks96.png',
+		'images/bookmarks144.png',
+		'images/bookmarks192.png',
+		'images/bookmarks512.png',
+		'css/bookmarks.css',
+		'css/bookmarks.min.css',
 ];
 
 self.addEventListener('install', event => {
+	skipWaiting();
 	event.waitUntil(
 		caches.open(CACHE_NAME).then(function(cache) {
 			console.log('Opened cache');
 			return cache.addAll(urlsToCache);
 		})
 	);
-	console.log("SyncMarks worker installed");
+	console.log('SyncMarks worker installed');
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener('activate', event => {
 	var cacheWhitelist = ['SyncMarksPWA-v1'];
 	clients.claim();
 	event.waitUntil(
@@ -34,11 +40,13 @@ self.addEventListener("activate", event => {
 			);
 		})
 	);
-	console.log("SyncMarks worker activated");
+	console.log('SyncMarks worker activated');
 });
 
 self.addEventListener('fetch', event => {
-	alert('fetch');
+	console.log(event.request.method);
+	console.log(event.request.url);
+
 	event.respondWith(
 		caches.match(event.request).then(function(response) {
 			if (response) {
@@ -47,10 +55,11 @@ self.addEventListener('fetch', event => {
 			return fetch(event.request);
 		})
 	);
-
+	
+	//event.respondWith(Response.redirect('./'));
 });
 
-self.addEventListener("push", event => {
+self.addEventListener('push', event => {
 	let notification = event.data.json();
 	//Test JSON for push: {"title":"Test title","url":"https://developers.google.com/learn/pathways/pwa-push-notifications"}
 	event.waitUntil(

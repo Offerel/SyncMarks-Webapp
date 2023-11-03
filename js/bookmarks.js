@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */
-document.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("DOMContentLoaded", function() {
 	/*
 	if ('serviceWorker' in navigator) {
 		navigator.serviceWorker.register("./js/smsw.js").then((registration) => {
@@ -36,17 +36,23 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	}
 	*/
+	const parsedUrl = new URL(window.location);
+	console.log('Title shared: ' + parsedUrl.searchParams.get('title'));
+	console.log('Text shared: ' + parsedUrl.searchParams.get('text'));
+	console.log('URL shared: ' + parsedUrl.searchParams.get('url'));
+
 	if ("serviceWorker" in navigator) {
-		navigator.serviceWorker.register("./js/smsw.js").then(
+		navigator.serviceWorker.register("smsw.js").then(
+		//navigator.serviceWorker.register("./js/smsw.js").then(
 		  registration => {
-			console.log("SyncMarks worker registered:", registration);
+			console.log("SyncMarks worker registered", registration);
 		  },
 		  error => {
 			console.error(`SyncMarks worker registration failed: ${error}`);
 		  },
 		);
 	  } else {
-		console.error("Service workers are not supported.");
+		console.error("Service workers are not supported");
 	  }
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){

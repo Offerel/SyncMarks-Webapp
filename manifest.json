@@ -1,66 +1,75 @@
 {
-	"short_name":"Syncmarks",
-	"name":"SyncMarks - WebApp",
-	"description":"Synchronize Bookmarks with your Browser",
+	"short_name": "SyncMarks",
+	"name": "SyncMarks - WebApp",
+	"description": "Synchronize Bookmarks with your Browser",
 	"id": "SyncMarks - WebApp",
 	"lang": "en",
-	"categories": [
-		"productivity",
-		"utilities"
-	],
-	"launch_handler": {
-		"client_mode": ["navigate-existing", "auto"]
-  	},
- 	"handle_links": "auto",
-	"start_url":".",
-	"icons":[
-		{
-			"src":"images/bookmarks192.png",
-			"type":"image/png",
-			"sizes":"192x192"
-		},
-		{
-			"src":"images/bookmarks.png",
-			"type":"image/png",
-			"sizes":"256x256"
-		},
-		{
-			"src":"images/bookmarks512.png",
-			"type":"image/png",
-			"sizes":"512x512"
-		}
+	"background_color": "#0879D9",
+	"theme_color": "#0879D9",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"start_url": "./",
+	"icons": [
+	  {
+		"src": "images/bookmarks48.png",
+		"type": "image/png",
+		"sizes": "48x48"
+	  },
+	  {
+		"src": "images/bookmarks72.png",
+		"type": "image/png",
+		"sizes": "72x72"
+	  },
+	  {
+		"src": "images/bookmarks96.png",
+		"type": "image/png",
+		"sizes": "96x96"
+	  },
+	  {
+		"src": "images/bookmarks144.png",
+		"type": "image/png",
+		"sizes": "144x144"
+	  },
+	  {
+		"src": "images/bookmarks192.png",
+		"type": "image/png",
+		"sizes": "192x192"
+	  },
+	  {
+		"src": "images/bookmarks.png",
+		"type": "image/png",
+		"sizes": "256x256"
+	  },
+	  {
+		"src": "images/bookmarks512.png",
+		"type": "image/png",
+		"sizes": "512x512"
+	  }
 	],
 	"edge_side_panel": {
-		"preferred_width": 420
+	  "preferred_width": 420
 	},
 	"shortcuts": [
-		{
-			"name": "Add Bookmark",
-			"url": ".?addb=true",
-			"description": "Add a new bookmark",
-			"icons": [{"src": "./images/bookmarks192.png", "sizes": "96x96"}]
-		}
+	  {
+		"name": "Add Bookmark",
+		"url": ".?addbm",
+		"description": "Add a new bookmark",
+		"icons": [
+		  {
+			"src": "./images/bookmarks96.png",
+			"sizes": "96x96"
+		  }
+		]
+	  }
 	],
-	"background_color":"#0879D9",
-	"display":"standalone",
-	"orientation":"portrait-primary",
-	"theme_color":"#0879D9",
 	"share_target": {
-		"action": ".?getlink=true",
-		"params": {
-			"title":"title",
-			"text": "link",
-			"url": "link"
-		}
-	},
-	"web_share_target":{
-		"action": ".?getlink=true",
-		"method": "GET",
-		"enctype": "application/x-www-form-urlencoded",
-		"params": {
-			"title":"title",
-			"text": "link",
-			"url": "link"
-		}
+	  "action": "sharelink",
+	  "method": "POST",
+	  "enctype": "application/x-www-form-urlencoded",
+	  "params": {
+		"title": "title",
+		"text": "text",
+		"url": "url"
+	  }
 	}
-}
+  }
