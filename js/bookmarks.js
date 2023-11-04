@@ -6,54 +6,23 @@
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */
-window.addEventListener("DOMContentLoaded", function() {
-	/*
-	if ('serviceWorker' in navigator) {
-		navigator.serviceWorker.register("./js/smsw.js").then((registration) => {
-			console.log('SyncMarks worker Registered')
-			return registration.pushManager.getSubscription().then(async (subscription) => {
-				if (subscription) {
-					return subscription;
-				} else {
-					const response = await fetch(".?getVapidPublicKey");
-					const vapidPublicKey = await response.text();
-					const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-					registration.pushManager.subscribe({
-						userVisibleOnly: true,
-						applicationServerKey: convertedVapidKey,
-					});
-				}
-			});
-		}).then((subscription) => {
-			fetch("./register", {
-				method: "post",
-				headers: {
-					"Content-type": "application/json",
-				},
-				body: JSON.stringify({ subscription }),
-			  });
-		});
-	}
-	*/
-	const parsedUrl = new URL(window.location);
-	console.log('Title shared: ' + parsedUrl.searchParams.get('title'));
-	console.log('Text shared: ' + parsedUrl.searchParams.get('text'));
-	console.log('URL shared: ' + parsedUrl.searchParams.get('url'));
+document.addEventListener("DOMContentLoaded", function() {
+	navigator.serviceWorker.addEventListener('message', event => { 
+		if (event.data && event.data.type === 'openDialog') { 
+			document.getElementById('bmarkadd').style.display = 'block';
+			document.getElementById('url').value = event.data.data;
+		} 
+	})
 
 	if ("serviceWorker" in navigator) {
-		navigator.serviceWorker.register("smsw.js").then(
-		//navigator.serviceWorker.register("./js/smsw.js").then(
-		  registration => {
-			console.log("SyncMarks worker registered", registration);
-		  },
-		  error => {
+		navigator.serviceWorker.register("smsw.js").then(registration => {
+			console.info("SyncMarks worker registered", registration);
+		}, error => {
 			console.error(`SyncMarks worker registration failed: ${error}`);
-		  },
-		);
-	  } else {
+		});
+	} else {
 		console.error("Service workers are not supported");
-	  }
+	}
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
 		e.preventDefault();

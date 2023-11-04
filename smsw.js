@@ -16,14 +16,11 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-	skipWaiting();
 	event.waitUntil(
 		caches.open(CACHE_NAME).then(function(cache) {
-			console.log('Opened cache');
 			return cache.addAll(urlsToCache);
 		})
 	);
-	console.log('SyncMarks worker installed');
 });
 
 self.addEventListener('activate', event => {
@@ -40,12 +37,23 @@ self.addEventListener('activate', event => {
 			);
 		})
 	);
-	console.log('SyncMarks worker activated');
 });
 
-self.addEventListener('fetch', event => {
-	console.log(event.request.method);
-	console.log(event.request.url);
+self.addEventListener('fetch', async event => {
+	if(event.request.method == 'POST') {
+		let requestClone = event.request.clone();
+		const params = await requestClone.text().catch((err) => err);
+		if(params.includes('title')) {		
+			self.clients.matchAll().then((clients) => { 
+                clients.forEach((client) => { 
+                    client.postMessage({  
+                        type: 'openDialog',  
+                        data: params 
+                    }) 
+                }) 
+            })
+		}
+	}
 
 	event.respondWith(
 		caches.match(event.request).then(function(response) {
@@ -55,13 +63,11 @@ self.addEventListener('fetch', event => {
 			return fetch(event.request);
 		})
 	);
-	
-	//event.respondWith(Response.redirect('./'));
 });
 
 self.addEventListener('push', event => {
 	let notification = event.data.json();
-	//Test JSON for push: {"title":"Test title","url":"https://developers.google.com/learn/pathways/pwa-push-notifications"}
+	//Test JSON for push: {"title":"Test title","url":"https://domain.com/path/document"}
 	event.waitUntil(
 		self.registration.showNotification(notification.title, {
 			body: notification.url,
