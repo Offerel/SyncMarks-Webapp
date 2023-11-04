@@ -15,6 +15,11 @@ const urlsToCache = [
 		'css/bookmarks.min.css',
 ];
 
+const dbName = "bookmarks";
+const version = 1;
+const storeName = "sharedlinks";
+let db;
+
 self.addEventListener('install', event => {
 	event.waitUntil(
 		caches.open(CACHE_NAME).then(function(cache) {
@@ -43,7 +48,10 @@ self.addEventListener('fetch', async event => {
 	if(event.request.method == 'POST') {
 		let requestClone = event.request.clone();
 		const params = await requestClone.text().catch((err) => err);
-		if(params.includes('title')) {		
+		if(params.includes('slink')) {
+			event.respondWith(fetch(event.request));
+			return;
+			/*
 			self.clients.matchAll().then((clients) => { 
                 clients.forEach((client) => { 
                     client.postMessage({  
@@ -52,15 +60,17 @@ self.addEventListener('fetch', async event => {
                     }) 
                 }) 
             })
+			*/
 		}
 	}
 
+	const formDataPromise = event.request.formData();
 	event.respondWith(
-		caches.match(event.request).then(function(response) {
-			if (response) {
-				return response;
-			}
-			return fetch(event.request);
+		formDataPromise.then((formData) => {
+			const link = formData.get("slink") || "";
+			const title = formData.get("title") || "";
+			addToStore(title, link);
+			return new Response(`Bookmark saved: ${link}`);
 		})
 	);
 });
@@ -88,3 +98,29 @@ self.addEventListener('notificationclick', (event) => {
 		if (clients.openWindow) return clients.openWindow(event.notification.body);
 	}))
 });
+
+function addToStore(title, url) {
+	let openDBRequest = indexedDB.open(dbName);
+
+	openDBRequest.onsuccess = (event) => {
+		const transaction = db.transaction(storeName, "readwrite");
+		const store = transaction.objectStore(storeName);
+		const request = store.put({ title, url });
+
+		request.onsuccess = function () {
+			console.log("added to the store", { title: url }, request.result);
+		};
+
+		request.onerror = function () {
+			console.log("Error did not save to store", request.error);
+		};
+
+		transaction.onerror = function (event) {
+			console.log("trans failed", event);
+		};
+
+		transaction.oncomplete = function (event) {
+			console.log("trans completed", event);
+		};
+	}
+}

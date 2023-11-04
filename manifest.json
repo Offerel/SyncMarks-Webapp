@@ -3,6 +3,15 @@
 	"name": "SyncMarks - WebApp",
 	"description": "Synchronize Bookmarks with your Browser",
 	"id": "SyncMarks-WebApp",
+	"developer": {
+		"name": "Offerel",
+		"url": "https://codeberg.org/Offerel/SyncMarks-Webapp"
+	},
+	"permissions": {
+		"desktop-notification": {
+			"description": "Needed for creating system notifications."
+		}
+	},
 	"lang": "en",
 	"background_color": "#0879D9",
 	"theme_color": "#0879D9",
@@ -64,12 +73,12 @@
 	],
 	"share_target": {
 	  "action": "./",
-	  "method": "GET",
-	  "enctype": "application/x-www-form-urlencoded",
+	  "method": "POST",
+	  "enctype": "multipart/form-data",
 	  "params": {
 		"title": "title",
-		"text": "link",
-		"url": "link"
+		"text": "slink",
+		"url": "slink"
 	  }
 	}
   }

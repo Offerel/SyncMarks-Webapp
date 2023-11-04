@@ -428,7 +428,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 window.addEventListener("keydown",function (e) {
 	if ((e.ctrlKey && e.code === 'KeyF')) { 
-        e.preventDefault();
+		e.preventDefault();
 		document.getElementById('bmsearch').focus();
 		document.querySelector('#menu button').innerHTML = '\u00D7';
 		document.querySelector('#menu input').value = '';
@@ -437,7 +437,7 @@ window.addEventListener("keydown",function (e) {
 		document.querySelector('#menu input').classList.add('asform');
 		document.getElementById('mprofile').style.display = 'none';
 		document.querySelector('#menu input').focus();
-    }
+	}
 
 	rmBm(e);
 })
@@ -1074,7 +1074,7 @@ function showMenu(x, y){
 	var menu = document.querySelector('.menu');
 	var minbot = window.innerHeight - 120;
 	if(y >= minbot) y = minbot;
-    menu.style.left = x + 'px';
+	menu.style.left = x + 'px';
 	menu.style.top = y + 'px';
 	menu.style.visibility = "visible";
 	addBD();
@@ -1099,8 +1099,8 @@ function hideMenu(){
 }
 
 function onContextMenu(e){
-    e.preventDefault();
-    e.stopPropagation();
+	e.preventDefault();
+	e.stopPropagation();
 	e.cancelBubble = true;
 	e.returnValue = false;
 	hideMenu();
@@ -1182,7 +1182,7 @@ function onMenuClick(e){
 			break;
 	}
 
-    document.removeEventListener('click', onMenuClick);
+	document.removeEventListener('click', onMenuClick);
 }
 
 function openMessages(element) {
