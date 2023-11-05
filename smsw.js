@@ -1,8 +1,7 @@
-const CACHE_NAME = 'SyncMarksPWA-v1';
-const urlsToCache = [
+const cacheName = 'SyncMarksPWA-v1';
+const cacheResources = [
 		'js/bookmarks.js',
 		'js/bookmarks.min.js',
-		'smsw.js',
 		'images/bookmarks.ico',
 		'images/bookmarks.png',
 		'images/bookmarks48.png',
@@ -21,9 +20,45 @@ const storeName = "sharedlinks";
 let db;
 
 self.addEventListener('install', event => {
+	console.log('Service Worker install event');
 	event.waitUntil(
-		caches.open(CACHE_NAME).then(function(cache) {
-			return cache.addAll(urlsToCache);
+		caches.open(cacheName).then(cache => {
+			console.log("Service Worker: Caching files");
+			return cache.addAll(cacheResources);
+		})
+		.catch(err => console.error(err))
+		.then(event => {
+			let url = self.location.origin + self.location.pathname.slice(0, self.location.pathname.lastIndexOf('/')) + '/';
+
+			let details = {
+				'action': 'bexport',
+				'data': 'json',
+				'client': 'PWA'
+			};
+
+			let formBody = [];
+			for (let property in details) {
+				let encodedKey = encodeURIComponent(property);
+				let encodedValue = encodeURIComponent(details[property]);
+				formBody.push(encodedKey + "=" + encodedValue);
+			}
+			formBody = formBody.join("&");
+
+			fetch(url, {
+				method: "POST",
+				mode: "cors",
+				cache: "no-cache",
+				credentials: "same-origin",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+				},
+				redirect: "follow",
+				referrerPolicy: "no-referrer",
+				body: formBody,
+				json: true
+			}).then(response => response.json()).then(responseData => {
+				console.log(responseData);
+			});
 		})
 	);
 });
@@ -45,34 +80,29 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', async event => {
+	console.log('Service Worker: fetching');
+	event.respondWith(caches.match(event.request).then(cachedResponse => {
+		return cachedResponse || fetch(event.request)
+	}))
+	/*
 	if(event.request.method == 'POST') {
 		let requestClone = event.request.clone();
 		const params = await requestClone.text().catch((err) => err);
 		if(params.includes('slink')) {
 			event.respondWith(fetch(event.request));
 			return;
-			/*
-			self.clients.matchAll().then((clients) => { 
-                clients.forEach((client) => { 
-                    client.postMessage({  
-                        type: 'openDialog',  
-                        data: params 
-                    }) 
-                }) 
-            })
-			*/
 		}
-	}
 
-	const formDataPromise = event.request.formData();
-	event.respondWith(
-		formDataPromise.then((formData) => {
-			const link = formData.get("slink") || "";
-			const title = formData.get("title") || "";
-			addToStore(title, link);
-			return new Response(`Bookmark saved: ${link}`);
-		})
-	);
+		const formDataPromise = event.request.formData();
+		event.respondWith(
+			formDataPromise.then((formData) => {
+				const link = formData.get("slink") || "";
+				const title = formData.get("title") || "";
+				addToStore(title, link);
+			})
+		);
+	}
+	*/
 });
 
 self.addEventListener('push', event => {
@@ -124,3 +154,11 @@ function addToStore(title, url) {
 		};
 	}
 }
+
+const cacheFirst = async (request) => {
+	const responseFromCache = await cache.match(request);
+	if (responseFromCache) {
+		return responseFromCache;
+	}
+	return fetch(request);
+  };

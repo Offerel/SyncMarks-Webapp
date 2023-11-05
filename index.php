@@ -226,7 +226,12 @@ if(isset($_POST['action'])) {
 				e_log(8,"No pushed sites found");
 				$myObj = new stdClass();
 			}
-			
+
+			if(isset($_COOKIE['syncmarks'])) 
+				e_log(8,'Cookie is available');
+			else
+				e_log(8,'Cookie is not set');
+
 			sendJSONResponse($myObj);
 			break;
 		case "getpurl":
@@ -1365,8 +1370,11 @@ function delUsermarks($uid) {
 function htmlHeader() {
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
-	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js?h=$hjs'></script>":"<script src='js/bookmarks.js?h=$hjs'></script>";
-	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css?h=$hcs'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css?h=$hcs'>";
+	//$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js?h=$hjs'></script>":"<script src='js/bookmarks.js?h=$hjs'></script>";
+	//$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css?h=$hcs'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css?h=$hcs'>";
+	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
+	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
+	
 	$htmlHeader = "<!DOCTYPE html>
 		<html lang='en'>
 			<head>
@@ -1844,16 +1852,23 @@ function clearAuthCookie() {
 			'path' => null,
 			'domain' => null,
 			'secure' => true,
-			'httponly' => true,
+			'httponly' => false,
 			'samesite' => 'Strict'
 		);
 		
 		setcookie("syncmarks", "", $cOptions);
+		e_log(8,"Cookie cleared");
 	}
 }
 
 function checkLogin() {
 	e_log(8,"Check login...");
+
+	if(isset($_COOKIE['syncmarks'])) 
+		e_log(8,'Cookie is available');
+	else
+		e_log(8,'Cookie is not set');
+
 	global $htmlFooter;
 	$headers = null;
 	if (isset($_SERVER['Authorization'])) {
@@ -1901,14 +1916,15 @@ function checkLogin() {
 				'path' => null,
 				'domain' => null,
 				'secure' => true,
-				'httponly' => true,
-				'samesite' => 'Strict'
+				'httponly' => false,
+				'samesite' => 'Strict',
+				'max-age' => $expireTime
 			);
 			
 			$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
 
 			setcookie('syncmarks', $cookieData, $cOptions);
-			
+			e_log(8,"New cookie refreshed");
 			$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
 			
 			$query = "UPDATE `auth_token` SET `tHash` = '$rtknh', `exDate` = '$expireTime' WHERE `tID` = $tVerified;";
@@ -2026,15 +2042,16 @@ function checkLogin() {
 							'path' => null,
 							'domain' => null,
 							'secure' => true,
-							'httponly' => true,
-							'samesite' => 'Strict'
+							'httponly' => false,
+							'samesite' => 'Strict',
+							'max-age' => $expireTime
 						);
 						
 						$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
 						$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $udata[0]['userName'], 'token' => $dtoken)), 1);
 
 						setcookie('syncmarks', $cookieData, $cOptions);
-						
+						e_log(8,"Cookie saved. Valid until $expireTime");
 						$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
 						
 						$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES ('".$udata[0]['userName']."', '$dtoken', '$rtknh', '$expireTime');";

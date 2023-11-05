@@ -15,13 +15,18 @@ document.addEventListener("DOMContentLoaded", function() {
 	})
 
 	if ("serviceWorker" in navigator) {
-		navigator.serviceWorker.register("smsw.js").then(registration => {
-			console.info("SyncMarks worker registered", registration);
-		}, error => {
-			console.error(`SyncMarks worker registration failed: ${error}`);
-		});
-	} else {
-		console.error("Service workers are not supported");
+		try {
+			const registration = navigator.serviceWorker.register("smsw.js");
+			if (registration.installing) {
+				console.log("Service worker installing");
+			} else if (registration.waiting) {
+				console.log("Service worker installed");
+			} else if (registration.active) {
+				console.log("Service worker active");
+			}
+		} catch (error) {
+			console.error(`Registration failed with ${error}`);
+		}
 	}
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
