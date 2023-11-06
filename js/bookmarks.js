@@ -30,16 +30,12 @@ document.addEventListener("DOMContentLoaded", function() {
 				let db = event.target.result;
 				const transaction = db.transaction(dbStoreName, "readwrite");
 				const store = transaction.objectStore(dbStoreName);
-				const getRecord = store.get(1);
+				const getRecord = store.get('bookmarks');
 
 				getRecord.onsuccess = function(event) {
-					document.getElementById('bookmarks').innerHTML = getRecord.result.bookmarks;
-					//let mdResult = getRecord.result.markdownContent;
-					//let mdFileName = getRecord.result.fileName;
-				
-					//$('#file-name').val(mdFileName)
-					//$('#live-markdown').val(mdResult);
-					//updatePreview(mdResult);
+					document.getElementById('bookmarks').innerHTML = getRecord.result;
+					document.getElementById('hmarks').innerHTML = getRecord.result;
+					addBookmarkEvents();
 				};
 			}
 		}
@@ -167,49 +163,6 @@ document.addEventListener("DOMContentLoaded", function() {
 				}
 			}, false);
 		}
-		
-		document.addEventListener("mouseup", function(){
-			document.removeEventListener("mousemove", resize, false);
-		}, false);
-		var draggable;
-		document.querySelectorAll('.file').forEach(function(bookmark){
-			bookmark.addEventListener('contextmenu', onContextMenu, false);
-			bookmark.addEventListener('mouseup', clicCheck, false);
-			bookmark.addEventListener('dragstart', function(event){
-				event.target.style.opacity = '.3';
-				event.dataTransfer.effectAllowed = "move";
-			});
-			bookmark.addEventListener('dragend', function(event){
-				event.target.style.opacity = '';
-			});			
-		});
-		
-		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
-		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
-
-		document.querySelectorAll('.lbl').forEach(function(folder) {
-			folder.addEventListener('mouseup', openFolderBookmarks, false);
-			folder.addEventListener('dragover', function(event){
-				event.preventDefault();
-				event.dataTransfer.dropEffect = "move"
-			});
-			folder.addEventListener('dragenter', function(){		
-				this.style = 'background-color: lightblue;';
-			});
-			folder.addEventListener('dragleave', function(){		
-				this.style = 'background-color: unset;';
-			});
-			folder.addEventListener('drop', function(event){
-				event.preventDefault();
-				let tFolder = event.target.htmlFor.substring(2);
-				if (bmIDs.length === 0) bmIDs.push(draggable.target.id);
-				bmIDs.forEach(bmID => sendRequest(bmmv, tFolder, bmID));
-				event.target.style = 'background-color: unset;';
-			});
-		});
-		document.addEventListener("drag", function(event) {
-			draggable = event;
-		});
 
 		document.querySelectorAll('.tablinks').forEach(tab => tab.addEventListener('click',openMessages, false));
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
@@ -346,9 +299,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			addBD();
 			document.getElementById('mngsform').style.display = 'block';
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
-		});
-		
-		document.getElementById('bookmarks').addEventListener('keyup', rmBm);
+		});		
 
 		document.getElementById('duplicates').addEventListener('click', function() {
 			hideMenu();
@@ -461,13 +412,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('mnubg').addEventListener('click', function() {hideMenu()});
 
+		addBookmarkEvents();
+
 		let renderedBookmarks = document.getElementById('bookmarks').innerHTML;
-		//let renderedBookmarks2 = document.getElementById('hmarks');
-
-		//renderedBookmarks1.replaceChildren(renderedBookmarks2);
-		//console.log(renderedBookmarks.children);
-
-		//JSON.parse(JSON.stringify(obj))
 
 		navigator.serviceWorker.controller.postMessage({
 			type: 'bookmarks',
@@ -493,6 +440,56 @@ window.addEventListener("keydown",function (e) {
 })
 
 var bmIDs = new Array();
+
+function addBookmarkEvents() {
+	document.addEventListener("mouseup", function(){
+		document.removeEventListener("mousemove", resize, false);
+	}, false);
+	
+	document.querySelectorAll('.file').forEach(function(bookmark){
+		bookmark.addEventListener('contextmenu', onContextMenu, false);
+		bookmark.addEventListener('mouseup', clicCheck, false);
+		bookmark.addEventListener('dragstart', function(event){
+			event.target.style.opacity = '.3';
+			event.dataTransfer.effectAllowed = "move";
+		});
+		bookmark.addEventListener('dragend', function(event){
+			event.target.style.opacity = '';
+		});			
+	});
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+	var draggable;
+	document.querySelectorAll('.lbl').forEach(function(folder) {
+		folder.addEventListener('mouseup', openFolderBookmarks, false);
+		folder.addEventListener('dragover', function(event){
+			event.preventDefault();
+			event.dataTransfer.dropEffect = "move"
+		});
+		folder.addEventListener('dragenter', function(){		
+			this.style = 'background-color: lightblue;';
+		});
+		folder.addEventListener('dragleave', function(){		
+			this.style = 'background-color: unset;';
+		});
+		folder.addEventListener('drop', function(event){
+			event.preventDefault();
+			let tFolder = event.target.htmlFor.substring(2);
+			if (bmIDs.length === 0) bmIDs.push(draggable.target.id);
+			bmIDs.forEach(bmID => sendRequest(bmmv, tFolder, bmID));
+			event.target.style = 'background-color: unset;';
+		});
+	});
+	document.addEventListener("drag", function(event) {
+		draggable = event;
+	});
+
+	document.getElementById('bookmarks').addEventListener('keyup', rmBm);
+	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+}
 
 function clicCheck(e) {
 	let bookmark = this.children[0];

@@ -1,17 +1,19 @@
 const cacheName = 'SyncMarksPWA-v1';
 const cacheResources = [
-		'js/bookmarks.js',
-		'js/bookmarks.min.js',
-		'images/bookmarks.ico',
-		'images/bookmarks.png',
-		'images/bookmarks48.png',
-		'images/bookmarks72.png',
-		'images/bookmarks96.png',
-		'images/bookmarks144.png',
-		'images/bookmarks192.png',
-		'images/bookmarks512.png',
-		'css/bookmarks.css',
-		'css/bookmarks.min.css',
+	'./',
+	'manifest.json',
+	'js/bookmarks.js',
+	'js/bookmarks.min.js',
+	'images/bookmarks.ico',
+	'images/bookmarks.png',
+	'images/bookmarks48.png',
+	'images/bookmarks72.png',
+	'images/bookmarks96.png',
+	'images/bookmarks144.png',
+	'images/bookmarks192.png',
+	'images/bookmarks512.png',
+	'css/bookmarks.css',
+	'css/bookmarks.min.css',
 ];
 
 const dbName = "syncmarks";
@@ -22,7 +24,6 @@ let db;
 let dbRequest = indexedDB.open(dbName, version);
 
 dbRequest.onsuccess = function(event) {
-	console.log(dbName + " IndexedDB opened successfully");
 	db = this.result;
 };
 
@@ -31,60 +32,16 @@ dbRequest.onupgradeneeded = function(event) {
 	if (dbResult.objectStoreNames.contains(dbStoreName)) {
 		dbResult.deleteObjectStore(dbStoreName);
 	}
-
-	let store = dbResult.createObjectStore(
-		dbStoreName, { autoIncrement: true }
-	);
+	
+	let store = dbResult.createObjectStore(dbStoreName);
 };
 
 self.addEventListener('install', event => {
-	console.log('Service Worker install event');
 	event.waitUntil(
 		caches.open(cacheName).then(cache => {
-			console.log("Service Worker: Caching files");
 			return cache.addAll(cacheResources);
 		})
 		.catch(err => console.error(err))
-		.then(event => {
-			/*
-			let url = self.location.origin + self.location.pathname.slice(0, self.location.pathname.lastIndexOf('/')) + '/';
-
-			let details = {
-				'action': 'bexport',
-				'data': 'json',
-				'client': 'PWA'
-			};
-
-			let formBody = [];
-			for (let property in details) {
-				let encodedKey = encodeURIComponent(property);
-				let encodedValue = encodeURIComponent(details[property]);
-				formBody.push(encodedKey + "=" + encodedValue);
-			}
-			formBody = formBody.join("&");
-
-			fetch(url, {
-				method: "POST",
-				mode: "cors",
-				cache: "no-cache",
-				credentials: "same-origin",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-				},
-				redirect: "follow",
-				referrerPolicy: "no-referrer",
-				body: formBody,
-				json: true
-			}).then(response => response.json()).then(responseData => {
-				const bookmarks = JSON.parse(responseData);
-				test();
-				//bookmarks.forEach(bookmark => {
-					//console.log(bookmark);
-				//	addToStore(bookmark['bmID'], bookmark, 'bookmarks')
-				//});
-			});
-			*/
-		})
 	);
 });
 
@@ -106,14 +63,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', async event => {
 	console.log('Service Worker: fetching');
-	self.clients.matchAll().then(clients => 
-		clients[0].postMessage({
-			'clientOffline': true,
-		})
-	);
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return cachedResponse || fetch(event.request)
 	}).catch(err => {
+		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
 		self.clients.matchAll().then(clients => 
 			clients[0].postMessage({
 				'clientOffline': true,
@@ -174,7 +127,7 @@ self.addEventListener('message', message => {
 			let db = event.target.result;
 			const transaction = db.transaction(dbStoreName, "readwrite");
 			const store = transaction.objectStore(dbStoreName);
-			const addRecord = store.put({ bookmarks });
+			const addRecord = store.put( bookmarks, 'bookmarks' );
 	  
 			addRecord.onsuccess = (event) => {
 				self.clients.matchAll().then(clients => 
