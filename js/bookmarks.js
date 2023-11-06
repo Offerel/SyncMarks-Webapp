@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 
 		if (event.data.bookmarksAddedDB) {
-			console.log("DB saved");
+			//console.log("DB saved" + event.data);
 		}
 
 		if (event.data.clientOffline) {
@@ -28,12 +28,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			let openDBRequest = indexedDB.open(dbName);
 			openDBRequest.onsuccess = (event) => {
 				let db = event.target.result;
-				const transaction = db.transaction(dbStoreName, "read");
+				const transaction = db.transaction(dbStoreName, "readwrite");
 				const store = transaction.objectStore(dbStoreName);
-				const getRecord = store.get('1');
+				const getRecord = store.get(1);
 
 				getRecord.onsuccess = function(event) {
-					console.log(getRecord.result);
+					document.getElementById('bookmarks').innerHTML = getRecord.result.bookmarks;
 					//let mdResult = getRecord.result.markdownContent;
 					//let mdFileName = getRecord.result.fileName;
 				

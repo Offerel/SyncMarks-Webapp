@@ -90,13 +90,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
 	var cacheWhitelist = ['SyncMarksPWA-v1'];
-	clients.claim();
-	self.clients.matchAll().then(clients => 
-		clients[0].postMessage({
-			'clientOffline': true,
-		})
-	);
-	console.log("activate");
+	clients.claim();	
 	event.waitUntil(
 		caches.keys().then(function(cacheNames) {
 			return Promise.all(
@@ -112,6 +106,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', async event => {
 	console.log('Service Worker: fetching');
+	self.clients.matchAll().then(clients => 
+		clients[0].postMessage({
+			'clientOffline': true,
+		})
+	);
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return cachedResponse || fetch(event.request)
 	}).catch(err => {
