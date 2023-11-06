@@ -6,13 +6,45 @@
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
  */
+const dbName = "syncmarks";
+const version = 1;
+const dbStoreName = "bookmarks";
+let db;
+let dbRequest = indexedDB.open(dbName, version);
+
 document.addEventListener("DOMContentLoaded", function() {
 	navigator.serviceWorker.addEventListener('message', event => { 
-		if (event.data && event.data.type === 'openDialog') { 
+		if (event.data && event.data.type === 'openDialog') {
 			document.getElementById('bmarkadd').style.display = 'block';
 			document.getElementById('url').value = event.data.data;
-		} 
+		}
+
+		if (event.data.bookmarksAddedDB) {
+			console.log("DB saved");
+		}
+
+		if (event.data.clientOffline) {
+			console.log("No network, get from indexdb and cache");
+			let openDBRequest = indexedDB.open(dbName);
+			openDBRequest.onsuccess = (event) => {
+				let db = event.target.result;
+				const transaction = db.transaction(dbStoreName, "read");
+				const store = transaction.objectStore(dbStoreName);
+				const getRecord = store.get('1');
+
+				getRecord.onsuccess = function(event) {
+					console.log(getRecord.result);
+					//let mdResult = getRecord.result.markdownContent;
+					//let mdFileName = getRecord.result.fileName;
+				
+					//$('#file-name').val(mdFileName)
+					//$('#live-markdown').val(mdResult);
+					//updatePreview(mdResult);
+				};
+			}
+		}
 	})
+
 
 	if ("serviceWorker" in navigator) {
 		try {
@@ -428,6 +460,19 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 
 		document.getElementById('mnubg').addEventListener('click', function() {hideMenu()});
+
+		let renderedBookmarks = document.getElementById('bookmarks').innerHTML;
+		//let renderedBookmarks2 = document.getElementById('hmarks');
+
+		//renderedBookmarks1.replaceChildren(renderedBookmarks2);
+		//console.log(renderedBookmarks.children);
+
+		//JSON.parse(JSON.stringify(obj))
+
+		navigator.serviceWorker.controller.postMessage({
+			type: 'bookmarks',
+			data: renderedBookmarks
+		});
 	}
 }, false);
 

@@ -14,10 +14,28 @@ const cacheResources = [
 		'css/bookmarks.min.css',
 ];
 
-const dbName = "bookmarks";
+const dbName = "syncmarks";
 const version = 1;
-const storeName = "sharedlinks";
+const dbStoreName = "bookmarks";
+
 let db;
+let dbRequest = indexedDB.open(dbName, version);
+
+dbRequest.onsuccess = function(event) {
+	console.log(dbName + " IndexedDB opened successfully");
+	db = this.result;
+};
+
+dbRequest.onupgradeneeded = function(event) {
+	let dbResult = event.target.result;
+	if (dbResult.objectStoreNames.contains(dbStoreName)) {
+		dbResult.deleteObjectStore(dbStoreName);
+	}
+
+	let store = dbResult.createObjectStore(
+		dbStoreName, { autoIncrement: true }
+	);
+};
 
 self.addEventListener('install', event => {
 	console.log('Service Worker install event');
@@ -28,6 +46,7 @@ self.addEventListener('install', event => {
 		})
 		.catch(err => console.error(err))
 		.then(event => {
+			/*
 			let url = self.location.origin + self.location.pathname.slice(0, self.location.pathname.lastIndexOf('/')) + '/';
 
 			let details = {
@@ -57,8 +76,14 @@ self.addEventListener('install', event => {
 				body: formBody,
 				json: true
 			}).then(response => response.json()).then(responseData => {
-				console.log(responseData);
+				const bookmarks = JSON.parse(responseData);
+				test();
+				//bookmarks.forEach(bookmark => {
+					//console.log(bookmark);
+				//	addToStore(bookmark['bmID'], bookmark, 'bookmarks')
+				//});
 			});
+			*/
 		})
 	);
 });
@@ -66,6 +91,12 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
 	var cacheWhitelist = ['SyncMarksPWA-v1'];
 	clients.claim();
+	self.clients.matchAll().then(clients => 
+		clients[0].postMessage({
+			'clientOffline': true,
+		})
+	);
+	console.log("activate");
 	event.waitUntil(
 		caches.keys().then(function(cacheNames) {
 			return Promise.all(
@@ -83,6 +114,12 @@ self.addEventListener('fetch', async event => {
 	console.log('Service Worker: fetching');
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return cachedResponse || fetch(event.request)
+	}).catch(err => {
+		self.clients.matchAll().then(clients => 
+			clients[0].postMessage({
+				'clientOffline': true,
+			})
+		);
 	}))
 	/*
 	if(event.request.method == 'POST') {
@@ -129,36 +166,24 @@ self.addEventListener('notificationclick', (event) => {
 	}))
 });
 
-function addToStore(title, url) {
-	let openDBRequest = indexedDB.open(dbName);
+self.addEventListener('message', message => {
+	if(message.data.type == 'bookmarks') {
+		let bookmarks = message.data.data;
+		let openDBRequest = indexedDB.open(dbName);
 
-	openDBRequest.onsuccess = (event) => {
-		const transaction = db.transaction(storeName, "readwrite");
-		const store = transaction.objectStore(storeName);
-		const request = store.put({ title, url });
-
-		request.onsuccess = function () {
-			console.log("added to the store", { title: url }, request.result);
-		};
-
-		request.onerror = function () {
-			console.log("Error did not save to store", request.error);
-		};
-
-		transaction.onerror = function (event) {
-			console.log("trans failed", event);
-		};
-
-		transaction.oncomplete = function (event) {
-			console.log("trans completed", event);
+		openDBRequest.onsuccess = (event) => {
+			let db = event.target.result;
+			const transaction = db.transaction(dbStoreName, "readwrite");
+			const store = transaction.objectStore(dbStoreName);
+			const addRecord = store.put({ bookmarks });
+	  
+			addRecord.onsuccess = (event) => {
+				self.clients.matchAll().then(clients => 
+					clients[0].postMessage({
+						'bookmarksAddedDB': true,
+					})
+				);
+			}
 		};
 	}
-}
-
-const cacheFirst = async (request) => {
-	const responseFromCache = await cache.match(request);
-	if (responseFromCache) {
-		return responseFromCache;
-	}
-	return fetch(request);
-  };
+});
