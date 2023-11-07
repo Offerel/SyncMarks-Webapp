@@ -88,11 +88,11 @@ self.addEventListener('fetch', async event => {
 	}
 
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
-		return cachedResponse || fetch(event.request, {
+		return fetch(event.request, {
 			mode: "same-origin",
 			credentials: 'same-origin',
 			cache: "default"
-		})
+		}) || cachedResponse
 	}).catch(err => {
 		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
 		self.clients.matchAll().then(clients => 
