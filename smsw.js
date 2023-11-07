@@ -68,7 +68,7 @@ self.addEventListener('fetch', async event => {
 		let requestClone = event.request.clone();
 		const params = await requestClone.text().catch((err) => err);
 		if(params.includes('slink')) {
-			event.respondWith(fetch(event.request, { credentials: 'include' }));
+			event.respondWith(fetch(event.request, { credentials: 'same-origin' }));
 			return;
 		}
 		/*
@@ -84,8 +84,7 @@ self.addEventListener('fetch', async event => {
 	}
 
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
-		return cachedResponse || fetch(event.request, { credentials: 'include' })
-		//return cachedResponse || fetch(event.request, {credentials: 'same-origin'})
+		return cachedResponse || fetch(event.request, { credentials: 'same-origin' })
 	}).catch(err => {
 		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
 		self.clients.matchAll().then(clients => 
