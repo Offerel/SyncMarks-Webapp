@@ -62,26 +62,16 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', async event => {
-	console.log('Service Worker: fetching');
-	event.respondWith(caches.match(event.request).then(cachedResponse => {
-		return cachedResponse || fetch(event.request)
-	}).catch(err => {
-		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
-		self.clients.matchAll().then(clients => 
-			clients[0].postMessage({
-				'clientOffline': true,
-			})
-		);
-	}))
-	/*
+	console.log("Fetch event for", event.request.url);
+
 	if(event.request.method == 'POST') {
 		let requestClone = event.request.clone();
 		const params = await requestClone.text().catch((err) => err);
 		if(params.includes('slink')) {
-			event.respondWith(fetch(event.request));
+			event.respondWith(fetch(event.request, { credentials: 'include' }));
 			return;
 		}
-
+		/*
 		const formDataPromise = event.request.formData();
 		event.respondWith(
 			formDataPromise.then((formData) => {
@@ -90,8 +80,20 @@ self.addEventListener('fetch', async event => {
 				addToStore(title, link);
 			})
 		);
+		*/
 	}
-	*/
+
+	event.respondWith(caches.match(event.request).then(cachedResponse => {
+		return cachedResponse || fetch(event.request, { credentials: 'include' })
+		//return cachedResponse || fetch(event.request, {credentials: 'same-origin'})
+	}).catch(err => {
+		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
+		self.clients.matchAll().then(clients => 
+			clients[0].postMessage({
+				'clientOffline': true,
+			})
+		);
+	}))
 });
 
 self.addEventListener('push', event => {

@@ -1917,8 +1917,7 @@ function checkLogin() {
 				'domain' => null,
 				'secure' => true,
 				'httponly' => false,
-				'samesite' => 'Strict',
-				'max-age' => $expireTime
+				'samesite' => 'Strict'
 			);
 			
 			$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
@@ -2043,8 +2042,7 @@ function checkLogin() {
 							'domain' => null,
 							'secure' => true,
 							'httponly' => false,
-							'samesite' => 'Strict',
-							'max-age' => $expireTime
+							'samesite' => 'Strict'
 						);
 						
 						$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
