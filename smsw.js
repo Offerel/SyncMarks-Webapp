@@ -66,25 +66,43 @@ self.addEventListener('fetch', async event => {
 
 	if(event.request.method == 'POST') {
 		let requestClone = event.request.clone();
-		const params = await requestClone.text().catch((err) => err);
-		if(params.includes('slink')) {
-			event.respondWith(fetch(event.request, {
-				mode: "same-origin",
-				credentials: 'same-origin',
-				cache: "default"
-			}));
-			return;
-		}
-		/*
-		const formDataPromise = event.request.formData();
-		event.respondWith(
-			formDataPromise.then((formData) => {
-				const link = formData.get("slink") || "";
-				const title = formData.get("title") || "";
-				addToStore(title, link);
-			})
-		);
-		*/
+		requestClone.formData().then(data => {
+			if(slink = data.get('slink')) {
+				//console.log(slink);
+				//let title = data.get('title');
+				let gparams = new URLSearchParams({
+					title: data.get('title'),
+					link: slink,
+				});
+
+				//console.log(event.request.url);
+				//return false;
+				event.respondWith(fetch(event.request.url + '?' + gparams, {
+					method: "GET",
+					mode: "same-origin",
+					credentials: 'same-origin',
+					cache: "default"
+				}));
+				return;
+			}
+		});
+	//	const params = await requestClone.text().catch(err => err);
+	//	if(params.includes('slink')) {
+			//let gparams = new URLSearchParams({
+			//	title: 'value',
+			//	link: 2,
+			//});
+
+			//requestClone.formData().then(formData => {
+				// Do whatever you want with formData, parameters are here :)
+			//	console.log(formData);
+			//});
+
+			
+
+
+		//}
+
 	}
 
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
