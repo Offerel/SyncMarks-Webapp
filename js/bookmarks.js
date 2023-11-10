@@ -18,6 +18,19 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.getElementById('bmarkadd').style.display = 'block';
 			document.getElementById('url').value = event.data.data;
 		}
+		
+		if (event.data.fresponse) {
+			location.reload();
+			/*
+			var mdiv = document.getElementById("pwamessage");
+			mdiv.style.backgroundColor = (event.data.fresponse.includes('not')) ? '#d9534f':'#5cb85c';
+			mdiv.innerText = event.data.fresponse;
+			mdiv.className = "show";
+			setTimeout(function(){
+				mdiv.className = mdiv.className.replace("show", "");
+			}, 5000);
+			*/
+		}
 
 		if (event.data.bookmarksAddedDB) {
 			//console.log("DB saved" + event.data);
@@ -415,7 +428,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		addBookmarkEvents();
 
 		let renderedBookmarks = document.getElementById('bookmarks').innerHTML;
-
+		
 		navigator.serviceWorker.controller.postMessage({
 			type: 'bookmarks',
 			data: renderedBookmarks

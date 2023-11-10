@@ -40,8 +40,7 @@ self.addEventListener('install', event => {
 	event.waitUntil(
 		caches.open(cacheName).then(cache => {
 			return cache.addAll(cacheResources);
-		})
-		.catch(err => console.error(err))
+		}).catch(err => console.error(err))
 	);
 });
 
@@ -62,48 +61,45 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', async event => {
-	console.log("Fetch event for", event.request.url);
-
-	if(event.request.method == 'POST') {
-		let requestClone = event.request.clone();
-		requestClone.formData().then(data => {
-			if(slink = data.get('slink')) {
-				//console.log(slink);
-				//let title = data.get('title');
-				let gparams = new URLSearchParams({
-					title: data.get('title'),
-					link: slink,
-				});
-
-				//console.log(event.request.url);
-				//return false;
-				event.respondWith(fetch(event.request.url + '?' + gparams, {
-					method: "GET",
-					mode: "same-origin",
-					credentials: 'same-origin',
-					cache: "default"
-				}));
-				return;
+	let requestClone = event.request.clone();
+	requestClone.text().then(data => {
+		if(data.includes('slink')) {
+			const urlObject = {};
+			const pairs = data.split("&");
+			for(var i = 0; i < pairs.length; i++) {
+				var pos = pairs[i].indexOf('=');       
+				if (pos == -1){ continue;}
+				const name = pairs[i].substring(0,pos);
+				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " "));
+				urlObject[name] = value;
 			}
-		});
-	//	const params = await requestClone.text().catch(err => err);
-	//	if(params.includes('slink')) {
-			//let gparams = new URLSearchParams({
-			//	title: 'value',
-			//	link: 2,
-			//});
 
-			//requestClone.formData().then(formData => {
-				// Do whatever you want with formData, parameters are here :)
-			//	console.log(formData);
-			//});
+			let gparams = new URLSearchParams({
+				title: urlObject.title,
+				link: urlObject.slink,
+				client: 'PWA'
+			});
 
+			fetch(event.request.url + '?' + gparams, {
+				method: "GET",
+				mode: "same-origin",
+				credentials: 'same-origin',
+				cache: "default"
+			}).then(response => {
+				response.text().then(data => {
+					self.clients.matchAll().then(clients => 
+						clients[0].postMessage({
+							'fresponse': data,
+						})
+					);
+				})
+			}).catch(err => {
+				console.error(err);
+			});
 			
-
-
-		//}
-
-	}
+			return;
+		}
+	})
 
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return fetch(event.request, {

@@ -30,7 +30,7 @@ set_error_handler("e_log");
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
 if(!isset($_SESSION['sauth'])) checkDB();
-$htmlFooter = "<div id = \"mnubg\"></div></body></html>";
+$htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
 	$headers = "From: SyncMarks <".CONFIG['sender'].">";
