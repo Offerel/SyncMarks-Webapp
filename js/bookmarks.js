@@ -32,6 +32,22 @@ document.addEventListener("DOMContentLoaded", function() {
 			*/
 		}
 
+		if (event.data.sharemark) {
+			console.log(sharemark);
+			return false;
+			let jsonMark = JSON.stringify({ 
+				"id": Math.random().toString(24).substring(2, 12),
+				"url": document.getElementById('url').value,
+				"title": '',
+				"type": 'bookmark',
+				"folder": document.getElementById('folder').value,  
+				"nfolder": 'More Bookmarks',
+				"added": new Date().valueOf()
+			});
+
+			sendRequest(addmark, jsonMark, 2);
+		}
+
 		if (event.data.bookmarksAddedDB) {
 			//console.log("DB saved" + event.data);
 		}
@@ -53,7 +69,6 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 		}
 	})
-
 
 	if ("serviceWorker" in navigator) {
 		try {

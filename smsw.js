@@ -70,10 +70,16 @@ self.addEventListener('fetch', async event => {
 				var pos = pairs[i].indexOf('=');       
 				if (pos == -1){ continue;}
 				const name = pairs[i].substring(0,pos);
-				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " "));
+				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " ")) || null;
 				urlObject[name] = value;
 			}
 
+			self.clients.matchAll().then(clients => 
+				clients[0].postMessage({
+					'sharemark': urlObject,
+				})
+			);
+			/*
 			let gparams = new URLSearchParams({
 				title: urlObject.title,
 				link: urlObject.slink,
@@ -96,8 +102,8 @@ self.addEventListener('fetch', async event => {
 			}).catch(err => {
 				console.error(err);
 			});
-			
-			return;
+			*/
+			return false;
 		}
 	})
 
