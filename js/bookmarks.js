@@ -18,33 +18,17 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.getElementById('bmarkadd').style.display = 'block';
 			document.getElementById('url').value = event.data.data;
 		}
-		
-		if (event.data.fresponse) {
-			location.reload();
-			/*
-			var mdiv = document.getElementById("pwamessage");
-			mdiv.style.backgroundColor = (event.data.fresponse.includes('not')) ? '#d9534f':'#5cb85c';
-			mdiv.innerText = event.data.fresponse;
-			mdiv.className = "show";
-			setTimeout(function(){
-				mdiv.className = mdiv.className.replace("show", "");
-			}, 5000);
-			*/
-		}
 
 		if (event.data.sharemark) {
-			console.log(sharemark);
-			return false;
 			let jsonMark = JSON.stringify({ 
 				"id": Math.random().toString(24).substring(2, 12),
-				"url": document.getElementById('url').value,
-				"title": '',
+				"url": event.data.sharemark.slink,
+				"title": event.data.sharemark.title || null,
 				"type": 'bookmark',
-				"folder": document.getElementById('folder').value,  
+				"folder": 'unfiled_____',  
 				"nfolder": 'More Bookmarks',
 				"added": new Date().valueOf()
 			});
-
 			sendRequest(addmark, jsonMark, 2);
 		}
 
@@ -596,6 +580,14 @@ function sendRequest(action, data = null, addendum = null) {
 				let message = `Error ${xhr.status}: ${xhr.statusText}`;
 				show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 				console.error(action.name, message);
+
+				var mdiv = document.getElementById("pwamessage");
+				mdiv.style.backgroundColor = '#d9534f';
+				mdiv.innerText = action.name + ": " + message;
+				mdiv.className = "show";
+				setTimeout(function(){
+					mdiv.className = mdiv.className.replace("show", "");
+				}, 5000);
 				return false;
 			}
 		}
@@ -604,7 +596,7 @@ function sendRequest(action, data = null, addendum = null) {
 	xhr.onerror = function () {
 		let message = "Error: " + xhr.status + ' | ' + xhr.response;
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-		console.error(action.name, message);
+		console.error(action.name, message);		
 		return false;
 	}
 
@@ -668,7 +660,17 @@ function addmark(response) {
 	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
-	console.info("Bookmark added successfully.");
+	let message = 'Bookmark added successfully.';
+	console.info(message);
+	
+	let mdiv = document.getElementById("pwamessage");
+	mdiv.style.backgroundColor = (message.includes('not')) ? '#d9534f':'#5cb85c';
+	mdiv.innerText = message;
+	mdiv.className = "show";
+	setTimeout(function(){
+		mdiv.className = mdiv.className.replace("show", "");
+	}, 5000);
+	
 }
 
 function muedt(response) {

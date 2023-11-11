@@ -363,7 +363,6 @@ if(isset($_POST['action'])) {
 						e_log(8,"Bookmark added");
 						sendJSONResponse(bmTree());
 					} else {
-						echo $res;
 						http_response_code(417);
 					}
 				} else {

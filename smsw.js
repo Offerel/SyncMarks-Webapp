@@ -79,30 +79,6 @@ self.addEventListener('fetch', async event => {
 					'sharemark': urlObject,
 				})
 			);
-			/*
-			let gparams = new URLSearchParams({
-				title: urlObject.title,
-				link: urlObject.slink,
-				client: 'PWA'
-			});
-
-			fetch(event.request.url + '?' + gparams, {
-				method: "GET",
-				mode: "same-origin",
-				credentials: 'same-origin',
-				cache: "default"
-			}).then(response => {
-				response.text().then(data => {
-					self.clients.matchAll().then(clients => 
-						clients[0].postMessage({
-							'fresponse': data,
-						})
-					);
-				})
-			}).catch(err => {
-				console.error(err);
-			});
-			*/
 			return false;
 		}
 	})
