@@ -13,6 +13,14 @@
 		}
 	},
 	"lang": "en",
+	"dir": "ltr",
+	"categories": [
+		"business",
+		"navigation",
+		"personalization",
+		"productivity",
+		"utilities"
+	],
 	"background_color": "#0879D9",
 	"theme_color": "#0879D9",
 	"display": "standalone",
@@ -55,6 +63,9 @@
 		"sizes": "512x512"
 	  }
 	],
+	"launch_handler": {
+		"client_mode": "navigate-existing"
+	},
 	"edge_side_panel": {
 	  "preferred_width": 420
 	},

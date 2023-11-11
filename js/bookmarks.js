@@ -64,6 +64,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			} else if (registration.active) {
 				console.log("Service worker active");
 			}
+
+			try {
+				registration.sync.register('database-sync');
+			} catch {
+				console.log("Background Sync failed.")
+			}
 		} catch (error) {
 			console.error(`Registration failed with ${error}`);
 		}

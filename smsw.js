@@ -111,6 +111,14 @@ self.addEventListener('push', event => {
 	);
 });
 
+self.addEventListener('sync', event => {
+	if (event.tag === 'database-sync') {
+		event.waitUntil(
+			pushLocalDataToDatabase()
+		);
+	  }
+});
+
 self.addEventListener('notificationclick', (event) => {
 	event.notification.close();
 	event.waitUntil(clients.matchAll({
@@ -144,3 +152,7 @@ self.addEventListener('message', message => {
 		};
 	}
 });
+
+function pushLocalDataToDatabase() {
+	
+}
