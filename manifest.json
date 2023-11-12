@@ -13,10 +13,8 @@
 		}
 	},
 	"lang": "en",
-	"dir": "ltr",
 	"categories": [
 		"business",
-		"navigation",
 		"personalization",
 		"productivity",
 		"utilities"
@@ -63,9 +61,6 @@
 		"sizes": "512x512"
 	  }
 	],
-	"launch_handler": {
-		"client_mode": "navigate-existing"
-	},
 	"edge_side_panel": {
 	  "preferred_width": 420
 	},
@@ -83,13 +78,13 @@
 	  }
 	],
 	"share_target": {
-	  "action": "./",
+	  "action": "./?sharelink",
 	  "method": "POST",
 	  "enctype": "application/x-www-form-urlencoded",
 	  "params": {
 		"title": "title",
-		"text": "slink",
-		"url": "slink"
+		"text": "link",
+		"url": "link"
 	  }
 	}
   }

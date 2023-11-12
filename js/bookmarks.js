@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.getElementById('bmarkadd').style.display = 'block';
 			document.getElementById('url').value = event.data.data;
 		}
+		
+		navigator.serviceWorker.addEventListener("controllerchange", event => {
+			//confirm('sw changed');
+		});
 
 		if (event.data.sharemark) {
 			let jsonMark = JSON.stringify({ 
@@ -29,7 +33,8 @@ document.addEventListener("DOMContentLoaded", function() {
 				"nfolder": 'More Bookmarks',
 				"added": new Date().valueOf()
 			});
-			sendRequest(addmark, jsonMark, 2);
+			console.log(jsonMark);
+			//sendRequest(addmark, jsonMark, 2);
 		}
 
 		if (event.data.bookmarksAddedDB) {
@@ -63,12 +68,6 @@ document.addEventListener("DOMContentLoaded", function() {
 				console.log("Service worker installed");
 			} else if (registration.active) {
 				console.log("Service worker active");
-			}
-
-			try {
-				registration.sync.register('database-sync');
-			} catch {
-				console.log("Background Sync failed.")
 			}
 		} catch (error) {
 			console.error(`Registration failed with ${error}`);
@@ -186,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
 
-		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
+	//	if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
 			if (e.key === 'Escape') hideMenu();
