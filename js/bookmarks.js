@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 
 		if (event.data.sharemark) {
+			/*
 			let jsonMark = JSON.stringify({ 
 				"id": Math.random().toString(24).substring(2, 12),
 				"url": event.data.sharemark.slink,
@@ -30,7 +31,9 @@ document.addEventListener("DOMContentLoaded", function() {
 				"added": new Date().valueOf()
 			});
 			console.log(jsonMark);
-			//sendRequest(addmark, jsonMark, 2);
+			*/
+	
+			sendRequest(addmark, event.data.sharemark, 2);
 		}
 
 		if (event.data.bookmarksAddedDB) {

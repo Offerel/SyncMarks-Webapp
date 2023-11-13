@@ -1,7 +1,9 @@
 const cacheName = 'SyncMarksPWA-v1';
 const cacheResources = [
+	'./',
 	'manifest.json',
 	'js/bookmarks.js',
+	'js/bookmarks.min.js',
 	'images/bookmarks.ico',
 	'images/bookmarks.png',
 	'images/bookmarks48.png',
@@ -61,7 +63,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', async (event) => {
 	var url = event.request.url;
 	if(url.includes('sharelink')) {
-		const onPOST = async () => {
+		const onShare = async () => {
 			const originalData = await event.request.text();
 			const shareObject = {};
 			const pairs = originalData.split("&");
@@ -76,7 +78,7 @@ self.addEventListener('fetch', async (event) => {
 			const addMark = {
 				id: Math.random().toString(24).substring(2, 12),
 				title: shareObject['title'] || null,
-				url: encodeURIComponent(shareObject['link']),
+				url: shareObject['link'],
 				type: 'bookmark',
 				folder: 'unfiled_____',
 				nfolder: 'More Bookmarks',
@@ -84,16 +86,15 @@ self.addEventListener('fetch', async (event) => {
 			};
 			
 			let jsonMark = JSON.stringify(addMark);
-	
-			const transformedRequest = new Request(event.request, {
-				method: event.request.method,
-				headers: event.request.headers,
-				body: 'action=addmark&client=PWA&data=' + jsonMark + '&add=2'
-			})
-			return fetch(transformedRequest);
-		
+
+			self.clients.matchAll().then(clients => 
+				clients[0].postMessage({
+					'sharemark': jsonMark,
+				})
+			);
+			return fetch(url.replace('?sharelink',''));
 		}
-		return event.respondWith(onPOST());
+		return event.respondWith(onShare());
 	}
 	
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
