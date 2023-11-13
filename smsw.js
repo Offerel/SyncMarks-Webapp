@@ -58,39 +58,44 @@ self.addEventListener('activate', event => {
 	);
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', async (event) => {
 	var url = event.request.url;
-	var ret = url.replace('sharelink','');
 	if(url.includes('sharelink')) {
-		event.waitUntil(async function() {
-			let jsonMark = JSON.stringify({ 
-				"id": Math.random().toString(24).substring(2, 12),
-				"url": '',
-				"title": '',
-				"type": 'bookmark',
-				"folder": 'unfiled_____',  
-				"nfolder": 'More Bookmarks',
-				"added": new Date().valueOf()
-			});
-			//console.log(jsonMark);
-			var req = new Request(ret, {
-				method: 'POST',
+		const onPOST = async () => {
+			const originalData = await event.request.text();
+			const shareObject = {};
+			const pairs = originalData.split("&");
+			for(var i = 0; i < pairs.length; i++) {
+				var pos = pairs[i].indexOf('=');       
+				if (pos == -1){ continue;}
+				const name = pairs[i].substring(0,pos);
+				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " ")) || null;
+				shareObject[name] = value;
+			}
+	
+			const addMark = {
+				id: Math.random().toString(24).substring(2, 12),
+				title: shareObject['title'] || null,
+				url: encodeURIComponent(shareObject['link']),
+				type: 'bookmark',
+				folder: 'unfiled_____',
+				nfolder: 'More Bookmarks',
+				added: new Date().valueOf()
+			};
+			
+			let jsonMark = JSON.stringify(addMark);
+	
+			const transformedRequest = new Request(event.request, {
+				method: event.request.method,
 				headers: event.request.headers,
-				mode: 'same-origin',
-				credentials: event.request.credentials,
-				redirect: 'manual',
-				body: {
-					action: 'addmark',
-					data: jsonMark,
-					client: 'PWA',
-					add: 2
-				}
-			});
-
-			return event.respondWith(fetch(req));
-		});
+				body: 'action=addmark&client=PWA&data=' + jsonMark + '&add=2'
+			})
+			return fetch(transformedRequest);
+		
+		}
+		return event.respondWith(onPOST());
 	}
-	return false;
+	
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return fetch(event.request, {
 			mode: "same-origin",

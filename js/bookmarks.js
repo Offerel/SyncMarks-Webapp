@@ -13,15 +13,11 @@ let db;
 let dbRequest = indexedDB.open(dbName, version);
 
 document.addEventListener("DOMContentLoaded", function() {
-	navigator.serviceWorker.addEventListener('message', event => { 
+	navigator.serviceWorker.addEventListener('message', event => {
 		if (event.data && event.data.type === 'openDialog') {
 			document.getElementById('bmarkadd').style.display = 'block';
 			document.getElementById('url').value = event.data.data;
 		}
-		
-		navigator.serviceWorker.addEventListener("controllerchange", event => {
-			//confirm('sw changed');
-		});
 
 		if (event.data.sharemark) {
 			let jsonMark = JSON.stringify({ 
@@ -58,6 +54,10 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 		}
 	})
+
+	navigator.serviceWorker.addEventListener("controllerchange", event => {
+		//confirm('sw changed');
+	});
 
 	if ("serviceWorker" in navigator) {
 		try {
@@ -431,11 +431,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		addBookmarkEvents();
 
-		let renderedBookmarks = document.getElementById('bookmarks').innerHTML;
-		
 		navigator.serviceWorker.controller.postMessage({
 			type: 'bookmarks',
-			data: renderedBookmarks
+			data: document.getElementById('bookmarks').innerHTML
 		});
 	}
 }, false);
