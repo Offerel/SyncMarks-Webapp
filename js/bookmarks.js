@@ -19,20 +19,12 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.getElementById('url').value = event.data.data;
 		}
 
+		if (event.data.addbm) {
+			document.getElementById('footer').click();
+			
+		}
+
 		if (event.data.sharemark) {
-			/*
-			let jsonMark = JSON.stringify({ 
-				"id": Math.random().toString(24).substring(2, 12),
-				"url": event.data.sharemark.slink,
-				"title": event.data.sharemark.title || null,
-				"type": 'bookmark',
-				"folder": 'unfiled_____',  
-				"nfolder": 'More Bookmarks',
-				"added": new Date().valueOf()
-			});
-			console.log(jsonMark);
-			*/
-	
 			sendRequest(addmark, event.data.sharemark, 2);
 		}
 
@@ -337,9 +329,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		document.getElementById('footer').addEventListener('click', function() {
 			hideMenu();
-			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+			document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
 			addBD();
 			document.getElementById('bmarkadd').style.display = 'block';
+			navigator.clipboard.readText().then(text => {
+				if(isValidUrl(text)) document.getElementById('url').value = text;
+			}).catch(err => {
+				console.error('Failed to read clipboard contents: ', err);
+			});
 			url.focus();
 			url.addEventListener('input', enableSave);
 		});
@@ -458,6 +455,17 @@ window.addEventListener("keydown",function (e) {
 })
 
 var bmIDs = new Array();
+
+const isValidUrl = urlString=> {
+	let url;
+	try { 
+		url =new URL(urlString); 
+	}
+	catch(e){ 
+	  return false; 
+	}
+	return url.protocol === "http:" || url.protocol === "https:";
+}
 
 function addBookmarkEvents() {
 	document.addEventListener("mouseup", function(){

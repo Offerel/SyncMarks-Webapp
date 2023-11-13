@@ -70,7 +70,7 @@
 	"shortcuts": [
 	  {
 		"name": "Add Bookmark",
-		"url": ".?addbm",
+		"url": "./?addbm",
 		"description": "Add a new bookmark",
 		"icons": [
 		  {

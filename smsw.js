@@ -96,6 +96,18 @@ self.addEventListener('fetch', async (event) => {
 		}
 		return event.respondWith(onShare());
 	}
+
+	if(url.includes('addbm')) {
+		const onAdd = async () => {
+			self.clients.matchAll().then(clients => 
+				clients[0].postMessage({
+					'addbm': true,
+				})
+			);
+			return fetch(url.replace('?addbm',''));
+		}
+		return event.respondWith(onAdd());
+	}
 	
 	event.respondWith(caches.match(event.request).then(cachedResponse => {
 		return fetch(event.request, {
