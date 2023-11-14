@@ -31,7 +31,8 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 
 		if (event.data.bookmarksAddedDB) {
-			//console.log("DB saved" + event.data);
+			console.log("DB saved");
+			pwaMessage("DB saved", 'success');
 		}
 
 		if (event.data.clientOffline) {
@@ -429,9 +430,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		addBookmarkEvents();
 
-		navigator.serviceWorker.controller.postMessage({
-			type: 'bookmarks',
-			data: document.getElementById('bookmarks').innerHTML
+		navigator.serviceWorker.ready.then( registration => {
+			if (registration.active) {
+				registration.active.postMessage({
+					type: 'bookmarks',
+					data: document.getElementById('bookmarks').innerHTML
+				});
+			}
 		});
 	}
 }, false);

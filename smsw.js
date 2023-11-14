@@ -17,7 +17,7 @@ const cacheResources = [
 ];
 
 const dbName = "syncmarks";
-const version = 1;
+const version = 2;
 const dbStoreName = "bookmarks";
 
 let db;
