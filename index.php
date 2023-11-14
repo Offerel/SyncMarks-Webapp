@@ -1012,7 +1012,7 @@ function getClientType($uas) {
 }
 
 function validate_url($url) {
-	$urla = parse_url($url);
+	$urla = parse_url(trim($url));
 
 	$pass      = $urla['pass'] ?? null;
     $user      = $urla['user'] ?? null;

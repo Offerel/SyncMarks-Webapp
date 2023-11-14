@@ -6,6 +6,7 @@ const cacheResources = [
 	'js/bookmarks.min.js',
 	'images/bookmarks.ico',
 	'images/bookmarks.png',
+	'images/maskable_icon.png',
 	'images/bookmarks48.png',
 	'images/bookmarks72.png',
 	'images/bookmarks96.png',
@@ -17,7 +18,7 @@ const cacheResources = [
 ];
 
 const dbName = "syncmarks";
-const version = 2;
+const version = 5;
 const dbStoreName = "bookmarks";
 
 let db;
@@ -32,8 +33,12 @@ dbRequest.onupgradeneeded = function(event) {
 	if (dbResult.objectStoreNames.contains(dbStoreName)) {
 		dbResult.deleteObjectStore(dbStoreName);
 	}
+	if (dbResult.objectStoreNames.contains('bmLater')) {
+		dbResult.deleteObjectStore('bmLater');
+	}
 	
-	let store = dbResult.createObjectStore(dbStoreName);
+	let store1 = dbResult.createObjectStore(dbStoreName);
+	let store2 = dbResult.createObjectStore('bmLater', { keyPath: 'id' });
 };
 
 self.addEventListener('install', event => {
@@ -62,6 +67,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', async (event) => {
 	var url = event.request.url;
+	var clone = event.request.clone();
 	if(url.includes('sharelink')) {
 		const onShare = async () => {
 			const originalData = await event.request.text();
@@ -115,8 +121,33 @@ self.addEventListener('fetch', async (event) => {
 			credentials: 'same-origin',
 			cache: "default"
 		}) || cachedResponse
-	}).catch(err => {
+	}).catch(async err => {
 		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
+		var clonedBody = await clone.text();
+		
+		if(clonedBody.includes('addmark')) {
+			const clonedObject = {};
+			const pairs = clonedBody.split("&");
+			for(var i = 0; i < pairs.length; i++) {
+				var pos = pairs[i].indexOf('=');       
+				if (pos == -1){ continue;}
+				const name = pairs[i].substring(0,pos);
+				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " ")) || null;
+				clonedObject[name] = value;
+			}
+			//console.warn(clonedObject.data);
+			//var abm = JSON.parse(clonedObject.data);
+			//console.log(abm);
+			/*
+			self.clients.matchAll().then(clients => 
+				clients[0].postMessage({
+					'bmLater': JSON.parse(clonedObject.data),
+				})
+			);
+			*/
+			bmLater(JSON.parse(clonedObject.data));
+		}
+
 		self.clients.matchAll().then(clients => 
 			clients[0].postMessage({
 				'clientOffline': true,
@@ -170,3 +201,15 @@ self.addEventListener('message', message => {
 		};
 	}
 });
+
+function bmLater(bma) {
+	let openDBRequest = indexedDB.open(dbName);
+
+	openDBRequest.onsuccess = (event) => {
+		let db = event.target.result;
+		let objectstore = 'bmLater';
+		const transaction = db.transaction(objectstore, "readwrite");
+		const store = transaction.objectStore(objectstore);
+		const addRecord = store.put(bma);
+	};
+}

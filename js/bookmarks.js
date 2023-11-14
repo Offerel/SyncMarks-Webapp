@@ -53,6 +53,10 @@ document.addEventListener("DOMContentLoaded", function() {
 				};
 			}
 		}
+
+		if (event.data.bmLater) {
+
+		}
 	})
 
 	navigator.serviceWorker.addEventListener("controllerchange", event => {

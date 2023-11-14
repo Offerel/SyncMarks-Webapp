@@ -28,41 +28,54 @@
 	  {
 		"src": "images/bookmarks48.png",
 		"type": "image/png",
-		"sizes": "48x48"
+		"sizes": "48x48",
+		"purpose": "any"
 	  },
 	  {
 		"src": "images/bookmarks72.png",
 		"type": "image/png",
-		"sizes": "72x72"
+		"sizes": "72x72",
+		"purpose": "any"
 	  },
 	  {
 		"src": "images/bookmarks96.png",
 		"type": "image/png",
-		"sizes": "96x96"
+		"sizes": "96x96",
+		"purpose": "any"
+	  },
+	  {
+		"src": "images/maskable_icon.png",
+		"type": "image/png",
+		"sizes": "96x96",
+		"purpose": "maskable"
 	  },
 	  {
 		"src": "images/bookmarks144.png",
 		"type": "image/png",
-		"sizes": "144x144"
+		"sizes": "144x144",
+		"purpose": "any"
 	  },
 	  {
 		"src": "images/bookmarks192.png",
 		"type": "image/png",
-		"sizes": "192x192"
+		"sizes": "192x192",
+		"purpose": "any"
 	  },
 	  {
 		"src": "images/bookmarks.png",
 		"type": "image/png",
-		"sizes": "256x256"
+		"sizes": "256x256",
+		"purpose": "any"
 	  },
 	  {
 		"src": "images/bookmarks512.png",
 		"type": "image/png",
-		"sizes": "512x512"
+		"sizes": "512x512",
+		"purpose": "any"
 	  }
 	],
 	"edge_side_panel": {
-	  "preferred_width": 420
+	  "preferred_width": 400
 	},
 	"shortcuts": [
 	  {
