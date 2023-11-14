@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if (event.data.addbm) {
 			document.getElementById('footer').click();
-			
+			return false;
 		}
 
 		if (event.data.sharemark) {
@@ -35,7 +35,9 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 
 		if (event.data.clientOffline) {
-			console.log("No network, get from indexdb and cache");
+			let message = 'No network, get from indexdb and cache';
+			console.warn(message);
+			pwaMessage(message, 'warn');
 			let openDBRequest = indexedDB.open(dbName);
 			openDBRequest.onsuccess = (event) => {
 				let db = event.target.result;
@@ -61,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			const registration = navigator.serviceWorker.register("smsw.js");
 		} catch (error) {
 			console.error(`Registration failed with ${error}`);
+			pwaMessage(`Registration failed with ${error}`, 'error');
 		}
 	}
 	 
@@ -330,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			navigator.clipboard.readText().then(text => {
 				if(isValidUrl(text)) document.getElementById('url').value = text;
 			}).catch(err => {
-				console.error('Failed to read clipboard contents: ', err);
+				console.warn('Failed to read clipboard contents: ', err);
 			});
 			url.focus();
 			url.addEventListener('input', enableSave);
@@ -589,15 +592,7 @@ function sendRequest(action, data = null, addendum = null) {
 				let message = `Error ${xhr.status}: ${xhr.statusText}`;
 				show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 				console.error(action.name, message);
-
-				var mdiv = document.getElementById("pwamessage");
-				mdiv.style.backgroundColor = '#d9534f';
-				mdiv.innerText = action.name + ": " + message;
-				mdiv.className = "show";
-				setTimeout(function(){
-					mdiv.className = mdiv.className.replace("show", "");
-				}, 5000);
-				return false;
+				pwaMessage(action.name + ": " + message, 'error');
 			}
 		}
 	}
@@ -605,12 +600,24 @@ function sendRequest(action, data = null, addendum = null) {
 	xhr.onerror = function () {
 		let message = "Error: " + xhr.status + ' | ' + xhr.response;
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-		console.error(action.name, message);		
+		console.error(action.name, message);
+		pwaMessage(action.name + ": " + message, 'error');
 		return false;
 	}
 
 	const qparams = new URLSearchParams(params);
 	xhr.send(qparams);
+}
+
+function pwaMessage(message, state) {
+	var mdiv = document.getElementById("pwamessage");
+	mdiv.classList.add(state);
+	mdiv.innerText = action.name + ": " + message;
+	mdiv.classList.add('show');
+	setTimeout(function(){
+		mdiv.className = mdiv.classList.remove("show");
+	}, 5000);
+	return false;
 }
 
 function getclients(response) {
@@ -672,14 +679,8 @@ function addmark(response) {
 	let message = 'Bookmark added successfully.';
 	console.info(message);
 	
-	let mdiv = document.getElementById("pwamessage");
-	mdiv.style.backgroundColor = (message.includes('not')) ? '#d9534f':'#5cb85c';
-	mdiv.innerText = message;
-	mdiv.className = "show";
-	setTimeout(function(){
-		mdiv.className = mdiv.className.replace("show", "");
-	}, 5000);
-	
+	let state = (message.includes('not')) ? 'warn':'success';
+	pwaMessage(message, state);
 }
 
 function muedt(response) {
@@ -689,6 +690,7 @@ function muedt(response) {
 		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
 	} else if(response.indexOf('not send') != -1) {
 		console.warn("Syncmarks: "+response);
+		pwaMessage(response, 'error');
 	}
 
 	sendRequest(getUsers);
@@ -836,6 +838,7 @@ function cmail(response) {
 		let message = response;
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		pwaMessage(message, 'error');
 	}
 }
 
@@ -892,6 +895,7 @@ function checkdups(response) {
 		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 		console.info("No duplicates found");
 		show_noti({title:"Syncmarks - Info", url:"No duplicates found", key:""}, false);
+		pwaMessage("No duplicates found", 'warn');
 	}
 }
 
@@ -936,6 +940,7 @@ function bexport(response) {
 	link.download = "bookmarks_" + today + ".html";
 	link.click();
 	console.info("HTML export successfully, please look in your download folder.");
+	pwaMessage("HTML export successfully, please look in your download folder.", 'success');
 }
 
 function mlog(response) {
@@ -1019,6 +1024,7 @@ function cfolder(response) {
 		let message = "There was a problem adding the new folder.";
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		pwaMessage(message, 'error');
 	}
 	hideMenu();
 }
@@ -1030,6 +1036,7 @@ function bmedt(response) {
 		let message = "There was a problem changing that bookmark.";
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		pwaMessage(message, 'error');
 	}
 }
 
@@ -1045,6 +1052,7 @@ function bmmv(response) {
 		let message = "Error moving bookmark";
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		console.error(message);
+		pwaMessage(message, 'error');
 	}
 }
 
@@ -1071,16 +1079,19 @@ function mdel(response) {
 	} else {
 		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
 		console.error(response);
+		pwaMessage(response, 'error');
 	}
 }
 
 function soption(response) {
 	if(response == 'true') {
 		console.info("Option saved.");
+		pwaMessage("Option saved.", 'success');
 	} else {
 		let message = "There was a problem, saving the option";
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		console.error(message);
+		pwaMessage(message, 'error');
 	}
 }
 
@@ -1091,6 +1102,7 @@ function durl(response) {
 		let message = "Problem removing notification, please check server log.";
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
+		pwaMessage(message, 'error');
 	}
 }
 

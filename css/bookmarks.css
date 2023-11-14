@@ -20,6 +20,26 @@
   visibility: visible;
   animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
+#pwamessage.error {
+    background-color: #f2dede;
+    border-color: #eda6b2;
+    color: #D8000C;
+}
+#pwamessage.warn {
+    background-color: #FEEFB3;
+    color: #9F6000;
+    border-color: #eea236;
+}
+#pwamessage.success {
+    background-color: #DFF2BF;
+    color: #270;
+    border-color: #a2dfa2;
+}
+#pwamessage.info {
+    background-color: #BEF;
+    color: #059;
+    border-color: #74d6f3;
+}
 @keyframes fadein {
   from {bottom: 0; opacity: 0;}
   to {bottom: 50px; opacity: 1;}
