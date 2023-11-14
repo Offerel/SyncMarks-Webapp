@@ -13,9 +13,6 @@
 		}
 	},
 	"lang": "en",
-	"launch_handler": {
-		"client_mode": "navigate-existing"
-	},
 	"categories": [
 		"business",
 		"personalization",

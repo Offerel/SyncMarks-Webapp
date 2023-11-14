@@ -1012,7 +1012,31 @@ function getClientType($uas) {
 }
 
 function validate_url($url) {
-	$url = filter_var(filter_var($url, FILTER_SANITIZE_STRING), FILTER_SANITIZE_URL);
+	$urla = parse_url($url);
+
+	$pass      = $urla['pass'] ?? null;
+    $user      = $urla['user'] ?? null;
+    $userinfo  = $pass !== null ? "$user:$pass" : $user;
+    $port      = $urla['port'] ?? 0;
+    $scheme    = $urla['scheme'] ?? "";
+    $query     = $urla['query'] ?? "";
+    $fragment  = $urla['fragment'] ?? "";
+	
+    $authority = (
+        ($userinfo !== null ? "$userinfo@" : "") .
+        (urlencode($urla['host']) ?? "") .
+        ($port ? ":$port" : "")
+	);
+
+	$url =
+        (\strlen($scheme) > 0 ? "$scheme:" : "") .
+        (\strlen($authority) > 0 ? "//$authority" : "") .
+        (join('/', array_map('rawurlencode', explode('/', $urla['path']))) ?? "") .		
+        (\strlen($query) > 0 ? "?$query" : "") .
+        (\strlen($fragment) > 0 ? "#$fragment" : "")
+    ;
+
+	$url = filter_var(filter_var($url, FILTER_SANITIZE_STRING), FILTER_UNSAFE_RAW);
 	if (filter_var($url, FILTER_VALIDATE_URL)) {
 		return $url;
 	} else {

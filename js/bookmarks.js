@@ -26,6 +26,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if (event.data.sharemark) {
 			sendRequest(addmark, event.data.sharemark, 2);
+			sessionStorage.setItem('gNoti', 1);
+			return false;
 		}
 
 		if (event.data.bookmarksAddedDB) {
@@ -57,13 +59,6 @@ document.addEventListener("DOMContentLoaded", function() {
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
-			if (registration.installing) {
-				console.log("Service worker installing");
-			} else if (registration.waiting) {
-				console.log("Service worker installed");
-			} else if (registration.active) {
-				console.log("Service worker active");
-			}
 		} catch (error) {
 			console.error(`Registration failed with ${error}`);
 		}
@@ -180,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
 
-	//	if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
+		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
 			if (e.key === 'Escape') hideMenu();
