@@ -7,6 +7,7 @@ const cacheResources = [
 	'images/bookmarks.ico',
 	'images/bookmarks.png',
 	'images/maskable_icon.png',
+	'images/maskable_icon_x128.png',
 	'images/bookmarks48.png',
 	'images/bookmarks72.png',
 	'images/bookmarks96.png',

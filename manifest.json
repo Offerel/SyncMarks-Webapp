@@ -44,9 +44,9 @@
 		"purpose": "any"
 	  },
 	  {
-		"src": "images/maskable_icon.png",
+		"src": "images/maskable_icon_x128.png",
 		"type": "image/png",
-		"sizes": "96x96",
+		"sizes": "128x128",
 		"purpose": "maskable"
 	  },
 	  {
