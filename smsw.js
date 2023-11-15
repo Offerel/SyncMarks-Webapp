@@ -16,10 +16,11 @@ const cacheResources = [
 	'./images/bookmarks512.png',
 	'./css/bookmarks.css',
 	'./css/bookmarks.min.css',
+	'./smsw.js',
 ];
 
 const dbName = "syncmarks";
-const version = 10;
+const version = 1;
 
 let db;
 let dbRequest = indexedDB.open(dbName, version);
@@ -244,14 +245,6 @@ function checkIDB() {
 		oStores.forEach(oStore => {
 			const transaction = db.transaction(oStore, "readonly");
 			const objectstore = transaction.objectStore(oStore);
-			/*
-			objectstore.getAll().onsuccess = event => {
-				let entries = event.target.result;
-				if(entries.length > 0) {
-					sendLater(entries, oStore);
-				}
-			};
-			*/
 			
 			objectstore.getAllKeys().onsuccess = event => {
 				let keys = event.target.result;
@@ -292,7 +285,7 @@ function sendLater(data, keys, store) {
 				k++;
 			});
 			delObj = [...new Set(delObj)];
-			//return false;
+
 			self.clients.matchAll().then(clients => 
 				clients[0].postMessage({
 					'delmsaved': JSON.stringify(delObj),

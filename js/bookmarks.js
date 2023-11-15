@@ -598,7 +598,6 @@ function sendRequest(action, data = null, addendum = null) {
 				action(xhr.response, addendum);
 			} else {
 				let message = `Error ${xhr.status}: ${xhr.statusText}`;
-				show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 				console.warn(action.name, message);
 				pwaMessage(action.name + ": " + message, 'error');
 			}
@@ -607,9 +606,7 @@ function sendRequest(action, data = null, addendum = null) {
 
 	xhr.onerror = function () {
 		let message = "Error: " + xhr.status + ' | ' + xhr.response;
-		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-		console.warn(action.name, message);
-		//pwaMessage(action.name + ": " + message, 'error');
+		console.warn(action.name, url, message);
 		return false;
 	}
 
@@ -624,7 +621,7 @@ function pwaMessage(message, state) {
 	mdiv.classList.add('show');
 	setTimeout(function(){
 		mdiv.className = mdiv.classList.remove("show");
-	}, 5000);
+	}, 10000);
 	return false;
 }
 
