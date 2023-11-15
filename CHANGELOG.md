@@ -1,8 +1,18 @@
 ChangeLog
 =========
-1.8.9 (2023-09-06)
+1.8.9 (2023-11-15)
 -------------------------
-- 
+- Fix response
+- Fix variable initialization
+- Fix CSS
+- Fix wording
+- Fix messaging
+- Added PWA / Service Worker
+- Added Share Target
+- Added indexedDB
+- Added offline functions
+- Added send later functions
+- Removed background sync for privacy reasons
   
 1.8.8 (2023-07-20)
 -------------------------
