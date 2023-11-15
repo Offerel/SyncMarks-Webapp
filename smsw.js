@@ -1,26 +1,25 @@
 const cacheName = 'SyncMarksPWA-v1';
 const cacheResources = [
 	'./',
-	'manifest.json',
-	'js/bookmarks.js',
-	'js/bookmarks.min.js',
-	'images/bookmarks.ico',
-	'images/bookmarks.png',
-	'images/maskable_icon.png',
-	'images/maskable_icon_x128.png',
-	'images/bookmarks48.png',
-	'images/bookmarks72.png',
-	'images/bookmarks96.png',
-	'images/bookmarks144.png',
-	'images/bookmarks192.png',
-	'images/bookmarks512.png',
-	'css/bookmarks.css',
-	'css/bookmarks.min.css',
+	'./manifest.json',
+	'./js/bookmarks.js',
+	'./js/bookmarks.min.js',
+	'./images/bookmarks.ico',
+	'./images/bookmarks.png',
+	'./images/maskable_icon.png',
+	'./images/maskable_icon_x128.png',
+	'./images/bookmarks48.png',
+	'./images/bookmarks72.png',
+	'./images/bookmarks96.png',
+	'./images/bookmarks144.png',
+	'./images/bookmarks192.png',
+	'./images/bookmarks512.png',
+	'./css/bookmarks.css',
+	'./css/bookmarks.min.css',
 ];
 
 const dbName = "syncmarks";
-const version = 5;
-const dbStoreName = "bookmarks";
+const version = 10;
 
 let db;
 let dbRequest = indexedDB.open(dbName, version);
@@ -31,15 +30,21 @@ dbRequest.onsuccess = function(event) {
 
 dbRequest.onupgradeneeded = function(event) {
 	let dbResult = event.target.result;
-	if (dbResult.objectStoreNames.contains(dbStoreName)) {
-		dbResult.deleteObjectStore(dbStoreName);
+	if (dbResult.objectStoreNames.contains('bookmarks')) {
+		dbResult.deleteObjectStore('bookmarks');
 	}
-	if (dbResult.objectStoreNames.contains('bmLater')) {
-		dbResult.deleteObjectStore('bmLater');
+
+	if (dbResult.objectStoreNames.contains('bmAdd')) {
+		dbResult.deleteObjectStore('bmAdd');
+	}
+
+	if (dbResult.objectStoreNames.contains('bmDel')) {
+		dbResult.deleteObjectStore('bmDel');
 	}
 	
-	let store1 = dbResult.createObjectStore(dbStoreName);
-	let store2 = dbResult.createObjectStore('bmLater', { keyPath: 'id' });
+	let store1 = dbResult.createObjectStore('bookmarks');
+	let store2 = dbResult.createObjectStore('bmAdd', { keyPath: 'id' });
+	let store3 = dbResult.createObjectStore('bmDel', { autoIncrement: true, unique: true });
 };
 
 self.addEventListener('install', event => {
@@ -52,7 +57,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
 	var cacheWhitelist = ['SyncMarksPWA-v1'];
-	clients.claim();	
+	clients.claim();
 	event.waitUntil(
 		caches.keys().then(function(cacheNames) {
 			return Promise.all(
@@ -124,34 +129,33 @@ self.addEventListener('fetch', async (event) => {
 		}) || cachedResponse
 	}).catch(async err => {
 		console.warn('SyncMarks seems to be offline. Loading from internal cache/db');
+
 		var clonedBody = await clone.text();
-		
-		if(clonedBody.includes('addmark')) {
-			const clonedObject = {};
-			const pairs = clonedBody.split("&");
-			for(var i = 0; i < pairs.length; i++) {
-				var pos = pairs[i].indexOf('=');       
-				if (pos == -1){ continue;}
-				const name = pairs[i].substring(0,pos);
-				const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " ")) || null;
-				clonedObject[name] = value;
-			}
-			//console.warn(clonedObject.data);
-			//var abm = JSON.parse(clonedObject.data);
-			//console.log(abm);
-			/*
-			self.clients.matchAll().then(clients => 
-				clients[0].postMessage({
-					'bmLater': JSON.parse(clonedObject.data),
-				})
-			);
-			*/
-			bmLater(JSON.parse(clonedObject.data));
+		const pairs = clonedBody.split("&");
+		const clonedObject = {};
+		let message = 'SyncMarks offline or unreachable.';
+
+		for(var i = 0; i < pairs.length; i++) {
+			var pos = pairs[i].indexOf('=');       
+			if (pos == -1){ continue;}
+			const name = pairs[i].substring(0,pos);
+			const value = decodeURIComponent(pairs[i].substring(pos+1).replace(/\+/g,  " ")) || null;
+			clonedObject[name] = value;
+		}
+
+		if(clonedObject["action"] === 'addmark') {
+			bmLater(JSON.parse(clonedObject.data), 'add');
+			message = 'SyncMarks offline or unreachable. Send added bookmark later.';
+		}
+
+		if(clonedObject["action"] === 'mdel') {
+			bmLater(JSON.parse(clonedObject.data), 'del');
+			message = 'SyncMarks offline or unreachable. Send deleted bookmark later.';
 		}
 
 		self.clients.matchAll().then(clients => 
 			clients[0].postMessage({
-				'clientOffline': true,
+				'clientOffline': message,
 			})
 		);
 	}))
@@ -188,8 +192,8 @@ self.addEventListener('message', message => {
 
 		openDBRequest.onsuccess = (event) => {
 			let db = event.target.result;
-			const transaction = db.transaction(dbStoreName, "readwrite");
-			const store = transaction.objectStore(dbStoreName);
+			const transaction = db.transaction('bookmarks', "readwrite");
+			const store = transaction.objectStore('bookmarks');
 			const addRecord = store.put( bookmarks, 'bookmarks' );
 	  
 			addRecord.onsuccess = (event) => {
@@ -201,16 +205,105 @@ self.addEventListener('message', message => {
 			}
 		};
 	}
+
+	if(message.data.type == 'checkIDB') {
+		checkIDB();
+	}
 });
 
-function bmLater(bma) {
+function bmLater(data, action) {
 	let openDBRequest = indexedDB.open(dbName);
+	let objectstore = '';
+
+	switch(action) {
+		case 'add':
+			objectstore = 'bmAdd';
+			break;
+		case 'del':
+			objectstore = 'bmDel';
+			break;
+		default:
+			console.warn('Save for later: Unknown action');
+			return false;
+	}
 
 	openDBRequest.onsuccess = (event) => {
 		let db = event.target.result;
-		let objectstore = 'bmLater';
 		const transaction = db.transaction(objectstore, "readwrite");
 		const store = transaction.objectStore(objectstore);
-		const addRecord = store.put(bma);
+		const addRecord = store.put(data);
 	};
+}
+
+function checkIDB() {
+	let openDBRequest = indexedDB.open(dbName);
+	const oStores = ['bmAdd', 'bmDel'];
+
+	openDBRequest.onsuccess = (event) => {
+		let db = event.target.result;
+		oStores.forEach(oStore => {
+			const transaction = db.transaction(oStore, "readonly");
+			const objectstore = transaction.objectStore(oStore);
+			/*
+			objectstore.getAll().onsuccess = event => {
+				let entries = event.target.result;
+				if(entries.length > 0) {
+					sendLater(entries, oStore);
+				}
+			};
+			*/
+			
+			objectstore.getAllKeys().onsuccess = event => {
+				let keys = event.target.result;
+				objectstore.getAll().onsuccess = event => {
+					let entries = event.target.result;
+					if(entries.length > 0) {
+						sendLater(entries, keys, oStore);
+					}
+				};
+			}
+			
+		});
+	};
+}
+
+function sendLater(data, keys, store) {
+	switch(store) {
+		case 'bmAdd':
+			data.forEach(entry => {
+				let jsonMark = JSON.stringify(entry);
+				delIdbEntry(entry.id, store);
+				
+				self.clients.matchAll().then(clients => 
+					clients[0].postMessage({
+						'sharemark': jsonMark,
+					})
+				);
+			});
+			break;
+		case 'bmDel':
+			var delObj = []
+			k = 0;
+			data.forEach( e => {
+				e.forEach( e => {
+					delObj.push(e);
+				});
+				delIdbEntry(keys[k], store);
+				k++;
+			});
+			delObj = [...new Set(delObj)];
+			//return false;
+			self.clients.matchAll().then(clients => 
+				clients[0].postMessage({
+					'delmsaved': JSON.stringify(delObj),
+				})
+			);
+			break;
+		default:
+			return false;
+	}
+}
+
+function delIdbEntry(key, store) {
+	const request = db.transaction(store, 'readwrite').objectStore(store).delete(key);
 }

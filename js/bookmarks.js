@@ -7,12 +7,20 @@
  * @license GNU General Public License, version 3
  */
 const dbName = "syncmarks";
-const version = 1;
 const dbStoreName = "bookmarks";
 let db;
-let dbRequest = indexedDB.open(dbName, version);
+let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded", function() {
+	if ("serviceWorker" in navigator) {
+		try {
+			const registration = navigator.serviceWorker.register("smsw.js");
+		} catch (error) {
+			console.error(`ServiceWorker registration failed with ${error}`);
+			pwaMessage(`ServiceWorker registration failed with ${error}`, 'error');
+		}
+	}
+
 	navigator.serviceWorker.addEventListener('message', event => {
 		if (event.data && event.data.type === 'openDialog') {
 			document.getElementById('bmarkadd').style.display = 'block';
@@ -30,15 +38,19 @@ document.addEventListener("DOMContentLoaded", function() {
 			return false;
 		}
 
+		if (event.data.delmsaved) {
+			sendRequest(mdel, event.data.delmsaved);
+			return false;
+		}
+
 		if (event.data.bookmarksAddedDB) {
-			console.log("DB saved");
-			pwaMessage("DB saved", 'success');
+			console.log("Bookmarks saved");
 		}
 
 		if (event.data.clientOffline) {
-			let message = 'No network, get from indexdb and cache';
-			console.warn(message);
-			pwaMessage(message, 'warn');
+			if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+			console.warn(event.data.clientOffline);
+			pwaMessage(event.data.clientOffline, 'warn');
 			let openDBRequest = indexedDB.open(dbName);
 			openDBRequest.onsuccess = (event) => {
 				let db = event.target.result;
@@ -53,24 +65,11 @@ document.addEventListener("DOMContentLoaded", function() {
 				};
 			}
 		}
-
-		if (event.data.bmLater) {
-
-		}
 	})
 
 	navigator.serviceWorker.addEventListener("controllerchange", event => {
 		//confirm('sw changed');
 	});
-
-	if ("serviceWorker" in navigator) {
-		try {
-			const registration = navigator.serviceWorker.register("smsw.js");
-		} catch (error) {
-			console.error(`Registration failed with ${error}`);
-			pwaMessage(`Registration failed with ${error}`, 'error');
-		}
-	}
 	 
 	if(document.getElementById('preset')) document.getElementById('preset').addEventListener('click', function(e){
 		e.preventDefault();
@@ -468,8 +467,8 @@ const isValidUrl = urlString=> {
 	try { 
 		url =new URL(urlString); 
 	}
-	catch(e){ 
-	  return false; 
+	catch(e){
+		return false; 
 	}
 	return url.protocol === "http:" || url.protocol === "https:";
 }
@@ -600,7 +599,7 @@ function sendRequest(action, data = null, addendum = null) {
 			} else {
 				let message = `Error ${xhr.status}: ${xhr.statusText}`;
 				show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-				console.error(action.name, message);
+				console.warn(action.name, message);
 				pwaMessage(action.name + ": " + message, 'error');
 			}
 		}
@@ -609,8 +608,8 @@ function sendRequest(action, data = null, addendum = null) {
 	xhr.onerror = function () {
 		let message = "Error: " + xhr.status + ' | ' + xhr.response;
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
-		console.error(action.name, message);
-		pwaMessage(action.name + ": " + message, 'error');
+		console.warn(action.name, message);
+		//pwaMessage(action.name + ": " + message, 'error');
 		return false;
 	}
 
@@ -621,7 +620,7 @@ function sendRequest(action, data = null, addendum = null) {
 function pwaMessage(message, state) {
 	var mdiv = document.getElementById("pwamessage");
 	mdiv.classList.add(state);
-	mdiv.innerText = action.name + ": " + message;
+	mdiv.innerText = message;
 	mdiv.classList.add('show');
 	setTimeout(function(){
 		mdiv.className = mdiv.classList.remove("show");
@@ -1080,7 +1079,7 @@ function arename(response) {
 
 function mdel(response) {
 	hideMenu();
-	document.getElementById('db-spinner').remove();
+	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 	if(Array.isArray(response)) {
 		response.forEach(function(element) {
 			document.getElementById(element).parentNode.remove();
@@ -1124,6 +1123,10 @@ function gurls(response) {
 	}
 
 	sessionStorage.setItem('gNoti', '1');
+
+	navigator.serviceWorker.controller.postMessage({
+		type: 'checkIDB',
+	});
 }
 
 function mngUform(uData, userSelect) {
