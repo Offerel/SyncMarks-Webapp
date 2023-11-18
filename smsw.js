@@ -1,3 +1,11 @@
+/**
+ * SyncMarks
+ *
+ * @version 1.9.0
+ * @author Offerel
+ * @copyright Copyright (c) 2023, Offerel
+ * @license GNU General Public License, version 3
+ */
 const cacheName = 'SyncMarksPWA-v1';
 const cacheResources = [
 	'./',

@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.9
+ * @version 1.9.0
  * @author Offerel
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			event.preventDefault();
 			hideMenu();
 			let jsonMark = JSON.stringify({ 
-				"id": Math.random().toString(24).substring(2, 12),
+				"id": Math.random().toString(24).substring(2, 14),
 				"url": document.getElementById('url').value,
 				"title": '',
 				"type": 'bookmark',
@@ -334,11 +334,15 @@ document.addEventListener("DOMContentLoaded", function() {
 			document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
 			addBD();
 			document.getElementById('bmarkadd').style.display = 'block';
-			navigator.clipboard.readText().then(text => {
-				if(isValidUrl(text)) document.getElementById('url').value = text;
-			}).catch(err => {
-				console.warn('Failed to read clipboard contents: ', err);
-			});
+
+			if(typeof navigator.clipboard.readText !== "undefined") {
+				navigator.clipboard.readText().then(text => {
+					if(isValidUrl(text)) document.getElementById('url').value = text;
+				}).catch(err => {
+					console.warn('Failed to read clipboard contents: ', err);
+				});
+			}
+
 			url.focus();
 			url.addEventListener('input', enableSave);
 		});
@@ -676,12 +680,18 @@ function getclients(response) {
 }
 
 function addmark(response) {
-	document.getElementById('bookmarks').innerHTML = response;
-	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
-	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
-	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
-	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
 	let message = 'Bookmark added successfully.';
+
+	if(response == 'Bookmark not added') {
+		message = 'Bookmark not added';
+	} else {
+		document.getElementById('bookmarks').innerHTML = response;
+		document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+		document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
+		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+	}
+	
 	console.info(message);
 	
 	let state = (message.includes('not')) ? 'warn':'success';

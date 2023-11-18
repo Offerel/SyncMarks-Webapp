@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.8.9
+ * @version 1.9.0
  * @author Offerel
  * @copyright Copyright (c) 2023, Offerel
  * @license GNU General Public License, version 3
@@ -347,7 +347,7 @@ if(isset($_POST['action'])) {
 			$bookmark = json_decode($_POST['data'], true);
 			$stime = round(microtime(true) * 1000);
 			$bookmark['added'] = $stime;
-			$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle($bookmark['url']):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
+			$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle(trim($bookmark['url'])):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 			e_log(9, print_r($bookmark, true));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
@@ -363,7 +363,9 @@ if(isset($_POST['action'])) {
 						e_log(8,"Bookmark added");
 						sendJSONResponse(bmTree());
 					} else {
+						sendJSONResponse('Bookmark not added');
 						http_response_code(417);
+						
 					}
 				} else {
 					updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
@@ -837,7 +839,7 @@ if(isset($_POST['action'])) {
 }
 
 if(isset($_GET['link'])) {
-	$url = validate_url($_GET["link"]);
+	$url = validate_url(trim($_GET["link"]));
 	e_log(9,"URL add request: " . $url);
 	
 	$bookmark['url'] = $url;
@@ -1573,7 +1575,7 @@ function htmlForms() {
 			<input placeholder='Title' type='text' id='mvtitle' name='mvtitle' value='' disabled>
 			<div class='select'>
 				<select id='mvfolder' name='mvfolder'>$sFolderOptions</select>
-				<div class='select__arrow'></div>
+				<!-- <div class='select__arrow'></div> -->
 			</div>
 			<input type='hidden' id='mvid' name='mvid' value=''>
 			<div class='dbutton'><button type='submit' id='mvsave' name='mvsave' value='Save' disabled>Save</button></div>
@@ -1599,7 +1601,6 @@ function htmlForms() {
 				<select id='folder' name='folder'>
 					$sFolderOptions
 				</select>
-				<div class='select__arrow'></div>
 			</div>
 			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>Save</button></div>
 		</form>
@@ -1714,7 +1715,7 @@ function makeHTMLTree($arr) {
 		if($bm['bmType'] == "bookmark") {
 			$title = ($bm['bmTitle'] != "") ? $bm['bmTitle']:'unknown title';//'&#13;' '&#10;'
 			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title.'&#13;'.$bm['bmURL']."' data-url='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
+			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title.'&#10;'.$bm['bmURL']."' data-url='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
 
