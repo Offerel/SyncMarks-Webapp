@@ -365,7 +365,6 @@ if(isset($_POST['action'])) {
 					} else {
 						sendJSONResponse('Bookmark not added');
 						http_response_code(417);
-						
 					}
 				} else {
 					updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime, true);
