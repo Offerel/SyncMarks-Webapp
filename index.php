@@ -1712,7 +1712,7 @@ function makeHTMLTree($arr) {
 	
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
-			$title = ($bm['bmTitle'] != "") ? $bm['bmTitle']:'unknown title';//'&#13;' '&#10;'
+			$title = ($bm['bmTitle'] != "") ? $bm['bmTitle']:'unknown title';
 			$title = htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 			$bookmark = "\n<li class='file'><span id='".$bm['bmID']."' title='".$title.'&#10;'.$bm['bmURL']."' data-url='".$bm['bmURL']."'>".$title."</span></li>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
