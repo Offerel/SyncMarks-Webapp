@@ -155,7 +155,7 @@ if(isset($_POST['action'])) {
 			foreach ($jtabs as $key => $tab) {
 				
 				$tID = unique_code(12);
-				$title = $tab['title'];
+				$title = trim($tab['title']);
 				$url = $tab['url'];
 				$query = "SELECT count(*) AS count FROM `bookmarks` WHERE `bmType` = 'tab' AND `bmURL` = '$url' AND `userID` = $user;";
 				$res = db_query($query)[0]['count'];
@@ -1259,7 +1259,7 @@ function addBookmark($bm) {
 	$nindex = db_query($query)[0]['nindex'];
 	
 	e_log(8,"Add bookmark '".$bm['title']."'");
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".$bm['title']."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].");";
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".trim($bm['title'])."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].");";
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
 		e_log(1, $message);
