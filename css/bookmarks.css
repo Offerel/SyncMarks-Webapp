@@ -1,38 +1,39 @@
 /* @media screen and (orientation:portrait) */
 #reqdialog {
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    min-width: 350px;
-    max-width: 500px;
-    width: auto;
-    padding: 10px;
-    font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
-    font-size: .9em;
+	left: 10px;
+	right: 10px;
+	margin: 0 auto;
+	min-width: 350px;
+	max-width: 500px;
+	width: auto;
+	padding: 10px;
+	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+	font-size: .9em;
+	top: 60px;
 }
 .dtext {
-    display: block;
-    font-size: .9em;
+	display: block;
+	font-size: .9em;
+	margin: 10px 0;
 }
 .btna {
-    text-align: center;
-    padding-top: 10px;
+	text-align: center;
 }
 #pwamessage {
-    visibility: hidden;
-    min-width: 250px;
-    background-color: transparent;
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-    color: white;
-    text-align: center;
-    border-radius: 5px;
-    padding: 3px 6px;
-    position: fixed;
-    z-index: 1;
-    left: 50%;
-    bottom: 50px;
-    font-size: 16px;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	visibility: hidden;
+	min-width: 250px;
+	background-color: transparent;
+	box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+	color: white;
+	text-align: center;
+	border-radius: 5px;
+	padding: 3px 6px;
+	position: fixed;
+	z-index: 1;
+	left: 50%;
+	bottom: 50px;
+	font-size: 16px;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	transform: translateX(-50%);
 }
 #pwamessage.show {
@@ -40,24 +41,24 @@
   animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
 #pwamessage.error {
-    background-color: #f2dede;
-    border-color: #eda6b2;
-    color: #D8000C;
+	background-color: #f2dede;
+	border-color: #eda6b2;
+	color: #D8000C;
 }
 #pwamessage.warn {
-    background-color: #FEEFB3;
-    color: #9F6000;
-    border-color: #eea236;
+	background-color: #FEEFB3;
+	color: #9F6000;
+	border-color: #eea236;
 }
 #pwamessage.success {
-    background-color: #DFF2BF;
-    color: #270;
-    border-color: #a2dfa2;
+	background-color: #DFF2BF;
+	color: #270;
+	border-color: #a2dfa2;
 }
 #pwamessage.info {
-    background-color: #BEF;
-    color: #059;
-    border-color: #74d6f3;
+	background-color: #BEF;
+	color: #059;
+	border-color: #74d6f3;
 }
 @keyframes fadein {
   from {bottom: 0; opacity: 0;}
@@ -388,7 +389,7 @@
 	max-width: 100%;
 	top: 60px;
 }
-.mbmdialog h6 {
+.mbmdialog h6, #reqdialog h6 {
 	margin: 0;
 	font-size: 1.2em;
 }
@@ -403,19 +404,19 @@
 	font-size: 1.2em;
 	margin: 5px 0;
 }
-.mbmdialog button, .btna button {
-	background-color: rgb(33,150,243);
+.btna button, .mbmdialog button {
+	background-color: #2196f3;
 	border: none;
 	text-transform: uppercase;
-	color: white;
+	color: #fff;
 	font-weight: 501;
-	margin-inline-start: 5px;
-	padding: 3px 6px;
+	margin-inline-start: 10px;
+	padding: 3px 10px;
 	border-radius: 4px;
-	box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-	font-family: "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui;
-	line-height: 20px;
-	outline: none;
+	box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12);
+	font-family: Roboto,"Segoe UI",BlinkMacSystemFont,system-ui;
+	line-height: 30px;
+	outline: 0;
 	cursor: pointer;
 }
 .mbmdialog button:hover, .btna button:hover {

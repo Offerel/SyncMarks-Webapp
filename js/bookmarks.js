@@ -572,15 +572,6 @@ function openFolderBookmarks(event) {
 function rmBm(key) {
 	if(key.keyCode == 46) {
 		mconfirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?", JSON.stringify(bmIDs));
-		/*
-		if(confirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?")) {
-			sendRequest(mdel, JSON.stringify(bmIDs));
-			let loader = document.createElement('div');
-			loader.classList.add('db-spinner');
-			loader.id = 'db-spinner';
-			document.querySelector('body').appendChild(loader);
-		}
-		*/
 	}
 }
 
@@ -1175,16 +1166,6 @@ function moveEnd() {
 function delBookmark(id, title) {
 	const bookmarks = [id];
 	mconfirm("Would you like to delete \"" + title + "\"?", JSON.stringify(bookmarks));
-	/*
-	if(confirm("Would you like to delete \"" + title + "\"?")) {
-		const bookmarks = [id]
-		sendRequest(mdel, JSON.stringify(bookmarks));
-		let loader = document.createElement('div');
-		loader.classList.add('db-spinner');
-		loader.id = 'db-spinner';
-		document.querySelector('body').appendChild(loader);
-	}
-	*/
 }
 
 function enableSave() {
@@ -1403,24 +1384,23 @@ function mconfirm(message, ids) {
 	dialog.classList.add('show-menu');
 	dialog.style.display = 'block';
 
-	document.getElementById('ydialog').addEventListener('click', e => {
-		delbm(ids);
-		hideMenu();
-	});
-	document.getElementById('ndialog').addEventListener('click', e => {
-		hideMenu();
-	});
+	let ydialog = document.getElementById('ydialog');
+	let ndialog = document.getElementById('ndialog');
+
+	ydialog.addEventListener('click', delbm, false);
+	ndialog.addEventListener('click', delbm, false);
+
+	ydialog.myparam = ids;
+	ndialog.myparam = null;
 }
 
-function delbm(ids) {
-	console.log('delbm');
-	console.log(ids);
-	return false;//
-	/*
-	sendRequest(mdel, ids);
-	let loader = document.createElement('div');
-	loader.classList.add('db-spinner');
-	loader.id = 'db-spinner';
-	document.querySelector('body').appendChild(loader);
-	*/
+function delbm(e) {
+	if(this.textContent == "Yes") {
+		sendRequest(mdel, ids);
+		let loader = document.createElement('div');
+		loader.classList.add('db-spinner');
+		loader.id = 'db-spinner';
+		document.querySelector('body').appendChild(loader);
+	}
+	hideMenu();
 }
