@@ -1546,10 +1546,11 @@ function htmlForms() {
 
 	$bmDialog = "
 	<menu class='menu' id='reqdialog'>
+		<h6>Delete Bookmark</h6>
 		<span class='dtext'></span>
 		<div class='btna'>
-			<button id='ydialog'>Yes</button>
 			<button id='ndialog'>No</button>
+			<button id='ydialog'>Yes</button>
 		</div>
 	</menu>";
 
