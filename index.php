@@ -1394,8 +1394,6 @@ function delUsermarks($uid) {
 function htmlHeader() {
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
-	//$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js?h=$hjs'></script>":"<script src='js/bookmarks.js?h=$hjs'></script>";
-	//$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css?h=$hcs'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css?h=$hcs'>";
 	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
 	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
 	
@@ -1537,13 +1535,22 @@ function htmlForms() {
 	</div>";
 
 	$bmMenu = "
-	<menu class='menu'><input type='hidden' id='bmid' title='bmtitle' value=''>
+	<menu class='menu' id='cmenu'><input type='hidden' id='bmid' title='bmtitle' value=''>
 		<ul>
 			<li id='btnEdit' class='menu-item'>Edit</li>
 			<li id='btnMove' class='menu-item'>Move</li>
 			<li id='btnDelete' class='menu-item'>Delete</li>
 			<li id='btnFolder' class='menu-item'>New Folder</li>
 		</ul>
+	</menu>";
+
+	$bmDialog = "
+	<menu class='menu' id='reqdialog'>
+		<span class='dtext'></span>
+		<div class='btna'>
+			<button id='ydialog'>Yes</button>
+			<button id='ndialog'>No</button>
+		</div>
 	</menu>";
 
 	$editForm = "
@@ -1606,7 +1613,7 @@ function htmlForms() {
 	</div>
 	<div id='footer'></div>";
 
-	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$logform.$mainmenu.$userform.$passwordform.$pbulletform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
+	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pbulletform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
 	return $htmlData;
 }
 

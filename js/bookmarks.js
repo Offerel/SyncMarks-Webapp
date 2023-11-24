@@ -571,6 +571,8 @@ function openFolderBookmarks(event) {
 
 function rmBm(key) {
 	if(key.keyCode == 46) {
+		mconfirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?", JSON.stringify(bmIDs));
+		/*
 		if(confirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?")) {
 			sendRequest(mdel, JSON.stringify(bmIDs));
 			let loader = document.createElement('div');
@@ -578,6 +580,7 @@ function rmBm(key) {
 			loader.id = 'db-spinner';
 			document.querySelector('body').appendChild(loader);
 		}
+		*/
 	}
 }
 
@@ -1170,6 +1173,9 @@ function moveEnd() {
 }
 
 function delBookmark(id, title) {
+	const bookmarks = [id];
+	mconfirm("Would you like to delete \"" + title + "\"?", JSON.stringify(bookmarks));
+	/*
 	if(confirm("Would you like to delete \"" + title + "\"?")) {
 		const bookmarks = [id]
 		sendRequest(mdel, JSON.stringify(bookmarks));
@@ -1178,6 +1184,7 @@ function delBookmark(id, title) {
 		loader.id = 'db-spinner';
 		document.querySelector('body').appendChild(loader);
 	}
+	*/
 }
 
 function enableSave() {
@@ -1188,7 +1195,7 @@ function enableSave() {
 }
 
 function showMenu(x, y){
-	var menu = document.querySelector('.menu');
+	var menu = document.getElementById('cmenu');
 	var minbot = window.innerHeight - 120;
 	if(y >= minbot) y = minbot;
 	menu.style.left = x + 'px';
@@ -1199,9 +1206,12 @@ function showMenu(x, y){
 }
 
 function hideMenu(){
-	let menu = document.querySelector('.menu');
-	menu.classList.remove('show-menu');
-	menu.style.display = 'none';
+	let menu = document.querySelectorAll('.menu');
+	menu.forEach(e => {
+		e.classList.remove('show-menu');
+		e.style.display = 'none';
+	});
+
 	document.querySelectorAll('.mmenu').forEach(function(item) {item.style.display = 'none'});
 	document.querySelectorAll('.mbmdialog').forEach(function(item) {item.style.display = 'none'});
 	document.getElementById('mnubg').style.visibility = "hidden";
@@ -1382,4 +1392,35 @@ function show_noti(noti, rei = true) {
 			}
 		};
 	}
+}
+
+function mconfirm(message, ids) {
+	hideMenu();
+	addBD();
+	var dialog = document.getElementById('reqdialog');
+	dialog.querySelector('span').innerText = message;
+	
+	dialog.classList.add('show-menu');
+	dialog.style.display = 'block';
+
+	document.getElementById('ydialog').addEventListener('click', e => {
+		delbm(ids);
+		hideMenu();
+	});
+	document.getElementById('ndialog').addEventListener('click', e => {
+		hideMenu();
+	});
+}
+
+function delbm(ids) {
+	console.log('delbm');
+	console.log(ids);
+	return false;//
+	/*
+	sendRequest(mdel, ids);
+	let loader = document.createElement('div');
+	loader.classList.add('db-spinner');
+	loader.id = 'db-spinner';
+	document.querySelector('body').appendChild(loader);
+	*/
 }

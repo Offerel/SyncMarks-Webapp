@@ -1,4 +1,23 @@
 /* @media screen and (orientation:portrait) */
+#reqdialog {
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    min-width: 350px;
+    max-width: 500px;
+    width: auto;
+    padding: 10px;
+    font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+    font-size: .9em;
+}
+.dtext {
+    display: block;
+    font-size: .9em;
+}
+.btna {
+    text-align: center;
+    padding-top: 10px;
+}
 #pwamessage {
     visibility: hidden;
     min-width: 250px;
@@ -384,7 +403,7 @@
 	font-size: 1.2em;
 	margin: 5px 0;
 }
-.mbmdialog button {
+.mbmdialog button, .btna button {
 	background-color: rgb(33,150,243);
 	border: none;
 	text-transform: uppercase;
@@ -399,7 +418,7 @@
 	outline: none;
 	cursor: pointer;
 }
-.mbmdialog button:hover {
+.mbmdialog button:hover, .btna button:hover {
 	background-color: #0879D9;
 	color: white;
 	border-color: #0879D9;
