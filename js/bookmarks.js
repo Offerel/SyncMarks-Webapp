@@ -570,7 +570,7 @@ function openFolderBookmarks(event) {
 }
 
 function rmBm(key) {
-	if(key.keyCode == 46) {
+	if(key.keyCode == 46 && bmIDs.length > 0) {
 		mconfirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?", JSON.stringify(bmIDs));
 	}
 }
@@ -1186,7 +1186,7 @@ function showMenu(x, y){
 	return false;
 }
 
-function hideMenu(){
+function hideMenu(marked = true){
 	let menu = document.querySelectorAll('.menu');
 	menu.forEach(e => {
 		e.classList.remove('show-menu');
@@ -1199,11 +1199,13 @@ function hideMenu(){
 	if(document.getElementById('dubDIV')) document.querySelector('body').removeChild(document.getElementById('dubDIV'));
 	if(document.getElementById('mnguform')) document.getElementById('mnguform').remove();
 
-	let bmMarked = document.querySelectorAll(".bmMarked");
-	for (let i = 0; i < bmMarked.length; i++) {
-		bmMarked[i].classList.remove("bmMarked");
+	if(marked) {
+		let bmMarked = document.querySelectorAll(".bmMarked");
+		for (let i = 0; i < bmMarked.length; i++) {
+			bmMarked[i].classList.remove("bmMarked");
+		}
+		bmIDs.length = 0;
 	}
-	bmIDs.length = 0;
 }
 
 function onContextMenu(e){
@@ -1215,6 +1217,8 @@ function onContextMenu(e){
 	
 	let menu = document.querySelector('.menu');
 	menu.style.display = 'block';
+
+	this.querySelector('span').classList.add("bmMarked");
 
 	if(e.target.attributes.id){
 		document.getElementById('bmid').value = e.target.attributes.id.value;
@@ -1275,7 +1279,6 @@ function onMenuClick(e){
 			document.getElementById('bmamove').style.display = 'block';
 			break;
 		case 'btnDelete':
-			hideMenu();
 			setTimeout(delBookmark, 5, document.getElementById('bmid').value, document.getElementById('bmid').title);
 			break;
 		case 'btnFolder':
@@ -1376,7 +1379,7 @@ function show_noti(noti, rei = true) {
 }
 
 function mconfirm(message, ids) {
-	hideMenu();
+	hideMenu(false);
 	addBD();
 	var dialog = document.getElementById('reqdialog');
 	dialog.querySelector('span').innerText = message;
