@@ -1,10 +1,11 @@
 ChangeLog
 =========
-1.8.9 (2023-11-18)
+1.9.0 (2023-11-24)
 -------------------------
 - Fix response
-  
-1.8.9 (2023-11-15)
+- Fix contextmenu Edge sidebar
+   
+1.8.9 (2023-11-18)
 -------------------------
 - Fix response
 - Fix variable initialization
