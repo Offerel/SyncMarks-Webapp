@@ -95,6 +95,12 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.querySelector('#menu button').classList.add('inlogin2');
 	}
 
+	document.querySelectorAll('.dclose').forEach(e => {
+		e.addEventListener('click', el => {
+			hideMenu();
+		});
+	});
+
 	if(document.getElementById('bookmarks')) {
 		document.querySelector('#menu input').addEventListener('keyup', function(e) {
 			var sfilter = this.value;

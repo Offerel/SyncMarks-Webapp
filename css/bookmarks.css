@@ -470,6 +470,26 @@
 	border-width: 8px 5px 0 5px;
 	border-color: black transparent transparent transparent;
 }
+.dclose {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	cursor: pointer;
+	font-size: 1.5em;
+	color: #555;
+	background: 0 0;
+	width: 1em;
+	height: 1em;
+	text-align: center;
+	border-radius: 50%;
+	padding: 0;
+	display: inline-block;
+	border: 0;
+}
+.dclose:hover {
+	background-color: orangered;
+	color: white;
+}
 .client-list {
 	padding: 0;
 }
@@ -1250,7 +1270,7 @@ span.rdesc {
 	display: inline-block;
 	width: 47px;
 	height: 26px;
-	right: 25px;
+	right: 30px;
 	top: 10px;
 }
 .switch input {
