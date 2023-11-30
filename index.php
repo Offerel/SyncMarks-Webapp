@@ -1447,6 +1447,7 @@ function htmlForms() {
 
 	$mngsettingsform = "
 	<div id='mngsform' class='mmenu'><h6>SyncMarks Settings</h6>
+		<span class='dclose'>&times;</span>
 		<table>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
 			<tr><td><span class='rdesc'>Username:</span>$userName</td><td class='bright'><button id='muser'>Edit</button></td></tr>
@@ -1468,6 +1469,7 @@ function htmlForms() {
 
 	$nmessagesform = "
 	<div id='nmessagesform' class='mmenu'>
+		<span class='dclose'>&times;</span>
 		<div class='tab'>
 		<button class='tablinks active' data-val='aNoti'>Active</button>
 		<button class='tablinks' data-val='oNoti'>Archived</button>
@@ -1487,6 +1489,7 @@ function htmlForms() {
 
 	$pbulletform = "
 	<div id='pbulletform' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Pushbullet</h6>
 		<div class='dialogdescr'>Maintain your API Token and Device ID.</div>
 		<form action='' method='POST'>$pbswitch
@@ -1499,6 +1502,7 @@ function htmlForms() {
 
 	$passwordform = "
 	<div id='passwordform' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Change Password</h6>
 		<div class='dialogdescr'>Enter your current password and a new password and confirm the new password.</div>
 		<form action='' method='POST'>					
@@ -1511,6 +1515,7 @@ function htmlForms() {
 
 	$userform = "
 	<div id='userform' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Change Username</h6>
 		<div class='dialogdescr'>Here you can change your username. Type in your new username and your current password and click on save to change it.</div>
 		<form action='' method='POST'>
@@ -1546,16 +1551,19 @@ function htmlForms() {
 
 	$bmDialog = "
 	<menu class='menu' id='reqdialog'>
+		
 		<h6>Delete Bookmark</h6>
 		<span class='dtext'></span>
 		<div class='btna'>
 			<button id='ndialog'>No</button>
 			<button id='ydialog'>Yes</button>
 		</div>
+		<span class='dclose'>&times;</span>
 	</menu>";
 
 	$editForm = "
 	<div id='bmarkedt' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Edit Bookmark</h6>
 		<form id='-' method='POST'>
 			<input placeholder='Title' type='text' id='edtitle' name='edtitle' value=''>
@@ -1577,6 +1585,7 @@ function htmlForms() {
 	}
 	$moveForm = "
 	<div id='bmamove' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Move Bookmark</h6>
 		<form id='bmmv' method='POST'>
 			<input placeholder='Title' type='text' id='mvtitle' name='mvtitle' value='' disabled>
@@ -1591,6 +1600,7 @@ function htmlForms() {
 
 	$folderForm = "
 	<div id='folderf' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Create new folder</h6>
 		<form id='fadd' method='POST'>
 			<input placeholder='Foldername' type='text' id='fname' name='fname' value=''>
@@ -1601,6 +1611,7 @@ function htmlForms() {
 
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
 		<h6>Add Bookmark</h6>
 		<form id='bmadd' action='?' method='POST'>
 			<input placeholder='URL' type='text' id='url' name='url' value=''>
