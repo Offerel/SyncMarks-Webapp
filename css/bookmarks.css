@@ -419,7 +419,7 @@
 	outline: 0;
 	cursor: pointer;
 }
-.mbmdialog button:hover, .btna button:hover {
+.mbmdialog button:hover, .btna button:hover, .btna button:focus {
 	background-color: #0879D9;
 	color: white;
 	border-color: #0879D9;

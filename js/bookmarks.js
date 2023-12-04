@@ -1393,19 +1393,22 @@ function mconfirm(message, ids) {
 	dialog.classList.add('show-menu');
 	dialog.style.display = 'block';
 
-	let ydialog = document.getElementById('ydialog');
-	let ndialog = document.getElementById('ndialog');
+	let ybtn = document.getElementById('ydialog');
+	let nbtn = document.getElementById('ndialog');
 
-	ydialog.addEventListener('click', delbm, false);
-	ndialog.addEventListener('click', delbm, false);
+	var buttons = dialog.getElementsByTagName("button");
+	buttons[0].focus();
 
-	ydialog.myparam = ids;
-	ndialog.myparam = null;
+	ybtn.addEventListener('click', delbm, false);
+	nbtn.addEventListener('click', delbm, false);
+
+	ybtn.myparam = ids;
+	nbtn.myparam = null;
 }
 
 function delbm(e) {
 	if(this.textContent == "Yes") {
-		sendRequest(mdel, ids);
+		sendRequest(mdel, e.target.myparam);
 		let loader = document.createElement('div');
 		loader.classList.add('db-spinner');
 		loader.id = 'db-spinner';
