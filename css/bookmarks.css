@@ -1140,6 +1140,7 @@ span.rdesc {
 }
 .show-menu, .menu-item:hover > .menu {
 	visibility: visible;
+	display: block;
 }
 .menu-item:hover > .menu {
   -webkit-transition-delay: 100ms;
