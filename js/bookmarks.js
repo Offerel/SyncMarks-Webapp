@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 	navigator.serviceWorker.addEventListener('message', event => {
 		if (event.data && event.data.type === 'openDialog') {
-			document.getElementById('bmarkadd').style.display = 'block';
+			showDialog('bmarkadd');
 			document.getElementById('url').value = event.data.data;
 		}
 
@@ -238,7 +238,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			e.preventDefault();
 			hideMenu();
 			addBD();
-			document.getElementById('userform').style.display = 'block';
+			showDialog('userform');
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
@@ -272,9 +272,15 @@ document.addEventListener("DOMContentLoaded", function() {
 				sendRequest(cmail, mput.value);
 			});
 
+			let cspan = document.createElement('span');
+			cspan.classList.add('dclose');
+			cspan.innerHTML = '&times;';
+			cspan.addEventListener('click', hideMenu, false);
+
 			mailform.appendChild(heading);
 			mailform.appendChild(mput);
 			mailform.appendChild(dbutton);
+			mailform.appendChild(cspan);
 
 			document.querySelector('body').appendChild(mailform);
 			addBD();
@@ -289,14 +295,14 @@ document.addEventListener("DOMContentLoaded", function() {
 		document.getElementById('mpassword').addEventListener('click', function() {
 			hideMenu();
 			addBD();
-			document.getElementById('passwordform').style.display = 'block';
+			showDialog('passwordform');
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
 		document.getElementById('pbullet').addEventListener('click', function() {
 			hideMenu();
 			addBD();
-			document.getElementById('pbulletform').style.display = 'block';
+			showDialog('pbulletform');
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
@@ -339,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			hideMenu();
 			document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
 			addBD();
-			document.getElementById('bmarkadd').style.display = 'block';
+			showDialog('bmarkadd');
 
 			if(typeof navigator.clipboard.readText !== "undefined") {
 				navigator.clipboard.readText().then(text => {
@@ -721,8 +727,7 @@ function getUsers(response) {
 		document.querySelector('#bookmarks').addEventListener('click', hideMenu, false);
 		let mnguform = document.createElement('div');
 		mnguform.id = 'mnguform';
-		mnguform.classList.add('mbmdialog');
-		mnguform.style.display = 'block';
+		mnguform.classList.add('mbmdialog', 'show-menu');
 		let heading = document.createElement('h6');
 		heading.appendChild(document.createTextNode('Manage Users'));
 		mnguform.appendChild(heading);
@@ -1187,20 +1192,23 @@ function showMenu(x, y){
 	if(y >= minbot) y = minbot;
 	menu.style.left = x + 'px';
 	menu.style.top = y + 'px';
-	menu.style.visibility = "visible";
+	menu.classList.add('show-menu');
 	addBD();
 	return false;
 }
 
 function hideMenu(marked = true){
-	let menu = document.querySelectorAll('.menu');
-	menu.forEach(e => {
+	let menus = document.querySelectorAll('.menu');
+	menus.forEach(e => {
 		e.classList.remove('show-menu');
-		e.style.display = 'none';
+	});
+
+	let dialogs = document.querySelectorAll('.mbmdialog');
+	dialogs.forEach(e => {
+		e.classList.remove('show-menu');
 	});
 
 	document.querySelectorAll('.mmenu').forEach(function(item) {item.style.display = 'none'});
-	document.querySelectorAll('.mbmdialog').forEach(function(item) {item.style.display = 'none'});
 	document.getElementById('mnubg').style.visibility = "hidden";
 	if(document.getElementById('dubDIV')) document.querySelector('body').removeChild(document.getElementById('dubDIV'));
 	if(document.getElementById('mnguform')) document.getElementById('mnguform').remove();
@@ -1212,6 +1220,18 @@ function hideMenu(marked = true){
 		}
 		bmIDs.length = 0;
 	}
+}
+
+function showDialog(dialogN) {
+	let dialog = document.getElementById(dialogN);
+	dialog.classList.add('show-menu');
+	let elems = dialog.querySelectorAll('input, button');
+	let le = elems.length - 1;
+
+	elems[le].addEventListener('blur', e => {
+		elems[0].focus();
+	});
+	elems[0].focus();
 }
 
 function onContextMenu(e){
@@ -1257,7 +1277,7 @@ function onMenuClick(e){
 	
 	switch(this.id) {
 		case 'btnEdit':
-			document.getElementById('edtitle').value = document.getElementById('bmid').title;
+			document.getElementById('edtitle').value = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
 			document.getElementById('edid').value = document.getElementById('bmid').value;
 
 			if(document.getElementById(document.getElementById('bmid').value)) {
@@ -1271,29 +1291,21 @@ function onMenuClick(e){
 			}
 			
 			hideMenu();
-			document.getElementById('bmarkedt').style.left = xpos;
-			document.getElementById('bmarkedt').style.top = ypos;
-			document.getElementById('bmarkedt').style.display = 'block';
-			document.getElementById('edtitle').focus();
+			showDialog('bmarkedt');
 			break;
 		case 'btnMove':
-			document.getElementById('mvtitle').value = document.getElementById('bmid').title;
+			document.getElementById('mvtitle').value = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
 			document.getElementById('mvid').value = document.getElementById('bmid').value;
 			hideMenu();
-			document.getElementById('bmamove').style.left = xpos;
-			document.getElementById('bmamove').style.top = ypos;
-			document.getElementById('bmamove').style.display = 'block';
+			showDialog('bmamove');
 			break;
 		case 'btnDelete':
-			setTimeout(delBookmark, 5, document.getElementById('bmid').value, document.getElementById('bmid').title);
+			setTimeout(delBookmark, 5, document.getElementById('bmid').value, document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0]);
 			break;
 		case 'btnFolder':
 			hideMenu();
-			document.getElementById('folderf').style.left = xpos;
-			document.getElementById('folderf').style.top = ypos;
-			document.getElementById('folderf').style.display = 'block';
+			showDialog('folderf');
 			document.getElementById('fbid').value = document.getElementById('bmid').value;
-			document.getElementById('fname').focus();
 			break;
 		default:
 			break;
@@ -1387,17 +1399,12 @@ function show_noti(noti, rei = true) {
 function mconfirm(message, ids) {
 	hideMenu(false);
 	addBD();
+	showDialog('reqdialog');
 	var dialog = document.getElementById('reqdialog');
 	dialog.querySelector('span').innerText = message;
-	
-	dialog.classList.add('show-menu');
-	dialog.style.display = 'block';
 
 	let ybtn = document.getElementById('ydialog');
 	let nbtn = document.getElementById('ndialog');
-
-	var buttons = dialog.getElementsByTagName("button");
-	buttons[0].focus();
 
 	ybtn.addEventListener('click', delbm, false);
 	nbtn.addEventListener('click', delbm, false);
