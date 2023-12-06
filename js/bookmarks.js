@@ -1237,7 +1237,9 @@ function showDialog(dialogN) {
 		elems[0].focus();
 	});
 	elems[0].focus();
-	elems[0].setSelectionRange(0, 0);
+	if (["text", "url", "tel"].indexOf(elems[0].type) >= 0) {
+		elems[0].setSelectionRange(0, 0);
+	}
 }
 
 function onContextMenu(e){
