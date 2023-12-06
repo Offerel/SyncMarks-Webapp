@@ -2,7 +2,10 @@
 #mvtitle {
     font-size: 1.1em;
     margin: .5em 0 0;
-    display: inline-block;
+    display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 .dtext {
 	display: block;

@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		}
 
 		if (event.data.bookmarksAddedDB) {
-			console.log("Bookmarks saved");
+			//console.log("Bookmarks saved");
 		}
 
 		if (event.data.clientOffline) {
@@ -356,6 +356,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 
 			url.focus();
+			url.setSelectionRange(0,0);
 			url.addEventListener('input', enableSave);
 		});
 
@@ -1187,9 +1188,13 @@ function enableSave() {
 }
 
 function showMenu(x, y){
-	var menu = document.getElementById('cmenu');
-	var minbot = window.innerHeight - 120;
+	let menu = document.getElementById('cmenu');
+	let minbot = window.innerHeight - 120;
+	let minwot = window.innerWidth - 140;
+	
 	if(y >= minbot) y = minbot;
+	if(x >= minwot) x = minwot;
+
 	menu.style.left = x + 'px';
 	menu.style.top = y + 'px';
 	menu.classList.add('show-menu');
@@ -1227,15 +1232,12 @@ function showDialog(dialogN) {
 	dialog.classList.add('show-menu');
 	let elems = dialog.querySelectorAll('input, select, button');
 	let le = elems.length - 1;
-	console.log(elems);
-
-	console.log('focus: ', elems[0]);
-	console.log('blur: ', elems[le]);
 
 	elems[le].addEventListener('blur', e => {
 		elems[0].focus();
 	});
 	elems[0].focus();
+	elems[0].setSelectionRange(0, 0);
 }
 
 function onContextMenu(e){
@@ -1299,6 +1301,7 @@ function onMenuClick(e){
 			break;
 		case 'btnMove':
 			document.getElementById('mvtitle').innerText = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
+			document.getElementById('mvtitle').title = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
 			document.getElementById('mvid').value = document.getElementById('bmid').value;
 			hideMenu();
 			showDialog('bmamove');
