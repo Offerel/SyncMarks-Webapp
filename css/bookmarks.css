@@ -1,19 +1,11 @@
 /* @media screen and (orientation:portrait) */
-#reqdialog {
-	left: 10px;
-	right: 10px;
-	margin: 0 auto;
-	min-width: 350px;
-	max-width: 500px;
-	width: auto;
-	padding: 10px;
-	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
-	font-size: .9em;
-	top: 60px;
+#mvtitle {
+    font-size: 1.1em;
+    margin: .5em 0 0;
+    display: inline-block;
 }
 .dtext {
 	display: block;
-	font-size: .9em;
 	margin: 10px 0;
 }
 .btna {
@@ -372,32 +364,32 @@
 	background-color: #05589D;
 }
 .mbmdialog {
-	position: relative;
-	border-radius: 4px;
-	width: 500px;
-	display: none;
-	font-family: Roboto,Arial,Helvetica,sans-serif;
-	font-size: .8em;
-	box-sizing: border-box;
-	box-shadow: 1px 1px 4px rgba(0,0,0,.2);
-	border: 1px solid #bbb;
-	z-index: 100;
-	background-color: #fff;
-	padding: 24px;
-	margin: 0 auto;
-	padding-bottom: 35px;
-	max-width: 100%;
-	top: 60px;
+    position: absolute;
+    border-radius: 4px;
+    display: none;
+    font-family: Roboto,Arial,Helvetica,sans-serif;
+    font-size: .83em;
+    box-sizing: border-box;
+    box-shadow: 1px 1px 4px rgba(0,0,0,.2);
+    border: 1px solid #bbb;
+    z-index: 100;
+    background-color: #fff;
+    padding: 10px;
+    margin: 0 auto;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    min-width: 330px;
+    max-width: 500px;
+    width: auto;
 }
-.mbmdialog h6, #reqdialog h6 {
+.mbmdialog h6 {
 	margin: 0;
 	font-size: 1.2em;
 }
 .mbmdialog .dbutton {
 	margin-top: 5px;
 	text-align: right;
-	margin-right: -4px;
-	margin-bottom: -20px;
 }
 .mbmdialog .dialogdescr {
 	opacity: 0.85;
@@ -696,9 +688,6 @@
 #menu button.asform {
 	background-color: #05589d;
 	width: 1.4em;
-}
-#bmarkadd {
-	bottom: 38px;
 }
 .dheader {
 	background: #333333;

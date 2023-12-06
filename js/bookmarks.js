@@ -1225,8 +1225,12 @@ function hideMenu(marked = true){
 function showDialog(dialogN) {
 	let dialog = document.getElementById(dialogN);
 	dialog.classList.add('show-menu');
-	let elems = dialog.querySelectorAll('input, button');
+	let elems = dialog.querySelectorAll('input, select, button');
 	let le = elems.length - 1;
+	console.log(elems);
+
+	console.log('focus: ', elems[0]);
+	console.log('blur: ', elems[le]);
 
 	elems[le].addEventListener('blur', e => {
 		elems[0].focus();
@@ -1294,7 +1298,7 @@ function onMenuClick(e){
 			showDialog('bmarkedt');
 			break;
 		case 'btnMove':
-			document.getElementById('mvtitle').value = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
+			document.getElementById('mvtitle').innerText = document.getElementById('bmid').title.split(/\r?\n|\r|\n/g)[0];
 			document.getElementById('mvid').value = document.getElementById('bmid').value;
 			hideMenu();
 			showDialog('bmamove');

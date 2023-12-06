@@ -1587,7 +1587,7 @@ function htmlForms() {
 		<span class='dclose'>&times;</span>
 		<h6>Move Bookmark</h6>
 		<form id='bmmv' method='POST'>
-			<input placeholder='Title' type='text' id='mvtitle' name='mvtitle' value='' disabled>
+			<span id='mvtitle'></span>
 			<div class='select'>
 				<select id='mvfolder' name='mvfolder'>$sFolderOptions</select>
 				<!-- <div class='select__arrow'></div> -->
