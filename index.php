@@ -2275,11 +2275,19 @@ function db_query($query, $data=null) {
 }
 
 function checkDB() {
-	$vInfo = db_query("SELECT * FROM `system` ORDER BY `updated` DESC LIMIT 1;")[0];
+	$vInfoa = db_query("SELECT * FROM `system` ORDER BY `updated` DESC LIMIT 1;");	
+	if(is_array($vInfoa) && count($vInfoa) > 0) {
+		$vInfo = $vInfoa[0];
+	} else {
+		$vInfo['updated'] = 0;
+		$vInfo['db_version'] = 0;
+	}
 	
 	$olddate = $vInfo['updated'];
 	$newdate = filemtime(__FILE__);
 	$dbv = 9;
+	$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
+	$aversion = substr($aversion,0,strpos($aversion, " "));
 
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
 		e_log(8,"Database update needed. Starting DB update...");
@@ -2288,8 +2296,6 @@ function checkDB() {
 		} elseif (CONFIG['db']['type'] == "mysql") {
 			db_query(file_get_contents("./sql/mysql_update.sql"));
 		}
-		$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
-	    $aversion = substr($aversion,0,strpos($aversion, " "));
 		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
 	} elseif ($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
 		if($olddate <> $newdate) db_query("UPDATE `system` SET `updated` = '$newdate' WHERE `updated` = '$olddate';");
@@ -2325,6 +2331,9 @@ function checkDB() {
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
+		db_query($query);
+		$query = "INSERT INTO `system` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
+		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
 		db_query($query);
 	}
 }
