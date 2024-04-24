@@ -4,7 +4,7 @@
  *
  * @version 1.9.1
  * @author Offerel
- * @copyright Copyright (c) 2023, Offerel
+ * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
  */
 session_start();
@@ -1387,7 +1387,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
-	$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = $uid AND `bmID` <> 'root________'";
+	$query = "DELETE FROM `bookmarks` WHERE `userID` = $uid AND `bmID` <> 'root________'";
 	db_query($query); 
 }
 
@@ -1437,7 +1437,7 @@ function htmlForms() {
 	$logform = ($_SESSION['sud']['userType'] == 2) ? "<div id=\"logfile\"><div id=\"close\"><button id='mrefresh'>refresh</button><label for='arefresh'><input type='checkbox' id='arefresh' name='arefresh'>Auto Refresh</label> <button id='mclear'>clear</button> <button id='mclose'>&times;</button></div><div id='lfiletext' contenteditable='true'></div></div>":"";
 
 	$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
-	$oswitch = ($uOptions['notifications'] == 1) ? " checked":"";
+	$oswitch = (isset($uOptions['notifications']) && $uOptions['notifications'] == 1) ? " checked":"";
 	$oswitch =  "<label class='switch' title='Enable/Disable Notifications'><input id='cnoti' type='checkbox'$oswitch><span class='slider round'></span></label>";
 
 	$pbswitch = (isset($uOptions['pbEnable']) && $uOptions['pbEnable'] == 1) ? " checked":"";
@@ -1803,6 +1803,12 @@ function importMarks($bookmarks, $uid) {
 			$bookmark[7],
 			$bookmark[8]
 		);
+	}
+
+	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cexport_".time().".json":"cexport_".time().".json";
+		e_log(9,"Import bookmarks saved to $filename");
+		file_put_contents($filename, print_r($data2, true));
 	}
 	
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`) VALUES (?,?,?,?,?,?,?,?,?)";
@@ -2332,9 +2338,7 @@ function checkDB() {
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
-		$query = "INSERT INTO `system` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
-		db_query($query);
 	}
 }
 ?>
