@@ -1,5 +1,5 @@
 -- Create users table
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `userID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(255) NOT NULL,
   `userType` int(11) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create bookmark table
-CREATE TABLE `bookmarks` (
+CREATE TABLE IF NOT EXISTS `bookmarks` (
   `bmID` varchar(15) NOT NULL,
   `bmParentID` varchar(15) DEFAULT NULL,
   `bmIndex` int(11) NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE `bookmarks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create clients table
-CREATE TABLE `clients` (
+CREATE TABLE IF NOT EXISTS `clients` (
   `cid` varchar(255) NOT NULL,
   `cname` text DEFAULT NULL,
   `ctype` text NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE `clients` (
   CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `pages` (
+CREATE TABLE IF NOT EXISTS `pages` (
   `pid` int(11) NOT NULL AUTO_INCREMENT,
   `ptitle` varchar(250) NOT NULL,
   `purl` text NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE `pages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create reset table
-CREATE TABLE `reset` (
+CREATE TABLE IF NOT EXISTS `reset` (
   `tokenID` int(11) NOT NULL AUTO_INCREMENT,
   `userID` int(11) NOT NULL,
   `tokenTime` varchar(255) NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE `reset` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create system table
-CREATE TABLE `system` (
+CREATE TABLE IF NOT EXISTS  `system` (
   `app_version` varchar(10) DEFAULT NULL,
   `db_version` varchar(10) DEFAULT NULL,
   `updated` varchar(250) DEFAULT NULL
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS `auth_token` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- CREATE ctokens table
-CREATE TABLE `c_token` (
+CREATE TABLE IF NOT EXISTS `c_token` (
   `tID` int(11) NOT NULL AUTO_INCREMENT,
   `cid` varchar(255) DEFAULT NULL,
   `tHash` varchar(255) NOT NULL,

@@ -104,7 +104,7 @@ CREATE VIEW `ClientsV` AS
 FROM `c_token` t
 INNER JOIN "clients" c ON t.cid = c.cid
 INNER JOIN users u ON c.userID = u.userID
-ORDER BY expire
+ORDER BY expire;
 
 -- Create triggers
 CREATE TRIGGER IF NOT EXISTS `update_tokenchange`
