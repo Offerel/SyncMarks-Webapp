@@ -1285,7 +1285,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
-		$message = (db_query($query)) ? "Failed to register client":"Client registered";
+		$message = (db_query($query)) ? "Client registered":"Failed to register client";
 		e_log(8, $message);
 	} elseif(!empty($clientData)) {
 		$message = "Client updated";
