@@ -474,10 +474,13 @@ if(isset($_POST['action'])) {
 			}
 			break;
 		case "tl":
+			session_start();
+			session_destroy();
+			session_unset();
+			
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$tbt = filter_var($_POST['tbt'], FILTER_VALIDATE_BOOLEAN);
-			e_log(8, $tbt);
-			$tm = ($tbt) ? "First login from client '$client'":"Token request from client '$client'";
+			$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
 			e_log(8, $tm);
 			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
@@ -505,14 +508,14 @@ if(isset($_POST['action'])) {
 				e_log(8, "Send new token to $client");
 				echo(json_encode($tResponse));
 			} else {
-				e_log(8, "Send response to $client");
+				e_log(8, "Send token to $client");
 				header("Content-Type: application/json");
 				echo(json_encode($tResponse));
 			}
 
 			e_log(8, "Logout $client");
 			unset($_SESSION['sauth']);
-			session_destroy();			
+			@session_destroy();
 			die();
 			break;
 		case "bmedt":
