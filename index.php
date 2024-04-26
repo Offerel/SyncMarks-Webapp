@@ -473,11 +473,7 @@ if(isset($_POST['action'])) {
 				sendJSONResponse(json_encode(false));
 			}
 			break;
-		case "tl":
-			session_start();
-			session_destroy();
-			session_unset();
-			
+		case "tl":		
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$tbt = filter_var($_POST['tbt'], FILTER_VALIDATE_BOOLEAN);
 			$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
@@ -1288,7 +1284,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
-		$message = (db_query($query)) ? "Client registered":"Failed to register client";
+		$message = (db_query($query) == 0) ? "Client registered":"Failed to register client";
 		e_log(8, $message);
 	} elseif(!empty($clientData)) {
 		$message = "Client updated";
