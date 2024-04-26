@@ -1,9 +1,10 @@
 ChangeLog
 =========
-1.9.1 (2024-04-24)
+1.9.1 (2024-04-26)
 -------------------------
-- Fix #80
+- Fix #80 for Extension
 - Fix initial SQL
+- Add function to remove questionmark from urlbar
 
 1.9.0 (2023-11-24)
 -------------------------
