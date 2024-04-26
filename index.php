@@ -1280,7 +1280,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for '$cl'");
 		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
-		$message = (db_query($query)) ? "Client updated.":"Failed update client";
+		$message = (db_query($query) == 0) ? "Client updated.":"Failed update client";
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
