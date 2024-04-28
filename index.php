@@ -327,6 +327,7 @@ if(isset($_POST['action'])) {
 				default:
 					$jerrmsg = 'Unknown error';
 			}
+
 			if(strlen($jerrmsg) > 0) {
 				e_log(1,"JSON error: ".$jerrmsg);
 				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
@@ -334,6 +335,7 @@ if(isset($_POST['action'])) {
 				file_put_contents($filename,urldecode($_POST['data']),true);
 				sendJSONResponse($jerrmsg);
 			}
+			
 			$client = $_POST['client'];
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$ctime = round(microtime(true) * 1000);
@@ -1280,7 +1282,7 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for '$cl'");
 		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
-		$message = (db_query($query) == 0) ? "Client updated.":"Failed update client";
+		$message = (db_query($query) == 1) ? "Client updated.":"Failed update client";
 	} else if(empty($clientData)) {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
@@ -1811,7 +1813,7 @@ function importMarks($bookmarks, $uid) {
 	}
 	
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`) VALUES (?,?,?,?,?,?,?,?,?)";
-	$response = db_query($query,$data2);
+	$response = db_query($query, $data2);
 
 	if($response)
 		e_log(8,"Bookmark import successful");
@@ -1908,6 +1910,7 @@ function clearAuthCookie() {
 }
 
 function checkLogin() {
+	global $htmlFooter;
 	e_log(8,"Check login...");
 
 	if(isset($_COOKIE['syncmarks'])) 
@@ -1915,7 +1918,6 @@ function checkLogin() {
 	else
 		e_log(8,'Cookie is not set');
 
-	global $htmlFooter;
 	$headers = null;
 	if (isset($_SERVER['Authorization'])) {
 		$headers = trim($_SERVER["Authorization"]);
@@ -2053,8 +2055,13 @@ function checkLogin() {
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 			header("Cache-Control: post-check=0, pre-check=0", false);
 			header("Pragma: no-cache");
-			if(!isset($_POST['client'])) header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
-			if(!isset($_POST['client'])) http_response_code(401);
+
+			if(!isset($_POST['client'])) {
+				e_log(8,'Username and password not set. using web loginform');
+				header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
+				http_response_code(401);
+			}
+
 			echo htmlHeader();
 			echo "<div id='loginbody'>
 				<div id='loginform'>
