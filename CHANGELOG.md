@@ -3,6 +3,7 @@
 ## 1.9.1 (2024-04-28)
 
 *   Fix #80 for Extension
+*   Fix #81 for Extension
 *   Fix initial SQL
 *   Add function to remove questionmark from urlbar
 *   Added .htaccess file for Apache FastCGI workaround
