@@ -1426,7 +1426,7 @@ function htmlHeader() {
 }
 
 function htmlForms() {
-	$version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
+	$version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
 	$version = substr($version,0,strpos($version, " "));
 	$clink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	$bookmarklet = "javascript:void function(){window.open('$clink?title='+encodeURIComponent(document.title)+'&link='+encodeURIComponent(document.location.href),'bWindow','width=480,height=245',replace=!0)}();";
@@ -2287,7 +2287,7 @@ function db_query($query, $data=null) {
 }
 
 function checkDB() {
-	$vInfoa = db_query("SELECT * FROM `system` ORDER BY `updated` DESC LIMIT 1;");	
+	$vInfoa = db_query("SELECT * FROM `system` ORDER BY `updated` DESC LIMIT 1;");
 	if(is_array($vInfoa) && count($vInfoa) > 0) {
 		$vInfo = $vInfoa[0];
 	} else {
@@ -2298,7 +2298,7 @@ function checkDB() {
 	$olddate = $vInfo['updated'];
 	$newdate = filemtime(__FILE__);
 	$dbv = 9;
-	$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[2];
+	$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
 	$aversion = substr($aversion,0,strpos($aversion, " "));
 
 	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
