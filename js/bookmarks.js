@@ -11,7 +11,7 @@ const dbStoreName = "bookmarks";
 let db;
 let dbRequest = indexedDB.open(dbName);
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded",function() {
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
