@@ -1324,7 +1324,7 @@ function getSiteTitle($url) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HEADER         => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT      => "syncmarks",
+        CURLOPT_USERAGENT      => "SyncMarks",
         CURLOPT_AUTOREFERER    => true,
         CURLOPT_CONNECTTIMEOUT => 120,
         CURLOPT_TIMEOUT        => 120,
@@ -1335,7 +1335,13 @@ function getSiteTitle($url) {
     $src = curl_exec($ch);
     $err = curl_errno($ch); 
     $errmsg = curl_error($ch);
-    curl_close($ch); 
+    curl_close($ch);
+/*
+	$doc = new DOMDocument();
+@$doc->loadHTMLFile('http://www.washingtontimes.com/news/2010/dec/3/debt-panel-fails-test-vote/');
+$xpath = new DOMXPath($doc);
+echo $xpath->query('//title')->item(0)->nodeValue."\n";
+*/
 
 	if(strlen($src) > 0) {
 		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1]:null;
