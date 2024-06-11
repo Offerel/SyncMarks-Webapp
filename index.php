@@ -1319,9 +1319,26 @@ function getIndex($folder) {
 
 function getSiteTitle($url) {
 	e_log(8,"Get titel for site ".$url);
-	$src = file_get_contents($url);
+	
+    $options = array( 
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER         => false,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_USERAGENT      => "syncmarks",
+        CURLOPT_AUTOREFERER    => true,
+        CURLOPT_CONNECTTIMEOUT => 120,
+        CURLOPT_TIMEOUT        => 120,
+        CURLOPT_MAXREDIRS      => 10,
+    ); 
+    $ch = curl_init($url); 
+    curl_setopt_array($ch, $options); 
+    $src = curl_exec($ch);
+    $err = curl_errno($ch); 
+    $errmsg = curl_error($ch);
+    curl_close($ch); 
+
 	if(strlen($src) > 0) {
-		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1] : null;
+		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1]:null;
 		$convTitle = ($title == '' ) ? substr($url, 0, 240):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 	}
 	e_log(8,"Titel for site is '$convTitle'");
