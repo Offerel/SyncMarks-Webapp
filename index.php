@@ -1572,8 +1572,8 @@ function htmlForms() {
 		<h6>Delete Bookmark</h6>
 		<span class='dtext'></span>
 		<div class='btna'>
-			<button id='ndialog'>No</button>
 			<button id='ydialog'>Yes</button>
+			<button id='ndialog'>No</button>
 		</div>
 		<span class='dclose'>&times;</span>
 	</div>";

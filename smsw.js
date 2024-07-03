@@ -28,7 +28,7 @@ const cacheResources = [
 ];
 
 const dbName = "syncmarks";
-const version = 1;
+const version = 2;
 
 let db;
 let dbRequest = indexedDB.open(dbName, version);

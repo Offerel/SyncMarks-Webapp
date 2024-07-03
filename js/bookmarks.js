@@ -1417,6 +1417,17 @@ function mconfirm(message, ids) {
 	let ybtn = document.getElementById('ydialog');
 	let nbtn = document.getElementById('ndialog');
 
+	dialog.addEventListener('keyup', (e) => {
+		const nKeys = ['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
+		if(nKeys.includes(e.key)) {
+			if(document.activeElement == nbtn) {
+				ybtn.focus();
+			} else if (document.activeElement == ybtn) {
+				nbtn.focus();
+			}
+		}
+	})
+
 	ybtn.addEventListener('click', delbm, false);
 	nbtn.addEventListener('click', delbm, false);
 
