@@ -31,6 +31,56 @@ if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'
 
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
+
+if (isset($_GET['api'])) {
+	$data = json_decode(file_get_contents('php://input'), true);
+	$jerror = json_last_error();
+
+	switch ($jerror) {
+		case JSON_ERROR_NONE:
+			$jerrmsg = '';
+		break;
+		case JSON_ERROR_DEPTH:
+			$jerrmsg = 'Maximum stack depth exceeded';
+		break;
+		case JSON_ERROR_STATE_MISMATCH:
+			$jerrmsg = 'Underflow or the modes mismatch';
+		break;
+		case JSON_ERROR_CTRL_CHAR:
+			$jerrmsg = 'Unexpected control character found';
+		break;
+		case JSON_ERROR_SYNTAX:
+			$jerrmsg = 'Syntax error, malformed JSON';
+		break;
+		case JSON_ERROR_UTF8:
+			$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+		break;
+		default:
+			$jerrmsg = 'Unknown error';
+	}
+
+	if($jerror == JSON_ERROR_NONE) {
+		if(isset($data['action'])) {
+			$code = 200;
+			$message = 'Client registered';
+		}
+	} else {
+		$code = 500;
+		$message = 'Invalid JSON. '.$jerrmsg;
+	}
+
+	$response = [
+		'code' => $code,
+		'message' => $message,
+		'cname'	=> '04fed904-02b8-4571-bee8-f33e775ae363',
+		'token'	=> '181598a79348a84cb9f4bd09dba5a9e5f6cdc49368940506f5e05dfcb5aa2157'
+	];
+
+	header('Content-Type: application/json');
+	http_response_code($code);
+	die(json_encode($response));
+}
+
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
 	$headers = "From: SyncMarks <".CONFIG['sender'].">";
