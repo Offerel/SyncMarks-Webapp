@@ -29,57 +29,11 @@ set_error_handler("e_log");
 
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
 
+$version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
+$version = explode(" ", $version)[1];
+
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
-
-if (isset($_GET['api'])) {
-	$data = json_decode(file_get_contents('php://input'), true);
-	$jerror = json_last_error();
-
-	switch ($jerror) {
-		case JSON_ERROR_NONE:
-			$jerrmsg = '';
-		break;
-		case JSON_ERROR_DEPTH:
-			$jerrmsg = 'Maximum stack depth exceeded';
-		break;
-		case JSON_ERROR_STATE_MISMATCH:
-			$jerrmsg = 'Underflow or the modes mismatch';
-		break;
-		case JSON_ERROR_CTRL_CHAR:
-			$jerrmsg = 'Unexpected control character found';
-		break;
-		case JSON_ERROR_SYNTAX:
-			$jerrmsg = 'Syntax error, malformed JSON';
-		break;
-		case JSON_ERROR_UTF8:
-			$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-		break;
-		default:
-			$jerrmsg = 'Unknown error';
-	}
-
-	if($jerror == JSON_ERROR_NONE) {
-		if(isset($data['action'])) {
-			$code = 200;
-			$message = 'Client registered';
-		}
-	} else {
-		$code = 500;
-		$message = 'Invalid JSON. '.$jerrmsg;
-	}
-
-	$response = [
-		'code' => $code,
-		'message' => $message,
-		'cname'	=> '04fed904-02b8-4571-bee8-f33e775ae363',
-		'token'	=> '181598a79348a84cb9f4bd09dba5a9e5f6cdc49368940506f5e05dfcb5aa2157'
-	];
-
-	header('Content-Type: application/json');
-	http_response_code($code);
-	die(json_encode($response));
-}
 
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
@@ -188,6 +142,59 @@ if(isset($_GET['reset'])){
 
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
+
+if (isset($_GET['api'])) {
+	$jdata = json_decode(file_get_contents('php://input'), true);
+	$jerror = json_last_error();
+
+	switch ($jerror) {
+		case JSON_ERROR_NONE:
+			$jerrmsg = '';
+		break;
+		case JSON_ERROR_DEPTH:
+			$jerrmsg = 'Maximum stack depth exceeded';
+		break;
+		case JSON_ERROR_STATE_MISMATCH:
+			$jerrmsg = 'Underflow or the modes mismatch';
+		break;
+		case JSON_ERROR_CTRL_CHAR:
+			$jerrmsg = 'Unexpected control character found';
+		break;
+		case JSON_ERROR_SYNTAX:
+			$jerrmsg = 'Syntax error, malformed JSON';
+		break;
+		case JSON_ERROR_UTF8:
+			$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+		break;
+		default:
+			$jerrmsg = 'Unknown error';
+	}
+
+	if($jerror == JSON_ERROR_NONE) {
+		if(isset($jdata['action'])) {
+			$action = filter_var($jdata['action'], FILTER_SANITIZE_STRING);
+			$client = filter_var($jdata['client'], FILTER_SANITIZE_STRING);
+			$time = round(microtime(true) * 1000);
+			$ctype = getClientType(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT']:"Unknown");
+
+			switch($action) {
+				case "checkClient":
+					$tbt = (isset($jdata['data']['usebasic'])) ? filter_var($jdata['data']['usebasic'], FILTER_VALIDATE_BOOLEAN):false;
+					$ctime = (isset($jdata['data']['sync']) && $jdata['data']['sync'] != 1) ? 0:$time;
+					$response = clientCheck($client, $tbt, $ctime, $ctype);
+					break;
+				default:		
+			}
+
+			$code = isset($response['code'])?$response['code']:500;
+		}
+	} else {
+		$code = 500;
+		$message = 'Invalid JSON. '.$jerrmsg;
+	}
+
+	sendJSONResponse($response, $code);
+}
 
 if(isset($_POST['action'])) {
 	switch($_POST['action']) {
@@ -525,45 +532,15 @@ if(isset($_POST['action'])) {
 				sendJSONResponse(json_encode(false));
 			}
 			break;
-		case "tl":		
+		case "tl":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$tbt = filter_var($_POST['tbt'], FILTER_VALIDATE_BOOLEAN);
-			$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
-			e_log(8, $tm);
-			$type = getClientType($_SERVER['HTTP_USER_AGENT']);
 			$time = round(microtime(true) * 1000);
+			$ctype = getClientType(isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:'Unknown');
 			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
-			$tResponse['message'] = updateClient($client, $type, $ctime);
-			$userID = $_SESSION['sud']['userID'];
 
-			if(!$tbt) {
-				$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `c_token`.`userID` = $userID;";
-				$tData = db_query($query);
-				$expireTime = time()+60*60*24*CONFIG['expireDays'];
-				$token = bin2hex(openssl_random_pseudo_bytes(32));
-				$thash = password_hash($token, PASSWORD_DEFAULT);
-				if(count($tData) > 0) {
-					$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
-					$tResponse['cname'] = $tData[0]['cname'];
-				} else {
-					$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
-					$tResponse['cname'] = '';
-				}
-				db_query($query);
-				$tResponse['token'] = $token;
-
-				header("Content-Type: application/json");
-				e_log(8, "Send new token to $client");
-				echo(json_encode($tResponse));
-			} else {
-				e_log(8, "Send token to $client");
-				header("Content-Type: application/json");
-				echo(json_encode($tResponse));
-			}
-
-			e_log(8, "Logout $client");
-			unset($_SESSION['sauth']);
-			@session_destroy();
+			$response = clientCheck($client, $tbt, $ctime, $ctype);
+			sendJSONResponse($response);
 			die();
 			break;
 		case "bmedt":
@@ -943,8 +920,44 @@ echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
 
-function sendJSONResponse($response) {
+function clientCheck($client, $tbt, $ctime, $type) {
+	$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
+	e_log(8, $tm);
+	$tResponse['message'] = updateClient($client, $type, $ctime);
+	$userID = $_SESSION['sud']['userID'];
+
+	if(!$tbt) {
+		$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `c_token`.`userID` = $userID;";
+		$tData = db_query($query);
+		$expireTime = time()+60*60*24*CONFIG['expireDays'];
+		$token = bin2hex(openssl_random_pseudo_bytes(32));
+		$thash = password_hash($token, PASSWORD_DEFAULT);
+		if(count($tData) > 0) {
+			$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+			$tResponse['cname'] = $tData[0]['cname'];
+		} else {
+			$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+			$tResponse['cname'] = '';
+		}
+		db_query($query);
+		$tResponse['token'] = $token;
+		e_log(8, "Send new token to $client");
+	} else {
+		e_log(8, "Send token to $client");
+	}
+
+	$tResponse['code'] = 200;
+	e_log(8, "Logout $client");
+	unset($_SESSION['sauth']);
+	@session_destroy();
+	return $tResponse;
+}
+
+function sendJSONResponse($response, $code = 200) {
+	global $version;
 	header("Content-Type: application/json");
+	http_response_code($code);
+	$response['version'] = 'v'.$version;
 	die(json_encode($response));
 }
 
@@ -1327,7 +1340,6 @@ function updateClient($cl, $ct, $time, $sync = false) {
 	$uid = $_SESSION['sud']["userID"];
 	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND `userID` = ".$uid.";";
 	$clientData = db_query($query);
-	$message = "";
 
 	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for '$cl'");
@@ -1493,8 +1505,7 @@ function htmlHeader() {
 }
 
 function htmlForms() {
-	$version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
-	$version = substr($version,0,strpos($version, " "));
+	global $version;
 	$clink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	$bookmarklet = "javascript:void function(){window.open('$clink?title='+encodeURIComponent(document.title)+'&link='+encodeURIComponent(document.location.href),'bWindow','width=480,height=245',replace=!0)}();";
 	$userName = $_SESSION['sud']['userName'];
