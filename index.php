@@ -142,7 +142,7 @@ if(isset($_GET['reset'])){
 
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
-
+/*
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
 	$jerror = json_last_error();
@@ -195,7 +195,7 @@ if (isset($_GET['api'])) {
 
 	sendJSONResponse($response, $code);
 }
-
+*/
 if(isset($_POST['action'])) {
 	switch($_POST['action']) {
 		case "sendTabs":
@@ -491,13 +491,21 @@ if(isset($_POST['action'])) {
 			sendJSONResponse(db_query($query));
 			break;
 		case "arename":
-			$client = (isset($_POST['add']) && $_POST['add'] != 'null') ? filter_var($_POST['add'], FILTER_SANITIZE_STRING):filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Rename client $client to $name");
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
 			$count = db_query($query);
-			$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID']):false;
-			sendJSONResponse($response);
+			//$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID'],'json'):false;
+
+			if (filter_var($_POST['add'], FILTER_SANITIZE_STRING) == "null" && $count > 0) {
+				$response = bClientlist($_SESSION['sud']['userID'], 'json');
+				e_log(2, print_r($response, true));
+				sendJSONResponse($response);
+			} else {
+				die(bClientlist($_SESSION['sud']['userID']));
+			}
+
 			break;
 		case "cfolder":
 			$ctime = round(microtime(true) * 1000);
@@ -955,10 +963,10 @@ function clientCheck($client, $tbt, $ctime, $type) {
 
 function sendJSONResponse($response, $code = 200) {
 	global $version;
-	header("Content-Type: application/json");
+	header('Content-Type: application/json; charset=utf-8');
 	http_response_code($code);
 	$response['version'] = 'v'.$version;
-	die(json_encode($response));
+	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
 
 function newNotification($url, $target) {
@@ -1714,23 +1722,32 @@ function showBookmarks($mode) {
 	return $htmlData;
 }
 
-function bClientlist($uid) {
+function bClientlist($uid, $mode = 'html') {
 	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid;";
 	$clientData = db_query($query);
 	
 	uasort($clientData, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
 	});
-	
-	$clientList = "<ul>";
-	foreach($clientData as $key => $client) {
-		$cname = $client['cid'];
-		if(isset($client['cname'])) $cname = $client['cname'];
-		$timestamp = $client['lastseen'] / 1000;
-		$lastseen = ($timestamp != '0') ? date('D, d. M. Y H:i', $timestamp):'----: -- -- ---- -- --';
-		$clientList.= "<li title='".$client['cid']."' data-type='".strtolower($client['ctype'])."' id='".$client['cid']."' class='client'><div class='clientname'>$cname<input type='text' name='cname' value='$cname'><div class='lastseen'>$lastseen</div></div><div class='fa-edit rename'></div><div class='fa-trash remove'></div></li>";
+
+	if($mode == 'html') {
+		$clientList = "<ul>";
+		foreach($clientData as $key => $client) {
+			$cname = $client['cid'];
+			if(isset($client['cname'])) $cname = $client['cname'];
+			$timestamp = $client['lastseen'] / 1000;
+			$lastseen = ($timestamp != '0') ? date('D, d. M. Y H:i', $timestamp):'----: -- -- ---- -- --';
+			$clientList.= "<li title='".$client['cid']."' data-type='".strtolower($client['ctype'])."' id='".$client['cid']."' class='client'><div class='clientname'>$cname<input type='text' name='cname' value='$cname'><div class='lastseen'>$lastseen</div></div><div class='fa-edit rename'></div><div class='fa-trash remove'></div></li>";
+		}
+		$clientList.= "</ul>";
+	} else {
+		$clientList = array();
+		foreach($clientData as $key => $client) {
+			$clientList[] = (array) $client;
+		}
+		//$clientList = $array;
 	}
-	$clientList.= "</ul>";
+	
 	return $clientList;
 }
 
