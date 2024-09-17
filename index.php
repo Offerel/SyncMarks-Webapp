@@ -142,60 +142,61 @@ if(isset($_GET['reset'])){
 
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
-/*
+
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
 	$jerror = json_last_error();
-
-	switch ($jerror) {
-		case JSON_ERROR_NONE:
-			$jerrmsg = '';
-		break;
-		case JSON_ERROR_DEPTH:
-			$jerrmsg = 'Maximum stack depth exceeded';
-		break;
-		case JSON_ERROR_STATE_MISMATCH:
-			$jerrmsg = 'Underflow or the modes mismatch';
-		break;
-		case JSON_ERROR_CTRL_CHAR:
-			$jerrmsg = 'Unexpected control character found';
-		break;
-		case JSON_ERROR_SYNTAX:
-			$jerrmsg = 'Syntax error, malformed JSON';
-		break;
-		case JSON_ERROR_UTF8:
-			$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-		break;
-		default:
-			$jerrmsg = 'Unknown error';
-	}
+	$jerrmsg = parseJError($jerror);
 
 	if($jerror == JSON_ERROR_NONE) {
 		if(isset($jdata['action'])) {
+			/*
+			const params = {
+				action: action.name,
+				client: client,
+				data: data,
+				add: addendum,
+				sync: sync
+			}
+			*/
 			$action = filter_var($jdata['action'], FILTER_SANITIZE_STRING);
 			$client = filter_var($jdata['client'], FILTER_SANITIZE_STRING);
+			$data = isset($jdata['data']) ? filter_var($jdata['data'], FILTER_SANITIZE_STRING):false;
+			$add = isset($jdata['add']) ? filter_var($jdata['add'], FILTER_SANITIZE_STRING):false;
 			$time = round(microtime(true) * 1000);
 			$ctype = getClientType(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT']:"Unknown");
+			$uid = $_SESSION['sud']['userID'];
 
 			switch($action) {
-				case "checkClient":
-					$tbt = (isset($jdata['data']['usebasic'])) ? filter_var($jdata['data']['usebasic'], FILTER_VALIDATE_BOOLEAN):false;
-					$ctime = (isset($jdata['data']['sync']) && $jdata['data']['sync'] != 1) ? 0:$time;
+				case "clientCheck":
+					$tbt = (isset($data['usebasic'])) ? filter_var($data['usebasic'], FILTER_VALIDATE_BOOLEAN):false;
+					$ctime = (isset($jdata['sync']) && $jdata['sync'] != 1) ? 0:$time;
 					$response = clientCheck($client, $tbt, $ctime, $ctype);
 					break;
-				default:		
+				case "clientRename":
+					$response = clientRename($client, $data, $add, $uid);
+					if(!is_array($response)) die($response);
+					break;
+				case "clientInfo":					
+					$response = clientInfo($client, $uid);
+					break;
+				default:
+					$response['message'] = "undefined action '$action'";
+					$response['code'] = 500;
+					//sendJSONResponse($response);
 			}
 
-			$code = isset($response['code'])?$response['code']:500;
+			sendJSONResponse($response);tbt
 		}
 	} else {
-		$code = 500;
-		$message = 'Invalid JSON. '.$jerrmsg;
+		$response['message'] = 'Invalid JSON. '.$jerrmsg;
+		$response['code'] = 500;
+		sendJSONResponse($response);
 	}
 
-	sendJSONResponse($response, $code);
+	sendJSONResponse($response);
 }
-*/
+
 if(isset($_POST['action'])) {
 	switch($_POST['action']) {
 		case "sendTabs":
@@ -928,6 +929,71 @@ echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
 
+function parseJError($jerror) {
+	switch ($jerror) {
+		case JSON_ERROR_NONE:
+			$jerrmsg = '';
+			break;
+		case JSON_ERROR_DEPTH:
+			$jerrmsg = 'Maximum stack depth exceeded';
+			break;
+		case JSON_ERROR_STATE_MISMATCH:
+			$jerrmsg = 'Underflow or the modes mismatch';
+			break;
+		case JSON_ERROR_CTRL_CHAR:
+			$jerrmsg = 'Unexpected control character found';
+			break;
+		case JSON_ERROR_SYNTAX:
+			$jerrmsg = 'Syntax error, malformed JSON';
+			break;
+		case JSON_ERROR_UTF8:
+			$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+			break;
+		default:
+			$jerrmsg = 'Unknown error';
+	}
+
+	return $jerrmsg;
+}
+
+function clientInfo($client, $uid) {
+	e_log(8,"Request client info");
+	$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `userID` = $uid;";
+	$clientData = db_query($query)[0];
+	if(count($clientData) > 0) {
+		e_log(8,"Send client info to '$client'");
+		$clientData['code'] = 200;
+		if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+			$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cinfo_".time().".json":"cinfo_".time().".json";
+			e_log(8,"Write client info to $filename");
+			file_put_contents($filename,json_encode($clientData),true);
+		}
+	} else {
+		e_log(2,"Client not found.");
+		$clientData['lastseen'] = 0;
+		$clientData['cname'] = '';
+		$clientData['ctype'] = '';
+		$clientData['message'] = "Client not found.";
+		$clientData['code'] = 500;
+	}
+
+	return $clientData;
+}
+
+function clientRename($client, $data, $add, $uid) {
+	e_log(8,"Rename client $client to '$data'");
+	$query = "UPDATE `clients` SET `cname` = '$data' WHERE `userID` = $uid AND `cid` = '$client';";
+	$count = db_query($query);
+	
+	if(isset($add)) {
+		$data = bClientlist($uid, $add);
+	} else {
+		$data = bClientlist($uid);
+	}
+
+	return $data;
+}
+
 function clientCheck($client, $tbt, $ctime, $type) {
 	$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
 	e_log(8, $tm);
@@ -961,8 +1027,9 @@ function clientCheck($client, $tbt, $ctime, $type) {
 	return $tResponse;
 }
 
-function sendJSONResponse($response, $code = 200) {
+function sendJSONResponse($response) {
 	global $version;
+	$code = isset($response['code']) ? $response['code']:200;
 	header('Content-Type: application/json; charset=utf-8');
 	http_response_code($code);
 	$response['version'] = 'v'.$version;
@@ -1741,11 +1808,7 @@ function bClientlist($uid, $mode = 'html') {
 		}
 		$clientList.= "</ul>";
 	} else {
-		$clientList = array();
-		foreach($clientData as $key => $client) {
-			$clientList[] = (array) $client;
-		}
-		//$clientList = $array;
+		$clientList['clients'] = $clientData;
 	}
 	
 	return $clientList;

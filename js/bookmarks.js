@@ -433,7 +433,7 @@ document.addEventListener("DOMContentLoaded",function() {
 
 		document.getElementById('edsave').addEventListener('click', function(e) {
 			e.preventDefault();
-			let jsonMark = JSON.stringify({ 
+			let jsonMark = JSON.stringify({
 				"id": document.getElementById('edid').value,
 				"url": document.getElementById('edurl').value,
 				"title": document.getElementById('edtitle').value,
@@ -1085,7 +1085,7 @@ function adel(response) {
 	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
 }
 
-function arename(response) {
+function clientRename(response) {
 	document.getElementById('mngcform').innerHTML = response;
 	document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
 	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
@@ -1164,7 +1164,7 @@ function mvClient(element) {
 	loader.classList.add('db-spinner');
 	loader.id = 'db-spinner';
 	document.querySelector('body').appendChild(loader);
-	sendRequest(arename, element.target.parentElement.children[0].children['cname'].value, element.target.parentElement.id);
+	sendRequest(clientRename, element.target.parentElement.children[0].children['cname'].value, element.target.parentElement.id);
 }
 
 function resize(e){
