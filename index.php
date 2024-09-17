@@ -183,15 +183,11 @@ if (isset($_GET['api'])) {
 				default:
 					$response['message'] = "undefined action '$action'";
 					$response['code'] = 500;
-					//sendJSONResponse($response);
 			}
-
-			sendJSONResponse($response);tbt
 		}
 	} else {
 		$response['message'] = 'Invalid JSON. '.$jerrmsg;
 		$response['code'] = 500;
-		sendJSONResponse($response);
 	}
 
 	sendJSONResponse($response);
