@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
 
-		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
+		if(sessionStorage.getItem('gNoti') != 1) sendRequest(pushGet);
 
 		document.addEventListener('keydown', e => {
 			if (e.key === 'Escape') hideMenu();
@@ -340,7 +340,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		
 		document.getElementById('bexport').addEventListener('click', function() {
 			hideMenu();
-			sendRequest(bexport, 'html');
+			sendRequest(bookmarkExport, 'html');
 		});
 
 		document.getElementById('footer').addEventListener('click', function() {
@@ -948,7 +948,7 @@ function rmessage(response, a = 'aNoti') {
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 }
 
-function bexport(response) {
+function bookmarkExport(response) {
 	let today = new Date();
 	let dd = today.getDate();
 	let mm = today.getMonth()+1; 
@@ -1118,7 +1118,7 @@ function soption(response) {
 	}
 }
 
-function durl(response) {
+function pushHide(response) {
 	if(response == "1") {
 		console.info("Notification removed");
 	} else {
@@ -1129,7 +1129,7 @@ function durl(response) {
 	}
 }
 
-function gurls(response) {
+function pushGet(response) {
 	let notifications = response;
 	if(Object.keys(notifications).length > 0 && notifications[0]['nOption'] == 1) {
 		notifications.forEach(function(notification){
@@ -1401,7 +1401,7 @@ function show_noti(noti, rei = true) {
 		notification.onclick = function() {
 			if(noti.url.indexOf('http') >= 0) {
 				window.open(noti.url);
-				sendRequest(durl, noti.nkey);
+				sendRequest(pushHide, noti.nkey);
 			}
 		};
 	}

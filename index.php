@@ -165,13 +165,13 @@ if (isset($_GET['api'])) {
 			$data = isset($jdata['data']) ? filter_var($jdata['data'], FILTER_SANITIZE_STRING):false;
 			$add = isset($jdata['add']) ? filter_var($jdata['add'], FILTER_SANITIZE_STRING):false;
 			$time = round(microtime(true) * 1000);
+			$ctime = (isset($jdata['sync']) && $jdata['sync'] != 1) ? 0:$time;
 			$ctype = getClientType(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT']:"Unknown");
 			$uid = $_SESSION['sud']['userID'];
 
 			switch($action) {
 				case "clientCheck":
 					$tbt = (isset($data['usebasic'])) ? filter_var($data['usebasic'], FILTER_VALIDATE_BOOLEAN):false;
-					$ctime = (isset($jdata['sync']) && $jdata['sync'] != 1) ? 0:$time;
 					$response = clientCheck($client, $tbt, $ctime, $ctype);
 					break;
 				case "clientRename":
@@ -181,17 +181,24 @@ if (isset($_GET['api'])) {
 				case "clientInfo":					
 					$response = clientInfo($client, $uid);
 					break;
+				case "clientList":
+					$response = clientList($client, $uid);
+					break;
 				case "pushURL":
-					$url = validate_url($data);
-					e_log(8,"Received new pushed URL: '$url'");
-					$target = $add;
-					$response = ntfyNotification($url, $target, $uid);
-					$message = (!isset($response['error'])) ? "URL successful pushed":"Failed to push URL";
-					e_log(8, $message);
+					$response = ntfyNotification($data, $uid, $add);
+					break;
+				case "pushGet":
+					$response = pushGet($client, $uid);
+					break;
+				case "pushHide":
+					$response = pushHide($data, $uid);
+					break;
+				case "bookmarkExport":
+					$response = bookmarkExport($ctype, $ctime, $data, $client);
 					break;
 				default:
-					$response['message'] = "undefined action '$action'";
-					$response['code'] = 500;
+					$response['message'] = "Undefined action '$action'";
+					$response['code'] = 501;
 			}
 		}
 	} else {
@@ -502,7 +509,6 @@ if(isset($_POST['action'])) {
 			e_log(8,"Rename client $client to $name");
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
 			$count = db_query($query);
-			//$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID'],'json'):false;
 
 			if (filter_var($_POST['add'], FILTER_SANITIZE_STRING) == "null" && $count > 0) {
 				$response = bClientlist($_SESSION['sud']['userID'], 'json');
@@ -934,6 +940,89 @@ echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
 
+function pushHide($pid, $uid) {
+	e_log(8,"Hide notification");
+	if(db_query("UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $pid AND `userID` = $uid;") == 1) {
+		$response['message'] = "Update successful";
+		$response['code'] = 200;
+	} else {
+		$response['error'] = "Update failed";
+		$response['code'] = 500;
+	}
+	return $response;
+}
+
+function pushGet($client, $uid) {
+	e_log(8,"Request pushed sites for '$client'");
+	$query = "SELECT * FROM `pages` WHERE `nloop` = 1 AND `userID` = $uid AND (`cid` IN ('$client') OR `cid` IS NULL);";
+	$options = json_decode($_SESSION['sud']['uOptions'],true);
+	$notificationData = db_query($query);
+	if (!empty($notificationData)) {
+		e_log(8,"Found ".count($notificationData)." links. Will send them to the client.");
+		
+		foreach($notificationData as $key => $notification) {
+			$myObj[$key]['title'] = html_entity_decode($notification['ptitle'], ENT_QUOTES | ENT_XML1, 'UTF-8');
+			$myObj[$key]['url'] = $notification['purl'];
+			$myObj[$key]['nkey'] = $notification['pid'];
+		}
+		$response['enabled'] = $options['notifications'];
+		$response['notifications'] = $myObj;
+	} else {
+		$msg = "No pushed sites found";
+		e_log(8,$msg);
+		$response['message'] = $msg;
+		$response['code'] = 200;
+	}
+
+	if(isset($_COOKIE['syncmarks'])) 
+		e_log(8,'Cookie is available');
+	else
+		e_log(8,'Cookie is not set');
+
+	return $response;
+}
+
+function clientList($client, $uid) {
+	e_log(8,"Try to get list of clients");
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid AND NOT `cid` = '$client';";
+	$clientList = db_query($query);
+
+	e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
+	
+	uasort($clientList, function($a, $b) {
+		return strnatcasecmp($a['cname'], $b['cname']);
+	});
+	
+	if (!empty($clientList)) {
+		foreach($clientList as $key => $clients) {
+			$myObj[$key]['id'] =	$clients['cid'];
+			$myObj[$key]['name'] = 	$clients['cname'];
+			$myObj[$key]['type'] = 	$clients['ctype'];
+			$myObj[$key]['date'] = 	$clients['lastseen'];
+		}
+		$all = array('id'=>'0', 'name'=>'All Clients', 'type'=>'', 'date'=>'');
+		array_unshift($myObj, $all);
+	} else {
+		$myObj[0]['id'] =	'0';
+		$myObj[0]['name'] =	'All Clients';
+		$myObj[0]['type'] =	'';
+		$myObj[0]['date'] =	'';
+
+		$response['error'] = "No clients found";
+		$response['code'] = 500;
+	}
+	
+	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/clist_".time().".json":"clist_".time().".json";
+		e_log(8,"Write clientlist to $filename");
+		file_put_contents($filename,json_encode($myObj),true);
+	}
+	
+	$response['clients'] = $myObj;
+
+	return $response;
+}
+
 function parseJError($jerror) {
 	switch ($jerror) {
 		case JSON_ERROR_NONE:
@@ -959,6 +1048,36 @@ function parseJError($jerror) {
 	}
 
 	return $jerrmsg;
+}
+
+function bookmarkExport($ctype, $ctime, $format, $client) {
+	e_log(8,"Request bookmark export");
+	switch($format) {
+		case "html":
+			e_log(8,"Exporting in HTML format for download");
+			$response = html_export();
+			break;
+		case "json":
+			e_log(8,"Exporting in JSON format");
+			$bookmarks = getBookmarks();
+			if(CONFIG['loglevel'] == 9 && CONFIG['cexp'] == true) {
+				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/export_".time().".json":"export_".time().".json";
+				file_put_contents($filename,json_encode($bookmarks),true);
+				e_log(8,"Export file is saved to $filename");
+			}
+			$bcount = count($bookmarks);
+			e_log(8,"Send $bcount bookmarks to '$client'");
+			updateClient($client, $ctype, $ctime, true);
+			$response = $bookmarks;
+			break;
+		default:
+			$msg = "Unknown export format, exit process";
+			e_log(2, $msg);
+			$response['error'] = $msg;
+			$response['code'] = 501;
+	}
+
+	return $response;
 }
 
 function clientInfo($client, $uid) {
@@ -1061,11 +1180,13 @@ function newNotification($url, $target) {
 	return $erg;
 }
 
-function ntfyNotification($url, $target, $uid) {
+function ntfyNotification($url, $uid, $target) {
+	$url = validate_url($url);
+	e_log(8,"Received new pushed URL: '$url'");
 	$title = getSiteTitle($url);
 	$ctime = time();
 
-	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`nloop`,`publish_date`,`userID`) VALUES ('$title', '$url', $ctime, 1, $ctime, $uid);";
+	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`nloop`,`publish_date`,`userID`, `cid`) VALUES ('$title', '$url', $ctime, 1, $ctime, $uid, NULLIF('$target',''));";
 	$res = db_query($query);
 	
 	if($res > 0) {
@@ -1080,6 +1201,9 @@ function ntfyNotification($url, $target, $uid) {
 	} else {
 		$res['error'] = "SQL error. Please check server logfile";
 	}
+
+	$message = (!isset($res['error'])) ? "URL successful pushed":"Failed to push URL";
+	e_log(8, $message);
 	
 	return $res;
 }
@@ -1262,9 +1386,10 @@ function pushntfy($title,$url) {
 		]
 	]));
 
-	if($content === false) 
+	if($content === false) {
 		$response['error'] = $le;
-	else
+		$response['code'] = 500;
+	} else
 		$response = json_decode($content, true);
 	
 	return $response;
