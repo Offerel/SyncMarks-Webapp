@@ -25,6 +25,7 @@ define("CONFIG", [
 	'expireDays'=> (!isset($expireDays)) ? 7:$expireDays
 ]);
 
+$le = "";
 set_error_handler("e_log");
 
 if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
@@ -179,6 +180,14 @@ if (isset($_GET['api'])) {
 					break;
 				case "clientInfo":					
 					$response = clientInfo($client, $uid);
+					break;
+				case "pushURL":
+					$url = validate_url($data);
+					e_log(8,"Received new pushed URL: '$url'");
+					$target = $add;
+					$response = ntfyNotification($url, $target, $uid);
+					$message = (!isset($response['error'])) ? "URL successful pushed":"Failed to push URL";
+					e_log(8, $message);
 					break;
 				default:
 					$response['message'] = "undefined action '$action'";
@@ -1052,6 +1061,29 @@ function newNotification($url, $target) {
 	return $erg;
 }
 
+function ntfyNotification($url, $target, $uid) {
+	$title = getSiteTitle($url);
+	$ctime = time();
+
+	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`nloop`,`publish_date`,`userID`) VALUES ('$title', '$url', $ctime, 1, $ctime, $uid);";
+	$res = db_query($query);
+	
+	if($res > 0) {
+		$options = json_decode($_SESSION['sud']['uOptions'],true);
+		if(isset($options['ntfy']['instance']) && $options['notifications'] == "1") {
+			$res = pushntfy($title, $url);
+		} else {
+			$msg = "Can't send to Pushbullet, missing data. Please check options";
+			e_log(2,$msg);
+			$res['error'] = $msg;
+		}
+	} else {
+		$res['error'] = "SQL error. Please check server logfile";
+	}
+	
+	return $res;
+}
+
 function gpwd($length = 12){
 	$allowedC =  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=~!#$^&*()_+,./<>:[]{}|';
 	$pwd = '';
@@ -1205,6 +1237,37 @@ function pushlink($title,$url) {
 	curl_setopt($curl, CURLOPT_HEADER, false);
 	curl_exec($curl);
 	curl_close($curl);
+}
+
+function pushntfy($title,$url) {
+	global $le;
+	e_log(8,"Publish ntfy notification");
+	$options = json_decode($_SESSION['sud']['uOptions'],true);
+	$instance = $options['ntfy']['instance'];
+	$token = isset($options['ntfy']['token']) ? $options['ntfy']['token']:null;
+
+	$encTitle = html_entity_decode($title, ENT_QUOTES | ENT_XML1, 'UTF-8');
+	$authHeader = base64_encode(":$token");
+	$authHeader = (strlen($authHeader) > 4) ? "Authorization: Basic $authHeader\r\n":'';
+
+	$content = @file_get_contents($instance, false, stream_context_create([
+		'http' => [
+			'method' => 'POST',
+			'header' => 
+				"Content-Type: text/plain\r\n".
+				$authHeader.
+				"title: $encTitle\r\n".
+				"click: $url\r\n",
+			'content' => $url
+		]
+	]));
+
+	if($content === false) 
+		$response['error'] = $le;
+	else
+		$response = json_decode($content, true);
+	
+	return $response;
 }
 
 function edcrpt($action, $text) {
@@ -1451,7 +1514,7 @@ function getIndex($folder) {
 }
 
 function getSiteTitle($url) {
-	e_log(8,"Get titel for site ".$url);
+	e_log(8,"Get titel for site '$url'");
 	
     $options = array( 
         CURLOPT_RETURNTRANSFER => true,
@@ -1474,7 +1537,8 @@ function getSiteTitle($url) {
 		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1]:null;
 		$convTitle = ($title == '' ) ? substr($url, 0, 240):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($title, ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 	}
-	e_log(8,"Titel for site is '$convTitle'");
+	$cTitle = html_entity_decode($convTitle, ENT_QUOTES | ENT_XML1, 'UTF-8');
+	e_log(8,"Titel for site is '$cTitle'");
 	return $convTitle;
 }
 
@@ -1505,6 +1569,7 @@ function unique_code($limit) {
 }
 
 function e_log($level, $message, $errfile="", $errline="", $output=0) {
+	global $le;
 	switch($level) {
 		case 9:
 			$mode = "debug ";
@@ -1525,6 +1590,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 			$mode = "unknown";
 			break;
 	}
+	$le = $message;
 	if($errfile != "") $message = $message." in ".$errfile." on line ".$errline;
 	$user = '';
 	if(isset($_SESSION['sauth'])) $user = "- ".$_SESSION['sauth']." ";
