@@ -754,22 +754,19 @@ if(isset($_POST['action'])) {
 			session_destroy();
 			exit;
 			break;
-		case "pbupdate":
-			e_log(8,"Pushbullet: Updating Pushbullet information.");
+		case "ntfyupdate":
+			e_log(8,"ntfy: Updating ntfy information.");
 			$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
-			$ptoken = filter_var($_POST['ptoken'], FILTER_SANITIZE_STRING);
-			$pdevice = filter_var($_POST['pdevice'], FILTER_SANITIZE_STRING);
-			$pbe = filter_var($_POST['pbe'], FILTER_SANITIZE_STRING);
+			$cnoti = filter_var($_POST['cnoti'], FILTER_SANITIZE_STRING);
+			$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
+			$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
 
 			if(password_verify($password,$_SESSION['sud']['userHash'])) {
-				$token = edcrpt('en', $ptoken);
-				$device = edcrpt('en', $pdevice);
-				$pbEnable = filter_var($pbe,FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
-		
+				$ntfyToken = edcrpt('en', $ntfyToken);		
 				$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-				$oOptionsA['pAPI'] = $token;
-				$oOptionsA['pDevice'] = $device;
-				$oOptionsA['pbEnable'] = $pbEnable;
+				$oOptionsA['notifications'] = $cnoti;
+				$oOptionsA['ntfy']['instance'] = $ntfyInstance;
+				$oOptionsA['ntfy']['token'] = $ntfyToken;
 		
 				$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
 				$count = db_query($query);
@@ -778,8 +775,8 @@ if(isset($_POST['action'])) {
 				die();
 			}
 			else {
-				e_log(1,"Password mismatch. Pushbullet not updated.");
-				die("Password mismatch. Pushbullet not updated.");
+				e_log(1,"Password mismatch. ntfy info not updated.");
+				die("Password mismatch. ntfy info not updated.");
 			}
 			die();
 			break;
@@ -943,7 +940,7 @@ echo $htmlFooter;
 function pushHide($pid, $uid) {
 	e_log(8,"Hide notification");
 	if(db_query("UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $pid AND `userID` = $uid;") == 1) {
-		$response['message'] = "Update successful";
+		$response['message'] = "Notification is now hidden";
 		$response['code'] = 200;
 	} else {
 		$response['error'] = "Update failed";
@@ -1155,8 +1152,10 @@ function sendJSONResponse($response) {
 	global $version;
 	$code = isset($response['code']) ? $response['code']:200;
 	header('Content-Type: application/json; charset=utf-8');
-	http_response_code($code);
-	$response['version'] = 'v'.$version;
+	if(is_array($response)) {
+		http_response_code($code);
+		$response['version'] = 'v'.$version;
+	}
 	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
 
@@ -1194,7 +1193,7 @@ function ntfyNotification($url, $uid, $target) {
 		if(isset($options['ntfy']['instance']) && $options['notifications'] == "1") {
 			$res = pushntfy($title, $url);
 		} else {
-			$msg = "Can't send to Pushbullet, missing data. Please check options";
+			$msg = "Can't publish to ntfy, missing data. Please check options";
 			e_log(2,$msg);
 			$res['error'] = $msg;
 		}
@@ -1368,7 +1367,7 @@ function pushntfy($title,$url) {
 	e_log(8,"Publish ntfy notification");
 	$options = json_decode($_SESSION['sud']['uOptions'],true);
 	$instance = $options['ntfy']['instance'];
-	$token = isset($options['ntfy']['token']) ? $options['ntfy']['token']:null;
+	$token = isset($options['ntfy']['token']) ? edcrpt('de',$options['ntfy']['token']):null;
 
 	$encTitle = html_entity_decode($title, ENT_QUOTES | ENT_XML1, 'UTF-8');
 	$authHeader = base64_encode(":$token");
@@ -1396,7 +1395,6 @@ function pushntfy($title,$url) {
 }
 
 function edcrpt($action, $text) {
-	$output = false;
 	$encrypt_method = "AES-256-CBC";
 	$key = hash('sha256', CONFIG['enckey']);
 	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
@@ -1781,10 +1779,8 @@ function htmlForms() {
 	$oswitch = (isset($uOptions['notifications']) && $uOptions['notifications'] == 1) ? " checked":"";
 	$oswitch =  "<label class='switch' title='Enable/Disable Notifications'><input id='cnoti' type='checkbox'$oswitch><span class='slider round'></span></label>";
 
-	$pbswitch = (isset($uOptions['pbEnable']) && $uOptions['pbEnable'] == 1) ? " checked":"";
-	$pbswitch = "<label class='switch' title='Enable/Disable Pushbullet'><input id='pbe' name='pbe' value='1' type='checkbox'$pbswitch><span class='slider round'></span></label>";
-	$pAPI = (isset($uOptions['pAPI'])) ? edcrpt('de',$uOptions['pAPI']):'';
-	$pDevice = (isset($uOptions['pDevice'])) ? edcrpt('de',$uOptions['pDevice']):'';
+	$ntfyInstance = (isset($uOptions['ntfy']['instance'])) ? $uOptions['ntfy']['instance']:'';
+	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
 
 	$mngsettingsform = "
 	<div id='mngsform' class='mmenu'><h6>SyncMarks Settings</h6>
@@ -1799,7 +1795,7 @@ function htmlForms() {
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
 			<tr><td colspan=2 class='bcenter'><button id='clientedt'>Show Clients</button></td></tr>
 			<tr><td colspan='2' style='height: 2px;'></td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='pbullet'>Pushbullet</button></td></tr>
+			<tr><td colspan=2 class='bcenter'><button id='ntfy'>ntfy</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
 			<tr><td>Notifications</td><td class='bright'>$oswitch</td></tr>
 		</table>
@@ -1828,16 +1824,15 @@ function htmlForms() {
 		</div>
 	</div>";
 
-	$pbulletform = "
-	<div id='pbulletform' class='mbmdialog'>
+	$pushform = "
+	<div id='pushform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Pushbullet</h6>
-		<div class='dialogdescr'>Maintain your API Token and Device ID.</div>
-		<form action='' method='POST'>$pbswitch
-			<input placeholder='API Token' type='text' id='ptoken' name='ptoken' value='$pAPI' />
-			<input placeholder='Device ID' type='text' id='pdevice' name='pdevice' value='$pDevice' autocomplete='device-token' />
-			<input required placeholder='Password' type='password' id='password' name='password' autocomplete='current-password' value='' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='pbupdate'>Save</button></div>
+		<h6>ntfy</h6>
+		<div class='dialogdescr'>Please enter the ntfy url including the topic and the token</div>
+		<form action='' method='POST'>$oswitch
+			<input required placeholder='URL' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
+			<input placeholder='Token' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
+			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='ntfyupdate'>Save</button></div>
 		</form>
 	</div>";
 
@@ -1965,7 +1960,7 @@ function htmlForms() {
 	</div>
 	<div id='footer'></div>";
 
-	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pbulletform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
+	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
 	return $htmlData;
 }
 
@@ -2007,15 +2002,15 @@ function notiList($uid, $loop) {
 	$notiList = "";
 	foreach($aNotitData as $key => $aNoti) {
 		$cl = ($aNoti['client'] == NULL) ? "All":$aNoti['client'];
-		$title = html_entity_decode($aNoti['title'],ENT_QUOTES,'UTF-8');
+		$title = html_entity_decode($aNoti['ptitle'],ENT_QUOTES,'UTF-8');
 
 		$notiList.= "<div class='NotiTableRow'>
 					<div class='NotiTableCell'>
-						<span><a class='link' target='_blank' title='$title' href='".$aNoti['message']."'>$title</a></span>
-						<span class='nlink'>".$aNoti['message']."</span>
+						<span><a class='link' target='_blank' title='$title' href='".$aNoti['purl']."'>$title</a></span>
+						<span class='nlink'>".$aNoti['purl']."</span>
 						<span class='ndate'>".date("d.m.Y H:i",$aNoti['publish_date'])." | $cl</span>
 					</div>
-					<div class='NotiTableCell'><a class='fa fa-trash' data-message='".$aNoti['id']."' href='#'></a></div>
+					<div class='NotiTableCell'><a class='fa fa-trash' data-message='".$aNoti['pid']."' href='#'></a></div>
 				</div>";
 	}
 	return $notiList;

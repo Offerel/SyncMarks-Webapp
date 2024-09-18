@@ -301,10 +301,10 @@ document.addEventListener("DOMContentLoaded",function() {
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
-		document.getElementById('pbullet').addEventListener('click', function() {
+		document.getElementById('ntfy').addEventListener('click', function() {
 			hideMenu();
 			addBD();
-			showDialog('pbulletform');
+			showDialog('pushform');
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
