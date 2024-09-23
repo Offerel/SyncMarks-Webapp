@@ -321,20 +321,6 @@ if(isset($_POST['action'])) {
 			$response['enabled'] = $uOptions['notifications'];
 			sendJSONResponse($response);
 			break;
-		case "getpurl":
-			$url = validate_url($_POST['data']);
-			e_log(8,"Received new pushed URL: ".$url);
-			$target = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING) : NULL;
-			$res = newNotification($url, $target);
-			$message = ($res != 0) ? "URL successful pushed":"Failed to push URL";
-			
-			$myObj = (object) [
-			    "state" => $res,
-			    "message" => $message
-			];
-			
-			sendJSONResponse($myObj);
-			break;
 		case "cinfo":
 			e_log(8,"Request client info");
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
@@ -944,9 +930,10 @@ if(isset($_GET['link'])) {
 if(isset($_GET['push'])) {
 	$url = validate_url($_GET['push']);
 	e_log(8,"Received new pushed URL from bookmarklet: ".$url);
-	$target = (isset($_GET['tg'])) ? filter_var($_GET['tg'], FILTER_SANITIZE_STRING) : NULL;
-	
-	if(newNotification($url, $target) !== 0) die('Pushed');
+
+	$data['url'] = $url;
+	$data['target'] = (isset($_GET['tg'])) ? filter_var($_GET['tg'], FILTER_SANITIZE_STRING):NULL;
+	if(ntfyNotification($data, $_SESSION['sud']['userID']) !== 0) die('Pushed');
 }
 
 echo htmlHeader();
@@ -1306,30 +1293,10 @@ function sendJSONResponse($response) {
 	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
 
-function newNotification($url, $target) {
-	$erg = 0;
-	$title = getSiteTitle($url);
-	$ctime = time();
-	$uidd = $_SESSION['sud']['userID'];
-
-	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`cid`,`nloop`,`publish_date`,`userID`) VALUES ('$title', '$url', $ctime, '$target', 1, $ctime, $uidd);";
-	$erg = db_query($query);
-	
-	$options = json_decode($_SESSION['sud']['uOptions'],true);
-	
-	if(strlen($options['pAPI']) > 1 && strlen($options['pDevice']) > 1 && $options['pbEnable'] == "1") {
-		pushlink($title, $url);
-	} else {
-		e_log(2,"Can't send to Pushbullet, missing data. Please check options");
-	}
-	
-	return $erg;
-}
-
 function ntfyNotification($data, $uid) {
 	$url = validate_url($data['url']);
 	$target = $data['target'];
-	e_log(8,"Received new pushed URL: '$url'");
+	e_log(8,"Received new push URL: '$url'");
 	$title = getSiteTitle($url);
 	$ctime = time();
 
@@ -1482,32 +1449,6 @@ function validate_url($url) {
 		e_log(2,"URL is not a valid URL. Exit now.");
 		exit;
 	}
-}
-
-function pushlink($title,$url) {
-	$pddata = json_decode($_SESSION['sud']['uOptions'],true);
-	$token = edcrpt('de', $pddata['pAPI']);
-	$device = edcrpt('de', $pddata['pDevice']);
-	e_log(8,"Send Pushbullet notification to device: $device");
-	$encTitle = html_entity_decode($title, ENT_QUOTES | ENT_XML1, 'UTF-8');
-	
-	$data = json_encode(array(
-		'type' => 'link',
-		'title' => $encTitle,
-		'url'	=> $url,
-		'device_iden' => $device
-	));
-
-	$curl = curl_init();
-	curl_setopt($curl, CURLOPT_URL, 'https://api.pushbullet.com/v2/pushes');
-	curl_setopt($curl, CURLOPT_USERPWD, $token);
-	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
-	curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($data)]);
-	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($curl, CURLOPT_HEADER, false);
-	curl_exec($curl);
-	curl_close($curl);
 }
 
 function pushntfy($title,$url) {
