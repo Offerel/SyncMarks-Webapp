@@ -340,7 +340,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		
 		document.getElementById('bexport').addEventListener('click', function() {
 			hideMenu();
-			sendRequest(bookmarkExport, 'html');
+			sendRequest(bexport, 'html');
 		});
 
 		document.getElementById('footer').addEventListener('click', function() {
@@ -639,7 +639,7 @@ function pwaMessage(message, state) {
 }
 
 function getclients(response) {
-	let cList = response;
+	let cList = response.clients;
 	var clientListForm = document.getElementById('mngcform');
 	if(clientListForm.childNodes.length) clientListForm.removeChild(clientListForm.firstChild);
 	var ulClients = document.createElement('ul');
@@ -691,10 +691,10 @@ function getclients(response) {
 function addmark(response) {
 	let message = 'Bookmark added successfully.';
 
-	if(response == 'Bookmark not added') {
+	if(response.code !== 200) {
 		message = 'Bookmark not added';
 	} else {
-		document.getElementById('bookmarks').innerHTML = response;
+		document.getElementById('bookmarks').innerHTML = response.html_bookmarks;
 		document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
 		document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 		document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
@@ -948,7 +948,7 @@ function rmessage(response, a = 'aNoti') {
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 }
 
-function bookmarkExport(response) {
+function bexport(response) {
 	let today = new Date();
 	let dd = today.getDate();
 	let mm = today.getMonth()+1; 
@@ -957,7 +957,7 @@ function bookmarkExport(response) {
 	if(mm<10) mm='0'+mm;
 	today = dd + '-' + mm + '-' + today.getFullYear();
 
-	let blob = new Blob([response], { type: 'text/html' });
+	let blob = new Blob([response.bookmarks], { type: 'text/html' });
 	let link = document.createElement('a');
 	link.href = window.URL.createObjectURL(blob);
 	link.download = "bookmarks_" + today + ".html";

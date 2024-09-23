@@ -260,39 +260,8 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($tabs);
 			break;
 		case "getclients":
-			e_log(8,"Try to get list of clients");
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = ".$_SESSION['sud']['userID']." AND NOT `cid` = '$client';";
-			$clientList = db_query($query);
-			e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
-			
-			uasort($clientList, function($a, $b) {
-				return strnatcasecmp($a['cname'], $b['cname']);
-			});
-			
-			if (!empty($clientList)) {
-				foreach($clientList as $key => $clients) {
-					$myObj[$key]['id'] =	$clients['cid'];
-					$myObj[$key]['name'] = 	$clients['cname'];
-					$myObj[$key]['type'] = 	$clients['ctype'];
-					$myObj[$key]['date'] = 	$clients['lastseen'];
-				}
-				$all = array('id'=>'0', 'name'=>'All Clients', 'type'=>'', 'date'=>'');
-				array_unshift($myObj, $all);
-			} else {
-				$myObj[0]['id'] =	'0';
-				$myObj[0]['name'] =	'All Clients';
-				$myObj[0]['type'] =	'';
-				$myObj[0]['date'] =	'';
-			}
-			
-			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/clist_".time().".json":"clist_".time().".json";
-				e_log(8,"Write clientlist to $filename");
-				file_put_contents($filename,json_encode($myObj),true);
-			}
-			
-			sendJSONResponse($myObj);
+			$response = clientList(filter_var($_POST['client'], FILTER_SANITIZE_STRING), $_SESSION['sud']['userID']);
+			sendJSONResponse($response);
 			break;
 		case "gurls":
 			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
@@ -343,35 +312,12 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($clientData);
 			break;
 		case "bexport":
-			e_log(8,"Request bookmark export");
 			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-			$ctime = round(microtime(true) * 1000);
+			$time = round(microtime(true) * 1000);
 			$format = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			switch($format) {
-				case "html":
-					e_log(8,"Exporting in HTML format for download");
-					sendJSONResponse(html_export());
-					break;
-				case "json":
-					e_log(8,"Exporting in JSON format");
-					$bookmarks = json_encode(getBookmarks());
-					if(CONFIG['loglevel'] == 9 && CONFIG['cexp'] == true) {
-						$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/export_".time().".json":"export_".time().".json";
-						file_put_contents($filename,$bookmarks,true);
-						e_log(8,"Export file is saved to $filename");
-					}
-					$bcount = count(json_decode($bookmarks));
-					e_log(8,"Send $bcount bookmarks to '$client'");
-					$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
-					updateClient($client, $ctype, $ctime);
-					sendJSONResponse($bookmarks);
-					break;
-				default:
-					die(e_log(2,"Unknown export format, exit process"));
-			}
-
-			exit;
+			$response = bookmarkExport($ctype, $time, $format, $client);
+			sendJSONResponse($response);
 			break;
 		case "bimport":
 			$jmarks = json_decode($_POST['data'], true);
@@ -419,40 +365,13 @@ if(isset($_POST['action'])) {
 			sendJSONResponse(importMarks($armarks,$_SESSION['sud']['userID']));
 			break;
 		case "addmark":
+			$time = round(microtime(true) * 1000);
 			$bookmark = json_decode($_POST['data'], true);
-			$stime = round(microtime(true) * 1000);
-			$bookmark['added'] = $stime;
-			$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle(trim($bookmark['url'])):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-			e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
-			e_log(9, print_r($bookmark, true));
+			$ctype = strtolower(getClientType($_SERVER['HTTP_USER_AGENT']));
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
-			if(strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])) != "firefox") $bookmark = cfolderMatching($bookmark);
-			$stime = (!isset($_POST['sync'])) ? 0:$stime;
-			
-			if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
-				$response = addBookmark($bookmark);
-
-				if($_POST['add'] === '2') {
-					if($response === 'Bookmark added') {
-						e_log(8,$response);
-						sendJSONResponse(bmTree());
-					} else {
-						sendJSONResponse('Bookmark not added');
-						http_response_code(417);
-					}
-				} else {
-					updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime);
-				}
-			} else if($bookmark['type'] == 'folder') {
-				$response = addFolder($bookmark);
-				updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $stime);
-			} else {
-				$message = "This bookmark is not added, some parameters are missing";
-				e_log(1, $message);
-				$response = $message;
-			}
-			
+			$add = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
+			$response = bookmarkAdd($bookmark, $time, $ctype, $client, $add);
+			e_log(2, print_r($response, true));
 			sendJSONResponse($response);
 			break;
 		case "editmark":
