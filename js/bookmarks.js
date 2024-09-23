@@ -1093,6 +1093,9 @@ function clientRename(response) {
 }
 
 function mdel(response) {
+	delete response.version;
+	response = Object.values(response);
+
 	hideMenu();
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 	if(Array.isArray(response)) {

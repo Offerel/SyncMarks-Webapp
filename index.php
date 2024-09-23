@@ -192,7 +192,7 @@ if (isset($_GET['api'])) {
 					$response = bookmarkAdd($data, $time, $ctype, $client);
 					break;
 				case "bookmarkDel":
-					$response = bookmarkDel($data, $client, $time, $uid);
+					$response = bookmarkDel($data, $uid);
 					break;
 				case "bookmarkMove":
 					$response = bookmarkMove($data, $client, $time, $uid);
@@ -227,6 +227,13 @@ if (isset($_GET['api'])) {
 }
 
 if(isset($_POST['action'])) {
+	$uid = $_SESSION['sud']['userID'];
+	$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+	$data = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+	$time = round(microtime(true) * 1000);
+	$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
+	$add = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
+
 	switch($_POST['action']) {
 		case "sendTabs":
 			$jtabs = json_decode($_POST['data'], true);
@@ -260,7 +267,7 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($tabs);
 			break;
 		case "getclients":
-			$response = clientList(filter_var($_POST['client'], FILTER_SANITIZE_STRING), $_SESSION['sud']['userID']);
+			$response = clientList($client, $uid);
 			sendJSONResponse($response);
 			break;
 		case "gurls":
@@ -312,11 +319,7 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($clientData);
 			break;
 		case "bexport":
-			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-			$time = round(microtime(true) * 1000);
-			$format = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$response = bookmarkExport($ctype, $time, $format, $client);
+			$response = bookmarkExport($ctype, $time, $data, $client);
 			sendJSONResponse($response);
 			break;
 		case "bimport":
@@ -365,13 +368,8 @@ if(isset($_POST['action'])) {
 			sendJSONResponse(importMarks($armarks,$_SESSION['sud']['userID']));
 			break;
 		case "addmark":
-			$time = round(microtime(true) * 1000);
 			$bookmark = json_decode($_POST['data'], true);
-			$ctype = strtolower(getClientType($_SERVER['HTTP_USER_AGENT']));
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$add = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
 			$response = bookmarkAdd($bookmark, $time, $ctype, $client, $add);
-			e_log(2, print_r($response, true));
 			sendJSONResponse($response);
 			break;
 		case "editmark":
@@ -434,7 +432,6 @@ if(isset($_POST['action'])) {
 
 			if (filter_var($_POST['add'], FILTER_SANITIZE_STRING) == "null" && $count > 0) {
 				$response = bClientlist($_SESSION['sud']['userID'], 'json');
-				e_log(2, print_r($response, true));
 				sendJSONResponse($response);
 			} else {
 				die(bClientlist($_SESSION['sud']['userID']));
@@ -474,17 +471,7 @@ if(isset($_POST['action'])) {
 				sendJSONResponse(json_encode(false));
 			}
 			break;
-		case "tl":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$tbt = filter_var($_POST['tbt'], FILTER_VALIDATE_BOOLEAN);
-			$time = round(microtime(true) * 1000);
-			$ctype = getClientType(isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:'Unknown');
-			$ctime = (filter_var($_POST['s'], FILTER_SANITIZE_STRING) === 'false') ? 0:$time;
 
-			$response = clientCheck($client, $tbt, $ctime, $ctype);
-			sendJSONResponse($response);
-			die();
-			break;
 		case "bmedt":
 			$bookmark = json_decode($_POST['data'], true);
 			$title = filter_var($bookmark['title'], FILTER_SANITIZE_STRING);
@@ -643,20 +630,8 @@ if(isset($_POST['action'])) {
 			break;
 		case "mdel":
 			$bmID = json_decode($_POST['data'], true);
-			$delMark = delMark($bmID);
-			if($delMark != 0) {
-				if(!isset($_POST['add'])) {
-					e_log(8,"Bookmark removed");
-					sendJSONResponse($bmID);
-				} else {
-					e_log(8,"Bookmark deleted");
-					sendJSONResponse($bmID);
-				}
-			} else {
-				$message = "There was an problem removing the bookmark, please check the logfile";
-				e_log(2, $message);
-				sendJSONResponse($message);
-			}
+			$response = delMark($bmID);
+			sendJSONResponse($bmID);
 			break;
 		case "logout":
 			e_log(8,"Logout user ".$_SESSION['sauth']);
@@ -1080,7 +1055,7 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 	return $erg;
 }
 
-function bookmarkDel($bookmark, $client, $ctime, $user) {
+function bookmarkDel($bookmark, $user) {
 	$bookmark = json_decode($bookmark, true);
 	e_log(8,"Try to identify bookmark to delete");
 
