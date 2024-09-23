@@ -416,10 +416,7 @@ if(isset($_POST['action'])) {
 
 			break;
 		case "cfolder":
-			$ctime = round(microtime(true) * 1000);
-			$fname = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-			$fbid = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
-			sendJSONResponse(cfolder($ctime,$fname,$fbid));
+			sendJSONResponse(cfolder($time,$data,$add));
 			break;
 		case "rmessage":
 			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
