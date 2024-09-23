@@ -866,7 +866,9 @@ function cmail(response) {
 }
 
 function checkdups(response) {
-	let dubData = response;
+	delete response.version;
+	var dubData = Object.values(response);
+
 	if(dubData.length > 0) {
 		let dubDIV = document.createElement('div');
 		let head = document.createElement('h6');

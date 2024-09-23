@@ -749,6 +749,8 @@ if(isset($_POST['action'])) {
 				}
 				$dubData[$key]['subs'] = $subData;
 			}
+
+			e_log(2, print_r($dubData, true));
 			sendJSONResponse($dubData);
 			break;
 		default:
