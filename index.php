@@ -457,17 +457,15 @@ if(isset($_POST['action'])) {
 			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
 			break;
 		case "bmmv":
-			$id = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
-			e_log(8,"Move bookmark $id");
-			$folder = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$folder';";
+			e_log(8,"Move bookmark $add");
+			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$data';";
 			$folderData = db_query($query);
-			$query = "SELECT `bmParentID` FROM `bookmarks` WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			$query = "SELECT `bmParentID` FROM `bookmarks` WHERE `bmID` = '$add' AND `userID` = $uid;";
 			$oFolder = db_query($query)[0]['bmParentID'];
-			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$folder', `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$data', `bmAdded` = '$time' WHERE `bmID` = '$add' AND `userID` = $uid;";
 			$count = db_query($query);
 			reIndex($oFolder);
-			$response = array("id" => $id, "folder" => $folder);
+			$response = array("id" => $add, "folder" => $data);
 			($count > 0) ? sendJSONResponse($response):sendJSONResponse(false);
 			break;
 		case "adel":
