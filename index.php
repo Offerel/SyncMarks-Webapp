@@ -615,7 +615,7 @@ if(isset($_POST['action'])) {
 		case "ntfyupdate":
 			e_log(8,"ntfy: Updating ntfy information.");
 			$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
-			$cnoti = filter_var($_POST['cnoti'], FILTER_SANITIZE_STRING);
+			$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
 			$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
 			$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
 
