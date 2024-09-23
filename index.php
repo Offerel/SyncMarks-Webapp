@@ -228,7 +228,7 @@ if (isset($_GET['api'])) {
 
 if(isset($_POST['action'])) {
 	$uid = $_SESSION['sud']['userID'];
-	$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+	$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
 	$data = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 	$time = round(microtime(true) * 1000);
 	$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
@@ -271,30 +271,7 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($response);
 			break;
 		case "gurls":
-			$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
-			e_log(8,"Request pushed sites for '$client'");
-			$query = "SELECT * FROM `pages` WHERE `nloop` = 1 AND `userID` = ".$_SESSION['sud']['userID']."  AND (`cid` IS NULL OR `cid` = '".$client."');";
-			$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
-			$notificationData = db_query($query);
-			if (!empty($notificationData)) {
-				e_log(8,"Found ".count($notificationData)." links. Will push them to the client.");
-				foreach($notificationData as $key => $notification) {
-					$myObj[$key]['title'] = html_entity_decode($notification['ptitle'], ENT_QUOTES | ENT_XML1, 'UTF-8');
-					$myObj[$key]['url'] = $notification['purl'];
-					$myObj[$key]['nkey'] = $notification['pid'];
-				}
-			} else {
-				e_log(8,"No pushed sites found");
-				$myObj = new stdClass();
-			}
-
-			if(isset($_COOKIE['syncmarks'])) 
-				e_log(8,'Cookie is available');
-			else
-				e_log(8,'Cookie is not set');
-
-			$response['notifications'] = $myObj;
-			$response['enabled'] = $uOptions['notifications'];
+			$response = pushGet($client, $uid);
 			sendJSONResponse($response);
 			break;
 		case "cinfo":
