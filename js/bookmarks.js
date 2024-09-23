@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
 
-		if(sessionStorage.getItem('gNoti') != 1) sendRequest(pushGet);
+		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 
 		document.addEventListener('keydown', e => {
 			if (e.key === 'Escape') hideMenu();
@@ -1129,9 +1129,10 @@ function pushHide(response) {
 	}
 }
 
-function pushGet(response) {
-	let notifications = response;
-	if(Object.keys(notifications).length > 0 && notifications[0]['nOption'] == 1) {
+function gurls(response) {
+	let notifications = response['notifications'];
+	
+	if(notifications.length > 0 && response['enabled'] == 1) {
 		notifications.forEach(function(notification){
 			show_noti(notification);
 		});
