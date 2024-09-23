@@ -1088,7 +1088,7 @@ function adel(response) {
 	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
 }
 
-function clientRename(response) {
+function arename(response) {
 	document.getElementById('mngcform').innerHTML = response;
 	document.querySelectorAll("#mngcform li div.remove").forEach(function(element) {element.addEventListener('click', delClient, false)});
 	document.querySelectorAll("#mngcform li div.rename").forEach(function(element) {element.addEventListener('click', mvClient, false)});
@@ -1171,7 +1171,7 @@ function mvClient(element) {
 	loader.classList.add('db-spinner');
 	loader.id = 'db-spinner';
 	document.querySelector('body').appendChild(loader);
-	sendRequest(clientRename, element.target.parentElement.children[0].children['cname'].value, element.target.parentElement.id);
+	sendRequest(arename, element.target.parentElement.children[0].children['cname'].value, element.target.parentElement.id);
 }
 
 function resize(e){

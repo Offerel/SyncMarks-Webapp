@@ -402,7 +402,11 @@ if(isset($_POST['action'])) {
 			break;
 		case "arename":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$response = clientRename($add, $data, $uid, true);
+			sendJSONResponse($response);
+			//$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			//$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			/*
 			e_log(8,"Rename client $client to $name");
 			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
 			$count = db_query($query);
@@ -413,6 +417,7 @@ if(isset($_POST['action'])) {
 			} else {
 				die(bClientlist($_SESSION['sud']['userID']));
 			}
+			*/
 
 			break;
 		case "cfolder":
@@ -1103,13 +1108,14 @@ function clientInfo($client, $uid) {
 	return $clientData;
 }
 
-function clientRename($client, $data, $add = null, $uid) {
+function clientRename($client, $data, $uid, $add = null) {
 	e_log(8,"Rename client $client to '$data'");
 	$query = "UPDATE `clients` SET `cname` = '$data' WHERE `userID` = $uid AND `cid` = '$client';";
 	$count = db_query($query);
 	
 	if(isset($add)) {
-		$data = bClientlist($uid, $add);
+		e_log(2, "with add");
+		$data = bClientlist($uid, 'html');
 	} else {
 		$data = bClientlist($uid);
 	}
