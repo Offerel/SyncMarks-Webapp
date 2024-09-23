@@ -983,6 +983,7 @@ function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
 }
 
 function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
+	$bookmark = (is_array($bookmark)) ? $bookmark:json_decode($bookmark, true);
 	$bookmark['added'] = $stime;
 	$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle(trim($bookmark['url'])):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 	
