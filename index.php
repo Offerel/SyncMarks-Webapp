@@ -430,7 +430,7 @@ if(isset($_POST['action'])) {
 				$count = db_query($query);
 				($count === 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
-			sendJSONResponse(notiList($_SESSION['sud']['userID'], $loop));
+			sendJSONResponse(notiList($uid, $loop));
 			break;
 		case "soption":
 			$option = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
