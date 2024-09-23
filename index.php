@@ -452,7 +452,7 @@ if(isset($_POST['action'])) {
 			$id = filter_var($bookmark['id'], FILTER_SANITIZE_STRING);
 			$url = (isset($bookmark['url']) && strlen($bookmark['url']) > 4) ? '\''.validate_url($bookmark['url']).'\'' : 'NULL';
 			e_log(8, "Edit entry '$title'");
-			$query = "UPDATE `bookmarks` SET `bmTitle` = '$title', `bmURL` = $url, `bmAdded` = '".round(microtime(true) * 1000)."' WHERE `bmID` = '$id' AND `userID` = ".$_SESSION['sud']['userID'].";";
+			$query = "UPDATE `bookmarks` SET `bmTitle` = '$title', `bmURL` = $url, `bmAdded` = '$time' WHERE `bmID` = '$id' AND `userID` = $uid;";
 			$count = db_query($query);
 			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
 			break;
