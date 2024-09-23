@@ -397,7 +397,7 @@ if(isset($_POST['action'])) {
 		case "pushHide":
 			e_log(8,"Hide notification");
 			$page = filter_var($_POST['data'], FILTER_VALIDATE_INT);
-			$query = "UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $page AND `userID` = ".$_SESSION['sud']['userID'];
+			$query = "UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $page AND `userID` = $uid";
 			sendJSONResponse(db_query($query));
 			break;
 		case "arename":
