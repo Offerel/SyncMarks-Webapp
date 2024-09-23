@@ -404,21 +404,6 @@ if(isset($_POST['action'])) {
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$response = clientRename($add, $data, $uid, true);
 			sendJSONResponse($response);
-			//$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			//$name = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-			/*
-			e_log(8,"Rename client $client to $name");
-			$query = "UPDATE `clients` SET `cname` = '".$name."' WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '".$client."';";
-			$count = db_query($query);
-
-			if (filter_var($_POST['add'], FILTER_SANITIZE_STRING) == "null" && $count > 0) {
-				$response = bClientlist($_SESSION['sud']['userID'], 'json');
-				sendJSONResponse($response);
-			} else {
-				die(bClientlist($_SESSION['sud']['userID']));
-			}
-			*/
-
 			break;
 		case "cfolder":
 			sendJSONResponse(cfolder($time,$data,$add));
@@ -435,12 +420,11 @@ if(isset($_POST['action'])) {
 			sendJSONResponse(notiList($uid, $loop));
 			break;
 		case "soption":
-			$option = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			$value = filter_var(filter_var($_POST['add'], FILTER_SANITIZE_NUMBER_INT), FILTER_VALIDATE_INT);
-			e_log(8,"Option received: ".$option.":".$value);
+			e_log(8,"Option received: ".$data.":".$value);
 			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-			$oOptionsA[$option] = $value;
-			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+			$oOptionsA[$data] = $value;
+			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=$uid;";
 			header("Content-Type: application/json");
 			if(db_query($query) !== false) {
 				e_log(8,"Option saved");
@@ -1818,6 +1802,7 @@ function htmlForms() {
 		<form action='' method='POST'>$oswitch
 			<input required placeholder='URL' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
 			<input placeholder='Token' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
+			<input placeholder='Password' type='password' id='password' name='password' value='' autocomplete='current-password' />
 			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='ntfyupdate'>Save</button></div>
 		</form>
 	</div>";
