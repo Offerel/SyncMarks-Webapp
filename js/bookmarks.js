@@ -709,6 +709,7 @@ function addmark(response) {
 
 function muedt(response) {
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
+	response = '' + response;
 	if(response.indexOf('failed') != -1) {
 		console.error("Syncmarks: "+response);
 		show_noti({title:"Syncmarks - Error", url:response, key:""}, false);
