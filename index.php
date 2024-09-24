@@ -180,7 +180,7 @@ if (isset($_GET['api'])) {
 					$response = pushGet($client, $uid);
 					break;
 				case "pushHide":
-					$response = pushHide($data, $uid);
+					$response = durl($data, $uid);
 					break;
 				case "bookmarkExport":
 					$response = bookmarkExport($ctype, $time, $data, $client);
