@@ -31,20 +31,23 @@ ALTER TABLE `auth_token_tmp` RENAME TO `auth_token`;
 
 ALTER TABLE `bookmarks` RENAME TO `bookmarks_tmp`;
 CREATE TABLE `bookmarks` (
-	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT,
-	`bmIndex`	INT NOT NULL,
-	`bmTitle`	TEXT,
-	`bmType`	TEXT NOT NULL,
-	`bmURL`	TEXT,
-	`bmAdded`	INT NOT NULL,
-	`bmModified`	INT,
-	`userID`	INT NOT NULL,
-	`bmAction`	INT,
-	PRIMARY KEY(`bmID`,`userID`),
-	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
-	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES `bookmarks`(`bmID`,`userID`) ON DELETE CASCADE
-);
+  `bmID` varchar(15) NOT NULL,
+  `bmParentID` varchar(15) DEFAULT NULL,
+  `bmIndex` int(10) unsigned NOT NULL,
+  `bmTitle` text DEFAULT NULL,
+  `bmType` text NOT NULL,
+  `bmURL` text DEFAULT NULL,
+  `bmAdded` text NOT NULL,
+  `bmModified` text DEFAULT NULL,
+  `userID` int(11) NOT NULL,
+  `bmAction` int(11) DEFAULT NULL,
+  PRIMARY KEY (`bmID`,`userID`),
+  KEY `userID` (`userID`),
+  KEY `bmParentID` (`bmParentID`,`userID`),
+  KEY `i1` (`bmURL`(255),`bmTitle`(255)),
+  CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `bookmarks_ibfk_2` FOREIGN KEY (`bmParentID`, `userID`) REFERENCES `bookmarks` (`bmID`, `userID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 INSERT OR IGNORE INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) SELECT 'root________', 0,'folder',0, `userID` FROM users;
 INSERT INTO `bookmarks` SELECT * FROM `bookmarks_tmp`;
 DROP TABLE `bookmarks_tmp`;

@@ -17,10 +17,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Create bookmark table
-CREATE TABLE IF NOT EXISTS `bookmarks` (
+CREATE TABLE `bookmarks` (
   `bmID` varchar(15) NOT NULL,
   `bmParentID` varchar(15) DEFAULT NULL,
-  `bmIndex` int(11) NOT NULL,
+  `bmIndex` int(10) unsigned NOT NULL,
   `bmTitle` text DEFAULT NULL,
   `bmType` text NOT NULL,
   `bmURL` text DEFAULT NULL,
