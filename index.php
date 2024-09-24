@@ -1460,12 +1460,17 @@ function editBookmark($bm, $time, $uid) {
 }
 
 function moveBookmark($bm) {
-	e_log(8,"Bookmark seems to be moved, checking current folder data");
-	$query = "SELECT `bmID`, `bmParentID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bm['nfolder']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	e_log(8,"Bookmark seems to be moved, checking folder data");
+	$uid = $_SESSION['sud']['userID'];
+	$query = "SELECT `bmID`, `bmParentID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bm['nfolder']."' AND `userID` = $uid;";
 	$folderData = db_query($query)[0];
 	
 	if(is_null($folderData['bmID'])) {
-		$response = array("message"=>"Folder not found, bookmark not moved", "code"=>500);
+		$response = [
+			"message" => "Folder not found, bookmark not moved",
+			"code" => 500,
+		];
+
 		e_log(2, $response['message']);
 		return $response;
 	} else {
@@ -1473,35 +1478,45 @@ function moveBookmark($bm) {
 	}
 
 	if(array_key_exists("url", $bm)) {
-		e_log(8,"Checking bookmark data before moving it");
-		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= ".$_SESSION['sud']["userID"]." AND `bmURL` = '".$bm["url"]."';";
-		$oldData = db_query($query)[0];
-		
-		if (!empty($folderData) && !empty($oldData)) {
-			if(($folderData['bmParentID'] != $oldData['bmParentID']) || ($oldData['bmIndex'] != $bm['index'])) {
-				e_log(8,"Folder or Position changed, moving bookmark");
-				$nfolder = $bm['folder'];
-				$bid = $oldData["bmID"];
-				$bindex = $bm['index'];
-				$bAdded = round(microtime(true) * 1000);
-				$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = ".$_SESSION['sud']["userID"];
-				db_query($query);
-				reIndex($oldData['bmParentID']);
-				$response = array("message"=>"Bookmark moved", "code"=>200);
-				return $response;
-			} else {
-				$response = array("message"=>"Bookmark not moved, exiting", "code"=>500);
-				e_log(2,$response['message']);
-				return $response;
-			}
+		e_log(8,"Search bookmark by url before moving it");
+		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= $uid AND `bmURL` = '".$bm["url"]."';";
+	} else {
+		e_log(8,"Bookmark is folder, search by name before moving it");
+		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmTitle` = '".$bm["title"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+	}
+
+	$oldData = db_query($query)[0];
+
+	if (!empty($folderData) && !empty($oldData)) {
+		if(($folderData['bmParentID'] != $oldData['bmParentID']) || ($oldData['bmIndex'] != $bm['index'])) {
+			e_log(8,"Folder or Position changed, moving bookmark");
+			$nfolder = $bm['folder'];
+			$bid = $oldData["bmID"];
+			$bindex = $bm['index'];
+			$bAdded = round(microtime(true) * 1000);
+			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmModified` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = $uid;";
+			db_query($query);
+			reIndex($oldData['bmParentID']);
+			$response = [
+				"message" => "Bookmark moved",
+				"code" => 200,
+			];
+			e_log(8, $response['message']);
+			return $response;
 		} else {
-			$response = array("message"=>"Can't move bookmark, data not found", "code"=>500);
-			e_log(2,$response['message']);
+			$response = [
+				"message" => "Bookmark not moved, exiting",
+				"code" => 500,
+			];
+			e_log(2, $response['message']);
 			return $response;
 		}
 	} else {
-		$response = array("message"=>"url key not found", "code"=>500);
-		e_log(2,$response['message']);
+		$response = [
+			"message" => "Can't move bookmark, data not found",
+			"code" => 500,
+		];
+		e_log(2, $response['message']);
 		return $response;
 	}
 }
