@@ -198,7 +198,7 @@ if (isset($_GET['api'])) {
 					$response = bookmarkMove($data, $client, $time, $uid);
 					break;
 				case "bookmarkEdit":
-					$response = (array_key_exists('url', $bookmark)) ? editBookmark($bookmark, $time, $uid):editFolder($bookmark, $time, $uid);
+					$response = (array_key_exists('url', $data)) ? editBookmark($data, $time, $uid):editFolder($data, $time, $uid);
 					break;
 				case "tabsGet":
 					$response = tabsGet($uid);
