@@ -974,6 +974,12 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 }
 
 function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
+	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
+		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
+		e_log(8,"Write client info to $filename");
+		file_put_contents($filename, json_encode($jmarks), true);
+	}
+
 	delUsermarks($user);
 	$armarks = parseJSON($jmarks);
 	updateClient($client, $ctype, $ctime);
@@ -1397,7 +1403,7 @@ function editFolder($bm, $time, $uid) {
 	$fData = db_query($query);
 
 	if(count($fData) == 1) {
-		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmModified` = $time WHERE WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = $uid;";
+		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmMAdded` = $time WHERE WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = $uid;";
 		$count = db_query($query);
 		$response = [
 			"message" => "Unique folder found, edit the folder",
@@ -1420,7 +1426,7 @@ function editBookmark($bm, $time, $uid) {
 	$bmData = db_query($query);
 
 	if(count($bmData) == 1) {
-		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmModified` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
+		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmAdded` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
 		$count = db_query($query);
 		$response = [
 			"message" => "Unique entry found, edit the title of the bookmark",
@@ -1433,7 +1439,7 @@ function editBookmark($bm, $time, $uid) {
 		$bmData = db_query($query);
 
 		if(count($bmData) == 1) {
-			$query = "UPDATE `bookmarks` SET `bmURL` = '".$bm['url']."', `bmModified` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
+			$query = "UPDATE `bookmarks` SET `bmURL` = '".$bm['url']."', `bmAdded` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
 			$count = db_query($query);
 			$response = [
 				"message" => "Unique entry found, edit the url of the bookmark",
@@ -1487,7 +1493,7 @@ function moveBookmark($bm) {
 			$bid = $oldData["bmID"];
 			$bindex = $bm['index'];
 			$bAdded = round(microtime(true) * 1000);
-			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmModified` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = $uid;";
+			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = $uid;";
 			db_query($query);
 			reIndex($oldData['bmParentID']);
 			$response = [
@@ -2174,8 +2180,8 @@ function parseJSON($arr) {
 }
 
 function getBookmarks() {
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmAdded` ASC, `bmType` DESC;";
 	e_log(8,"Get bookmarks");
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmAdded` ASC, `bmType` DESC;";
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
 		$element['bmTitle'] = html_entity_decode($element['bmTitle'],ENT_QUOTES,'UTF-8');
