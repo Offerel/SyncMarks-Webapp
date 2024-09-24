@@ -1096,15 +1096,8 @@ function clientInfo($client, $uid) {
 function clientRename($client, $data, $uid, $add = null) {
 	e_log(8,"Rename client $client to '$data'");
 	$query = "UPDATE `clients` SET `cname` = '$data' WHERE `userID` = $uid AND `cid` = '$client';";
-	$count = db_query($query);
-	
-	if(isset($add)) {
-		e_log(2, "with add");
-		$data = bClientlist($uid, 'html');
-	} else {
-		$data = bClientlist($uid);
-	}
-
+	$count = db_query($query);	
+	$data = (isset($add)) ? bClientlist($uid, 'html'):bClientlist($uid, 'json');
 	return $data;
 }
 
@@ -1965,6 +1958,8 @@ function bClientlist($uid, $mode = 'html') {
 	uasort($clientData, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
 	});
+
+	e_log(2, $mode);
 
 	if($mode == 'html') {
 		$clientList = "<ul>";
