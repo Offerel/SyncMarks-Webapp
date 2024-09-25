@@ -406,7 +406,7 @@ if(isset($_POST['action'])) {
 			sendJSONResponse($response);
 			break;
 		case "cfolder":
-			sendJSONResponse(cfolder($time,$data,$add));
+			sendJSONResponse(cfolder($time, $data, $add));
 			break;
 		case "rmessage":
 			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
@@ -453,7 +453,7 @@ if(isset($_POST['action'])) {
 			$oFolder = db_query($query)[0]['bmParentID'];
 			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$data', `bmAdded` = '$time' WHERE `bmID` = '$add' AND `userID` = $uid;";
 			$count = db_query($query);
-			reIndex($oFolder);
+			reIndex($oFolder, $folderData[0]['index']);
 			$response = array("id" => $add, "folder" => $data);
 			($count > 0) ? sendJSONResponse($response):sendJSONResponse(false);
 			break;
@@ -1220,9 +1220,10 @@ function delMark($bmID) {
 	return $count;
 }
 
-function reIndex($parentid) {
+function reIndex($parentid, $bmIndex = null) {
 	e_log(8,"Check for remaining entries in folder");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY bmIndex;";
+	$uid = $_SESSION['sud']['userID'];
+	$query = "SELECT * FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = $uid ORDER BY bmIndex;";
 	$fBookmarks = db_query($query);
 
 	$bm_count = count($fBookmarks);
@@ -1231,25 +1232,34 @@ function reIndex($parentid) {
 		$data[] = array($i, $fBookmarks[$i]['bmID']);
 	}
 
+	if(!is_null($bmIndex)) {
+		$bmSort = getSort($parentid, $bmIndex, $uid);
+		e_log(8, "Shift bigger sort entries");
+		db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
+	}
+
 	$query = "UPDATE `bookmarks` SET `bmIndex` = ? WHERE bmID = ?";
 	db_query($query, $data);
 }
 
-function cfolder($ctime,$fname,$fbid) {
+function cfolder($ctime, $fname, $fbid) {
 	e_log(8,"Request to create folder $fname");
-	$query = "SELECT `bmParentID`  FROM `bookmarks` WHERE `bmID` = '$fbid' AND `userID` = ".$_SESSION['sud']['userID'];
+	$uid = $_SESSION['sud']['userID'];
+	$query = "SELECT `bmParentID`  FROM `bookmarks` WHERE `bmID` = '$fbid' AND `userID` = $uid;";
 	$pdata = db_query($query);
 	$res = '';
 	$parentid = $pdata[0]['bmParentID'];
 
 	if(count($pdata) == 1) {
 		e_log(8,"Try to get index folder");
-		$query = "SELECT MAX(`bmIndex`)+1 as nIndex FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = ".$_SESSION['sud']['userID'];
+		$query = "SELECT MAX(`bmIndex`)+1 as nIndex FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = $uid";
 		$idata = db_query($query);
 
 		if(count($idata) == 1) {
 			e_log(8,"Add new folder to database");
-			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', '$parentid', ".$idata[0]['nIndex'].", '$fname', 'folder', $ctime, ".$_SESSION['sud']["userID"].")";
+			$bmIndex = $idata[0]['nIndex'];
+
+			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', '$parentid', $bmIndex, '$fname', 'folder', $ctime, $uid)";
 			if(db_query($query) === false)
 				$res = "Adding folder failed.";
 			else {
@@ -1495,7 +1505,7 @@ function moveBookmark($bm) {
 			$bAdded = round(microtime(true) * 1000);
 			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = $uid;";
 			db_query($query);
-			reIndex($oldData['bmParentID']);
+			reIndex($oldData['bmParentID'], $bindex);
 			$response = [
 				"message" => "Bookmark moved",
 				"code" => 200,
@@ -1548,7 +1558,8 @@ function addFolder($bm) {
 
 function addBookmark($bm) {
 	e_log(8,"Check if bookmark already exists for user.");
-	$query = "SELECT `bmID`, COUNT(*) AS `bmcount` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = ".$_SESSION['sud']["userID"].";";
+	$uid = $_SESSION['sud']["userID"];
+	$query = "SELECT `bmID`, COUNT(*) AS `bmcount` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = $uid;";
 	$bmExistData = db_query($query);
 	if($bmExistData[0]["bmcount"] > 0) {
 		$message = "Bookmark not added at server, it already exists";
@@ -1556,15 +1567,23 @@ function addBookmark($bm) {
 		return $message;
 	}
 	e_log(8,"Identify folder for new bookmark");
-	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = '".$bm["folder"]."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = '".$bm["folder"]."' AND `userID` = $uid;";
 	$folderID = db_query($query)[0]['bmID'];
 
 	e_log(8,"Get new index for bookmark");
-	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `bmParentID` = '$folderID';";
+	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = $uid AND `bmParentID` = '$folderID';";
 	$nindex = db_query($query)[0]['nindex'];
 	
 	e_log(8,"Add bookmark '".$bm['title']."'");
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".trim($bm['title'])."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].");";
+
+	$bmSort = getSort($folderID, $nindex, $uid);
+
+	e_log(8, "Shift bigger sort entries");
+	db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
+
+	e_log(8, "Add bookmark to db");
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".trim($bm['title'])."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", $uid, $bmSort);";
+	
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
 		e_log(1, $message);
@@ -1572,6 +1591,16 @@ function addBookmark($bm) {
 	} else {
 		return "Bookmark added";
 	}
+}
+
+function getSort($parentid, $bmIndex, $uid) {
+	e_log(8, "Try to find sort index");
+	$maxIndex = db_query("SELECT MAX(`bmIndex`) AS `maxIndex` FROM `bookmarks` WHERE `userID` = $uid AND `bmParentID` = '$parentid'")[0]['maxIndex'];
+	$searchIndex = ($bmIndex <= $maxIndex) ? $bmIndex:$maxIndex;
+	$sort = db_query("SELECT `bmSort` FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = $uid AND `bmIndex` = $searchIndex")[0]['bmSort'];
+	$bmSort = ($bmIndex <= $maxIndex) ? $sort:$sort+1;
+	e_log(8, "Found sort index: $bmSort");
+	return $bmSort;
 }
 
 function updateClient($cl, $ct, $time) {
@@ -2130,7 +2159,8 @@ function importMarks($bookmarks, $uid) {
 			$bookmark[5],
 			$bookmark[6],
 			$bookmark[7],
-			$bookmark[8]
+			$bookmark[8],
+			$key
 		);
 	}
 
@@ -2140,7 +2170,7 @@ function importMarks($bookmarks, $uid) {
 		file_put_contents($filename, print_r($data2, true));
 	}
 	
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`) VALUES (?,?,?,?,?,?,?,?,?)";
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query($query, $data2);
 
 	if($response) {
@@ -2181,7 +2211,7 @@ function parseJSON($arr) {
 
 function getBookmarks() {
 	e_log(8,"Get bookmarks");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmAdded` ASC, `bmType` DESC;";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
 		$element['bmTitle'] = html_entity_decode($element['bmTitle'],ENT_QUOTES,'UTF-8');
