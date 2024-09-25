@@ -2,11 +2,11 @@
 CREATE TABLE IF NOT EXISTS `users` (
   `userID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(255) NOT NULL,
-  `userType` int(11) NOT NULL,
+  `userType` int(10) unsigned NOT NULL,
   `userHash` text NOT NULL,
-  `userLastLogin` int(11) DEFAULT NULL,
+  `userLastLogin` int(10) unsigned DEFAULT NULL,
   `sessionID` varchar(255) DEFAULT NULL,
-  `userOldLogin` int(11) DEFAULT NULL,
+  `userOldLogin` int(10) unsigned DEFAULT NULL,
   `uOptions` text DEFAULT NULL,
   `userMail` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`userID`),
@@ -27,7 +27,8 @@ CREATE TABLE `bookmarks` (
   `bmAdded` text NOT NULL,
   `bmModified` text DEFAULT NULL,
   `userID` int(11) NOT NULL,
-  `bmAction` int(11) DEFAULT NULL,
+  `bmAction` int(11) unsigned DEFAULT NULL,
+  `bmSort` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`bmID`,`userID`),
   KEY `userID` (`userID`),
   KEY `bmParentID` (`bmParentID`,`userID`),
@@ -138,4 +139,4 @@ END;
 @delimiter ; 
 %%%
 
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.0', '9', '1646766932');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.10.0', '11', '1727281092');

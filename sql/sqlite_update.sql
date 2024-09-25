@@ -31,7 +31,7 @@ ALTER TABLE `auth_token_tmp` RENAME TO `auth_token`;
 
 CREATE TABLE `bookmarks_tmp` (
 	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT,
+	`bmParentID`	TEXT DEFAULT NULL,
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -40,6 +40,7 @@ CREATE TABLE `bookmarks_tmp` (
 	`bmModified`	INTEGER,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
+	`bmSort` INTEGER DEFAULT NULL,
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES `bookmarks`(`bmID`,`userID`) ON DELETE CASCADE,
 	PRIMARY KEY(`bmID`,`userID`)
@@ -147,7 +148,7 @@ DROP TRIGGER IF EXISTS `update_usertoken`;
 DROP TRIGGER IF EXISTS `delete_clientokens`;
 DROP TRIGGER IF EXISTS `delete_subbm`;
 
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.3', '10', '1667852693');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.10.0', '11', '1727281092');
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 10;
+PRAGMA user_version = 11;
 PRAGMA journal_mode=WAL;

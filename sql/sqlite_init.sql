@@ -4,11 +4,11 @@ CREATE TABLE `users` (
 	`userName`	TEXT NOT NULL UNIQUE,
 	`userType`	INTEGER NOT NULL,
 	`userHash`	TEXT NOT NULL,
-	`userLastLogin`	INTEGER,
+	`userLastLogin`	INTEGER DEFAULT NULL,
 	`sessionID`	VARCHAR(255) UNIQUE,
-	`userOldLogin`	INTEGER,
+	`userOldLogin`	INTEGER DEFAULT NULL,
 	`uOptions`	TEXT,
-	`userMail`	VARCHAR(255),
+	`userMail`	VARCHAR(255) DEFAULT NULL,
 	PRIMARY KEY(`userID`)
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE `auth_token` (
 
 CREATE TABLE `bookmarks` (
 	`bmID`	TEXT NOT NULL,
-	`bmParentID`	TEXT,
+	`bmParentID`	TEXT DEFAULT NULL,
 	`bmIndex`	INTEGER NOT NULL,
 	`bmTitle`	TEXT,
 	`bmType`	TEXT NOT NULL,
@@ -33,6 +33,7 @@ CREATE TABLE `bookmarks` (
 	`bmModified`	INTEGER,
 	`userID`	INTEGER NOT NULL,
 	`bmAction`	INTEGER,
+	`bmSort` INTEGER DEFAULT NULL,
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES `bookmarks`(`bmID`,`userID`) ON DELETE CASCADE,
 	PRIMARY KEY(`bmID`,`userID`)
@@ -113,9 +114,9 @@ BEGIN
 	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
 END;
 
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.8.3', '10', '1667852693');
+INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.10.0', '11', '1727281092');
 
-PRAGMA user_version = 10;
+PRAGMA user_version = 11;
 
 PRAGMA foreign_keys = ON;
 
