@@ -1,12 +1,12 @@
 /**
  * SyncMarks
  *
- * @version 1.9.2
+ * @version 1.10.0
  * @author Offerel
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
  */
-const cacheName = 'SyncMarksPWA-v1';
+const cacheName = 'SyncMarksPWA-v3';
 const cacheResources = [
 	'./',
 	'./manifest.json',
@@ -28,7 +28,7 @@ const cacheResources = [
 ];
 
 const dbName = "syncmarks";
-const version = 2;
+const version = 3;
 
 let db;
 let dbRequest = indexedDB.open(dbName, version);

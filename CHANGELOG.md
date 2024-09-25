@@ -1,6 +1,10 @@
 # ChangeLog
-## 1.9.2 (2024-05-01)
--
+## 1.10.0 (2024-09-25)
+- Added API and API description
+- Added sort field for bookmarks
+- Added ntfy support
+- Removed Pushbullet support
+- Fix some issues
 
 ## 1.9.1 (2024-04-28)
 *   Fix #80 for Extension
