@@ -1491,7 +1491,12 @@ function moveBookmark($bm) {
 		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= $uid AND `bmURL` = '".$bm["url"]."';";
 	} else {
 		e_log(8,"Bookmark is folder, search by name before moving it");
-		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmTitle` = '".$bm["title"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+		$sysfolder = array("root________", "toolbar_____", "unfiled_____", "mobile______");
+		if (in_array($bm['folder'], $sysfolder)) {
+			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmTitle` = '".$bm["title"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+		} else {
+			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmID` = '".$bm["folder"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+		}
 	}
 
 	$oldData = db_query($query)[0];
