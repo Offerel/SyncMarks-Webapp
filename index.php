@@ -34,7 +34,10 @@ $version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1]
 $version = explode(" ", $version)[1];
 
 $headers = getallheaders();
-if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') die(http_response_code(204));
+if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
+	header("X-SyncMarks: $version");
+	die(http_response_code(204));
+}
 
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
@@ -1147,9 +1150,9 @@ function sendJSONResponse($response) {
 	global $version;
 	$code = isset($response['code']) ? $response['code']:200;
 	header('Content-Type: application/json; charset=utf-8');
+	header("X-SyncMarks: $version");
 	if(is_array($response)) {
 		http_response_code($code);
-		$response['version'] = 'v'.$version;
 	}
 	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
