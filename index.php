@@ -1210,14 +1210,19 @@ function fWay($parent, $user, $str) {
 function delMark($bmID) {
 	$count = 0;
 	$bms = implode(", ", $bmID);
+	$uid = $_SESSION['sud']['userID'];
 	e_log(8,"Delete bookmark(s) $bms");
 
 	foreach ($bmID as $key => $value) {
 		$bm = $value;
-		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL` FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
+		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL`, `bmSort` FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = $uid;";
 		$dData = db_query($query)[0];
 
-		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = ".$_SESSION['sud']['userID'].";";
+		$bmSort = $dData['bmSort'];
+		e_log(8,"Re-Sort bookmarks");
+		db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`-1 WHERE `userID` = $uid AND `bmSort` > $bmSort ORDER BY `bmSort`");
+
+		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = $uid;";
 		$count = db_query($query);
 
 		reIndex($dData['bmParentID']);
@@ -1514,9 +1519,19 @@ function moveBookmark($bm) {
 			$bid = $oldData["bmID"];
 			$bindex = $bm['index'];
 			$bAdded = round(microtime(true) * 1000);
-			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded  WHERE `bmID` = '$bid' AND `userID` = $uid;";
+
+			$bmSortN = getSort($nfolder, $bindex, $uid);
+			e_log(8, "Shift bigger sort entries");
+			db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSortN ORDER BY `bmSort`");
+			
+			e_log(8, "Move bookmark");
+			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded, `bmSort` = $bmSortN  WHERE `bmID` = '$bid' AND `userID` = $uid;";
 			db_query($query);
-			reIndex($oldData['bmParentID'], $bindex);
+
+			$bmSortO = $oldData["bmSort"];
+			e_log(8, "Shift old sort entries");
+			db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`-1 WHERE `userID` = $uid AND `bmSort` > $bmSortO ORDER BY `bmSort`");
+
 			$response = [
 				"message" => "Bookmark moved",
 				"code" => 200,
