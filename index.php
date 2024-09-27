@@ -33,6 +33,9 @@ if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'
 $version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
 $version = explode(" ", $version)[1];
 
+$headers = getallheaders();
+if($headers['X-Action'] === 'verify') die(http_response_code(204));
+
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 
