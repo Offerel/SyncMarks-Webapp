@@ -1544,7 +1544,8 @@ function moveBookmark($bm) {
 function addFolder($bm) {
 	$count = 0;
 	e_log(8,"Try to find if this folder exists already");
-	$query = "SELECT COUNT(*) AS bmCount, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	$uid = $_SESSION['sud']["userID"];
+	$query = "SELECT COUNT(*) AS bmCount, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = $uid;";
 	$res = db_query($query)[0];
 
 	if($res["bmCount"] > 0 && $count != 1) {
@@ -1553,15 +1554,19 @@ function addFolder($bm) {
 	}
 	
 	e_log(8,"Get folder data for adding folder");
-	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex`, `bmParentId` FROM `bookmarks` WHERE `bmParentId` = '".$bm['folder']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
+	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex`, `bmParentId` FROM `bookmarks` WHERE `bmParentId` = '".$bm['folder']."' AND `userID` = $uid;";
 	$folderData = db_query($query);
+
+	$bmSort = getSort($bm['folder'], $folderData[0]['nindex'], $uid);
+
+	e_log(8, "Shift bigger sort entries");
+	db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
 	
 	if (!empty($folderData)) {
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES ('".$bm['id']."', '".$bm['folder']."', ".$folderData[0]['nindex'].", '".$bm['title']."', '".$bm['type']."', ".$bm['added'].", ".$_SESSION['sud']["userID"].")";
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '".$bm['folder']."', ".$folderData[0]['nindex'].", '".$bm['title']."', '".$bm['type']."', ".$bm['added'].", $uid, $bmSort)";
 		db_query($query);
 		return true;
-	}
-	else {
+	} else {
 		e_log(1,"Couldn't add folder");
 		return false;
 	}
