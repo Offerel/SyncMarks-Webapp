@@ -1,5 +1,5 @@
 # ChangeLog
-## 1.10.0 (2024-09-25)
+## 2.0.0 (2024-09-25)
 - Added API and API description
 - Added sort field for bookmarks
 - Added ntfy support

@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 1.10.0
+ * @version 2.0.0
  * @author Offerel
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
@@ -241,37 +241,6 @@ if(isset($_POST['action'])) {
 	$add = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
 
 	switch($_POST['action']) {
-		case "sendTabs":
-			$jtabs = json_decode($_POST['data'], true);
-			$urls = [];
-			foreach ($jtabs as $tab) {
-				$urls[] = $tab['url'];
-			}
-			$jurls = trim(json_encode($urls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), '[]');
-			$user = $_SESSION['sud']['userID'];
-			$query = "DELETE FROM `bookmarks` WHERE `bmID` IN (SELECT `bmID` FROM `bookmarks` WHERE `bmURL` NOT IN ($jurls) AND `bmType` = 'tab' AND `userID` = $user);";
-			$res = db_query($query);
-			
-			foreach ($jtabs as $key => $tab) {
-				$tID = unique_code(12);
-				$title = trim($tab['title']);
-				$url = $tab['url'];
-				$query = "SELECT count(*) AS count FROM `bookmarks` WHERE `bmType` = 'tab' AND `bmURL` = '$url' AND `userID` = $user;";
-				$res = db_query($query)[0]['count'];
-				$added = round(microtime(true) * 1000);
-				if($res == 0) {
-					$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `userID`) VALUES ('$tID', $key, '$title', 'tab', '$url', '$added', $user);";
-					$res = db_query($query);
-				}
-			}
-			sendJSONResponse(1);
-			break;
-		case "getTabs":
-			$user = $_SESSION['sud']['userID'];
-			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user";
-			$tabs = db_query($query);
-			sendJSONResponse($tabs);
-			break;
 		case "getclients":
 			$response = clientList($client, $uid);
 			sendJSONResponse($response);
@@ -280,124 +249,13 @@ if(isset($_POST['action'])) {
 			$response = pushGet($client, $uid);
 			sendJSONResponse($response);
 			break;
-		case "cinfo":
-			e_log(8,"Request client info");
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = '$client' AND `userID` = ".$_SESSION['sud']['userID'].";";
-			$clientData = db_query($query)[0];
-			if(count($clientData) > 0) {
-				e_log(8,"Send client info to '$client'");
-				if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-					$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cinfo_".time().".json":"cinfo_".time().".json";
-					e_log(8,"Write client info to $filename");
-					file_put_contents($filename,json_encode($clientData),true);
-				}
-			} else {
-				e_log(2,"Client not found.");
-				$clientData['lastseen'] = 0;
-				$clientData['cname'] = '';
-				$clientData['ctype'] = '';
-			}
-
-			sendJSONResponse($clientData);
-			break;
 		case "bexport":
 			$response = bookmarkExport($ctype, $time, $data, $client);
 			sendJSONResponse($response);
 			break;
-		case "bimport":
-			$jmarks = json_decode($_POST['data'], true);
-			$jerrmsg = "";
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$partial = (isset($_POST['add'])) ? filter_var($_POST['add'], FILTER_VALIDATE_INT):0;
-			switch (json_last_error()) {
-				case JSON_ERROR_NONE:
-					$jerrmsg = '';
-				break;
-				case JSON_ERROR_DEPTH:
-					$jerrmsg = 'Maximum stack depth exceeded';
-				break;
-				case JSON_ERROR_STATE_MISMATCH:
-					$jerrmsg = 'Underflow or the modes mismatch';
-				break;
-				case JSON_ERROR_CTRL_CHAR:
-					$jerrmsg = 'Unexpected control character found';
-				break;
-				case JSON_ERROR_SYNTAX:
-					$jerrmsg = 'Syntax error, malformed JSON';
-				break;
-				case JSON_ERROR_UTF8:
-					$jerrmsg = 'Malformed UTF-8 characters, possibly incorrectly encoded';
-				break;
-				default:
-					$jerrmsg = 'Unknown error';
-			}
-
-			if(strlen($jerrmsg) > 0) {
-				e_log(1,"JSON error: ".$jerrmsg);
-				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
-				e_log(8,"JSON file written as $filename");
-				file_put_contents($filename,urldecode($_POST['data']),true);
-				sendJSONResponse($jerrmsg);
-			}
-			
-			$client = $_POST['client'];
-			$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-			$ctime = round(microtime(true) * 1000);
-			if($partial === 0) delUsermarks($_SESSION['sud']['userID']);
-			$armarks = parseJSON($jmarks);
-			$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
-			updateClient($client, $ctype, $ctime);
-			sendJSONResponse(importMarks($armarks,$_SESSION['sud']['userID']));
-			break;
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
 			$response = bookmarkAdd($bookmark, $time, $ctype, $client, $add);
-			sendJSONResponse($response);
-			break;
-		case "editmark":
-			$bookmark = json_decode(rawurldecode($_POST['data']),true);
-			$response = (array_key_exists('url',$bookmark)) ? editBookmark($bookmark):editFolder($bookmark);
-			sendJSONResponse($response);
-			break;
-		case "movemark":
-			$bookmark = json_decode($_POST['data'],true);
-			if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/movemark_".time().".json":"movemark_".time().".json";
-				e_log(8,"Write move bookmark json to $filename");
-				file_put_contents($filename,json_encode($bookmark),true);
-			}
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$ctime = round(microtime(true) * 1000);
-			$response = moveBookmark($bookmark);
-			$ctime = (filter_var($_POST['sync'], FILTER_SANITIZE_STRING) === 'false') ? 0:$ctime;
-			updateClient($client, strtolower(getClientType($_SERVER['HTTP_USER_AGENT'])), $ctime);
-			sendJSONResponse($response);
-			break;
-		case "delmark":
-			$bookmark = json_decode($_POST['data'], true);
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
-			$ctime = round(microtime(true) * 1000);
-			e_log(8,"Try to identify bookmark to delete");
-			if(isset($bookmark['url'])) {
-				$url = $bookmark['url'];
-				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '$url' AND `userID` = ".$_SESSION['sud']['userID'].";";
-			} else {
-				$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bookmark['title']."' AND `userID` = ".$_SESSION['sud']['userID'].";";
-			}
-			$response = 1;
-			$bData = db_query($query);
-			if(count($bData) == 1) {
-				e_log(8, "Bookmark found, trying to remove it");
-				$response = delMark(array($bData[0]['bmID']));
-			} else if (count($bData) > 1) {
-				$response = "No unique bookmark found, doing nothing";
-				e_log(2, $response);
-			} else {
-				e_log(2, "Bookmark not found, mark as deleted");
-				$response = 1;
-			}
-			
 			sendJSONResponse($response);
 			break;
 		case "pushHide":
@@ -642,47 +500,6 @@ if(isset($_POST['action'])) {
 				e_log(1,"Password mismatch. ntfy info not updated.");
 				die("Password mismatch. ntfy info not updated.");
 			}
-			die();
-			break;
-		case "pupdate":
-			e_log(8,"User change: Updating user password started");
-			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
-			$npassword = filter_var($_POST['npassword'], FILTER_SANITIZE_STRING);
-			$cpassword = filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING);
-
-			if($opassword != "" && $npassword !="" && $cpassword !="") {
-				e_log(8,"User change: Data complete entered");
-				if(password_verify($opassword,$_SESSION['sud']['userHash'])) {
-					e_log(8,"User change: Verify original password");
-					if($npassword === $cpassword) {
-						e_log(8,"User change: New and confirmed password");
-						if($npassword != $opassword) {
-							$password = password_hash($npassword,PASSWORD_DEFAULT);
-							$query = "UPDATE `users` SET `userHash`='$password' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-							db_query($query);
-							e_log(8,"User change: Password changed");
-						} else {
-							e_log(2,"User change: Old and new password identical, user not changed");
-						}
-					}
-				} else {
-					e_log(2,"User change: Old password mismatch");
-				}
-			} else {
-				e_log(2,"User change: Data missing, process failed");
-			}
-
-			unset($_SESSION['sauth']);
-			e_log(8,"User logged out");
-			echo htmlHeader();
-			echo "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>Logout successful</div>
-					<div id='loginformt'>User logged out. <a href='".$_SERVER['SCRIPT_NAME']."'>Login</a> again</div>
-				</div>
-			</div>";
-			echo $htmlFooter;
-
 			die();
 			break;
 		case "uupdate":
