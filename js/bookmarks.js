@@ -1138,7 +1138,7 @@ function pushHide(response) {
 function gurls(response) {
 	let notifications = response['notifications'];
 	
-	if(notifications.length > 0 && response['enabled'] == 1) {
+	if(Array.isArray(notifications) && notifications.length > 0 && response['enabled'] == 1) {
 		notifications.forEach(function(notification){
 			show_noti(notification);
 		});
