@@ -40,7 +40,6 @@ CREATE TABLE `bookmarks` (
   `bmAdded` text NOT NULL,
   `bmModified` text DEFAULT NULL,
   `userID` int(11) NOT NULL,
-  `bmAction` int(11) unsigned DEFAULT NULL,
   `bmSort` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`bmID`,`userID`),
   KEY `userID` (`userID`),

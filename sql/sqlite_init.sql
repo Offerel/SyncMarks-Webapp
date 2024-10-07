@@ -32,7 +32,6 @@ CREATE TABLE `bookmarks` (
 	`bmAdded`	INTEGER NOT NULL,
 	`bmModified`	INTEGER,
 	`userID`	INTEGER NOT NULL,
-	`bmAction`	INTEGER,
 	`bmSort` INTEGER DEFAULT NULL,
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE,
 	FOREIGN KEY(`bmParentID`,`userID`) REFERENCES `bookmarks`(`bmID`,`userID`) ON DELETE CASCADE,
