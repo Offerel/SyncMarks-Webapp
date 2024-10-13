@@ -179,6 +179,9 @@ if (isset($_GET['api'])) {
 				case "clientList":
 					$response = clientList($client, $uid);
 					break;
+				case "clientSendOptions":					
+					$response = clientSaveOptions($client, $data, $uid);
+					break;
 				case "pushURL":
 					$response = ntfyNotification($data, $uid);
 					break;
@@ -698,6 +701,25 @@ function pushGet($client, $uid) {
 	return $response;
 }
 
+function clientSaveOptions($client, $cOptions) {
+	e_log(8,"Save client options to database");
+	$jOptions = json_encode($cOptions);
+	$query = "UPDATE `clients` SET `cOptions` = '$jOptions' WHERE `cid` = '$client';";
+	$result = db_query($query);
+
+	if($result == 1) {
+		$response['message'] = "Client settings saved";
+		$response['code'] = 200;
+		$lvl = 8;
+	} else {
+		$response['message'] = "Error saving client settings";
+		$response['code'] = 500;
+		$lvl = 1;
+	}
+
+	return $response;
+}
+
 function clientList($client, $uid) {
 	e_log(8,"Try to get list of clients");
 	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid AND NOT `cid` = '$client';";
@@ -951,7 +973,12 @@ function clientCheck($client, $tbt, $ctime, $type) {
 			$tResponse['cname'] = '';
 		}
 		db_query($query);
+
+		$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = $userID AND `cOptions` IS NOT NULL;";
+		$cOptions = db_query($query);
+		$tResponse['cOptions'] = $cOptions;
 		$tResponse['token'] = $token;
+		
 		e_log(8, "Send new token to $client");
 	} else {
 		e_log(8, "Send token to $client");

@@ -1,7 +1,8 @@
 # ChangeLog
-## 2.0.1 (2024-10-07)
+## 2.0.1 (2024-10-13)
 - Removed unused db column
 - Fixed issue with remove bookmark
+- Add support for save client options
 
 ## 2.0.0 (2024-09-25)
 - Added API and API description
