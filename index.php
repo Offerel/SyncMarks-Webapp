@@ -850,24 +850,25 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 
 function bookmarkDel($bookmark, $user) {
 	$bookmark = json_decode($bookmark, true);
-	e_log(8,"Try to identify bookmark to delete");
 
+	e_log(8,"Try to identify bookmark to delete");
 	if(isset($bookmark['url'])) {
-		$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '".$bookmark['url']."' AND `userID` = $user;";
+		$query = "SELECT DISTINCT a.bmID FROM `bookmarks` a INNER JOIN `bookmarks` b ON a.bmParentID = b.bmID WHERE a.`bmURL` = '".$bookmark['url']."' AND a.`userID` = $user AND b.bmTitle = '".$bookmark['nfolder']."';";
 	} else {
 		$query = "SELECT `bmID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bookmark['title']."' AND `userID` = $user;";
 	}
 	$bData = db_query($query);
 
-	if(count($bData) == 1) {
+	if(count($bData) > 0) {
 		e_log(8, "Bookmark found, trying to remove it");
-		$erg = delMark(array($bData[0]['bmID']));
+		$bookmarks = array();
+		foreach ($bData as $key => $bookmark) {
+			$bookmarks[] = $bookmark['bmID'];
+		}
+		
+		$erg = delMark($bookmarks);
 		$message = ($erg == 1) ? "Bookmark deleted":"Delete Bookmark failed";
 		$code = ($erg == 1) ? 200:500;
-	} else if (count($bData) > 1) {
-		$message = "No unique bookmark found, doing nothing";
-		$code = 204;
-		e_log(2, $message);
 	} else {
 		$message = "Bookmark not found, mark as deleted";
 		$code = 200;
