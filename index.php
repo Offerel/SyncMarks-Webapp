@@ -27,9 +27,6 @@ define("CONFIG", [
 
 $le = "";
 set_error_handler("e_log");
-
-if(CONFIG['loglevel'] == 9 && CONFIG['cexp']) e_log(9, $_SERVER['REQUEST_METHOD'].' '.var_export($_REQUEST,true));
-
 $version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
 $version = explode(" ", $version)[1];
 
@@ -1869,8 +1866,6 @@ function bClientlist($uid, $mode = 'html') {
 	uasort($clientData, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
 	});
-
-	e_log(2, $mode);
 
 	if($mode == 'html') {
 		$clientList = "<ul>";
