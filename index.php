@@ -176,6 +176,9 @@ if (isset($_GET['api'])) {
 				case "clientList":
 					$response = clientList($client, $uid);
 					break;
+				case "clientRemove":
+					$response = clientRemove($client, $data);
+					break;
 				case "clientSendOptions":					
 					$response = clientSaveOptions($client, $data, $uid);
 					break;
@@ -644,6 +647,34 @@ function tabsSend($jtabs, $user, $added) {
 	}
 
 	$response['tabs'] = count($jtabs);
+	return $response;
+}
+
+function clientRemove($client, $data) {
+	$old = $data['old'];
+	$new = $data['new'];
+	$res = 0;
+
+	e_log(8, "A client has been restored from the server configuration. The temporary client '$old' will now be removed");
+	$query = "UPDATE `c_token` SET `tHash` = (SELECT `tHash` FROM `c_token` WHERE `cid` = '$old') WHERE `cid` = '$new';";
+	if(db_query($query) == 1) {
+		$query = "DELETE FROM `clients` WHERE `cid` = '$old';";
+		$res = db_query($query);
+	} else {
+		$res = 0;
+	}
+
+	if($res == 1) {
+		$response['message'] = "Temporary client removed";
+		$response['code'] = 200;
+		$res = 8;
+	} else {
+		$response['message'] = "Could not remove temporary client";
+		$response['code'] = 500;
+		$res = 1;
+	}
+
+	e_log($res, $response['message']);
 	return $response;
 }
 
