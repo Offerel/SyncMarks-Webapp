@@ -182,6 +182,10 @@ if (isset($_GET['api'])) {
 				case "clientSendOptions":					
 					$response = clientSaveOptions($client, $data, $uid);
 					break;
+				case "clientGetOptions":					
+					$response = clientGetOptions($client, $uid);
+					e_log(2, print_r($response, true));
+					break;
 				case "pushURL":
 					$response = ntfyNotification($data, $uid);
 					break;
@@ -647,6 +651,16 @@ function tabsSend($jtabs, $user, $added) {
 	}
 
 	$response['tabs'] = count($jtabs);
+	return $response;
+}
+
+function clientGetOptions($client, $uid) {
+	e_log(8, "Request of client settings");
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = $uid AND `cOptions` IS NOT NULL AND `cid` != '$client';";
+	$cOptions = db_query($query);
+
+	$response['cOptions'] = $cOptions;
+	$response['code'] = 200;
 	return $response;
 }
 
