@@ -226,7 +226,7 @@ if (isset($_GET['api'])) {
 		}
 	} else {
 		e_log(1, "JSON error: ".$jerrmsg);
-		saveDebugJSON("import", $jarr);
+		saveDebugJSON("incom_jerr", $jarr);
 		
 		$response['message'] = 'Invalid JSON. '.$jerrmsg;
 		$response['code'] = 500;
@@ -845,10 +845,23 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 
 function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
 	saveDebugJSON("import", $jmarks);
-	delUsermarks($user);
-	$armarks = parseJSON($jmarks);
+
+	if(is_array($jmarks)) {
+		if(isset($jmarks[0]['children'])) {
+			delUsermarks($user);
+			$armarks = parseJSON($jmarks);
+			$response = importMarks($armarks, $user);
+		} else {
+			$response['message'] = "Invalid import data";
+			$response['code'] = 500;
+		}
+	 } else {
+		$response['message'] = "Import data is not an array";
+		$response['code'] = 500;
+	 }
+
 	updateClient($client, $ctype, $ctime);
-	$response = importMarks($armarks, $user);
+	
 	return $response;
 }
 
