@@ -39,6 +39,8 @@ if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 
+saveRequest();
+
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
 	$headers = "From: SyncMarks <".CONFIG['sender'].">";
@@ -152,6 +154,8 @@ if (isset($_GET['api'])) {
 	$jerror = json_last_error();
 	$jerrmsg = parseJError($jerror);
 
+	saveDebugJSON("api_request", $jdata);
+
 	if($jerror == JSON_ERROR_NONE) {
 		if(isset($jdata['action'])) {
 			$action = $jdata['action'];
@@ -226,7 +230,7 @@ if (isset($_GET['api'])) {
 		}
 	} else {
 		e_log(1, "JSON error: ".$jerrmsg);
-		saveDebugJSON("incom_jerr", $jarr);
+		saveDebugJSON("incom_jerr", $jdata);
 		
 		$response['message'] = 'Invalid JSON. '.$jerrmsg;
 		$response['code'] = 500;
@@ -1606,13 +1610,30 @@ function unique_code($limit) {
 
 function saveDebugJSON($prefix, $jarr) {
 	if(!CONFIG['cexp'] && CONFIG['loglevel'] < 9) return false;
+
 	$logfile = CONFIG['logfile'];
 	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
 	$tstamp = time();
 
-	$filename = $logpath."/".$prefix."_".$tstamp.".json";
-	e_log(9,"JSON file saved to $filename");
-	file_put_contents($filename, json_encode($jarr, true));
+	if(isset($_GET['api']) && is_array($jarr)) {
+		$filename = $logpath."/".$prefix."_".$tstamp.".json";
+		e_log(9,"JSON file saved to $filename");
+		file_put_contents($filename, json_encode($jarr, true));
+	}
+}
+
+function saveRequest() {
+	if(!CONFIG['cexp'] && CONFIG['loglevel'] < 9) return false;
+	if(empty($_REQUEST) || isset($_GET['api'])) return false;
+
+	$logfile = CONFIG['logfile'];
+	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
+	$tstamp = time();
+
+	$filename = $logpath."/request_".$tstamp.".txt";
+	e_log(9,"Request file saved to $filename");
+	file_put_contents($filename, $_SERVER['REQUEST_METHOD'].PHP_EOL, FILE_APPEND);
+	file_put_contents($filename, var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
 }
 
 function e_log($level, $message, $errfile="", $errline="", $output=0) {
