@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.0.2 (2024-10-16)
+- Added JSON debug function
+
 ## 2.0.1 (2024-10-15)
 - Removed unused db column
 - Fixed issue with remove bookmark

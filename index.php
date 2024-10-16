@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.0.1
+ * @version 2.0.2
  * @author Offerel
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
@@ -226,11 +226,7 @@ if (isset($_GET['api'])) {
 		}
 	} else {
 		e_log(1, "JSON error: ".$jerrmsg);
-		if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-			$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
-			e_log(8, "JSON file written as $filename");
-			file_put_contents($filename, $jdata, true);
-		}
+		saveDebugJSON("import", $jarr);
 		
 		$response['message'] = 'Invalid JSON. '.$jerrmsg;
 		$response['code'] = 500;
@@ -597,12 +593,8 @@ if(isset($_GET['link'])) {
 			break;
 		}
 	}
-	
-	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/addmark_".time().".json":"addmark_".time().".json";
-		e_log(8,"Write addmark json to $filename");
-		file_put_contents($filename,json_encode($bookmark),true);
-	}
+
+	saveDebugJSON("addmark", $bookmark);
 	
 	$res = addBookmark($bookmark);
 	if($res == "Bookmark added") {
@@ -791,13 +783,8 @@ function clientList($client, $uid) {
 		$response['error'] = "No clients found";
 		$response['code'] = 500;
 	}
-	
-	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/clist_".time().".json":"clist_".time().".json";
-		e_log(8,"Write clientlist to $filename");
-		file_put_contents($filename,json_encode($myObj),true);
-	}
-	
+
+	saveDebugJSON("clist", $myObj);	
 	$response['clients'] = $myObj;
 
 	return $response;
@@ -840,11 +827,7 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 		case "json":
 			e_log(8,"Exporting in JSON format");
 			$bookmarks = getBookmarks();
-			if(CONFIG['loglevel'] == 9 && CONFIG['cexp'] == true) {
-				$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/export_".time().".json":"export_".time().".json";
-				file_put_contents($filename,json_encode($bookmarks),true);
-				e_log(8,"Export file is saved to $filename");
-			}
+			saveDebugJSON("export", $bookmarks);
 			$bcount = count($bookmarks);
 			e_log(8,"Send $bcount bookmarks to '$client'");
 			updateClient($client, $ctype, $ctime);
@@ -861,17 +844,11 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 }
 
 function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
-	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/import_".time().".json":"import_".time().".json";
-		e_log(8,"Write client info to $filename");
-		file_put_contents($filename, json_encode($jmarks), true);
-	}
-
+	saveDebugJSON("import", $jmarks);
 	delUsermarks($user);
 	$armarks = parseJSON($jmarks);
 	updateClient($client, $ctype, $ctime);
 	$response = importMarks($armarks, $user);
-
 	return $response;
 }
 
@@ -946,12 +923,7 @@ function bookmarkDel($bookmark, $user) {
 }
 
 function bookmarkMove($bookmark, $client, $ctime, $ctype) {
-	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/movemark_".time().".json":"movemark_".time().".json";
-		e_log(8,"Write move bookmark json to $filename");
-		file_put_contents($filename,json_encode($bookmark),true);
-	}
-
+	saveDebugJSON("movemark", $bookmark);
 	$response = moveBookmark($bookmark);
 	updateClient($client, $ctype, $ctime);
 
@@ -970,11 +942,7 @@ function clientInfo($client, $uid) {
 			$clientData['cinfo'] = json_decode($clientData['cinfo'], true);
 		}
 
-		if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-			$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cinfo_".time().".json":"cinfo_".time().".json";
-			e_log(8,"Write client info to $filename");
-			file_put_contents($filename,json_encode($clientData),true);
-		}
+		saveDebugJSON("cinfo", $clientData);
 	} else {
 		e_log(2,"Client not found.");
 		$clientData['lastseen'] = 0;
@@ -1623,6 +1591,17 @@ function unique_code($limit) {
 	return substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, $limit);
 }
 
+function saveDebugJSON($prefix, $jarr) {
+	if(!CONFIG['cexp'] && CONFIG['loglevel'] < 9) return false;
+	$logfile = CONFIG['logfile'];
+	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
+	$tstamp = time();
+
+	$filename = $logpath."/".$prefix."_".$tstamp.".json";
+	e_log(9,"JSON file saved to $filename");
+	file_put_contents($filename, json_encode($jarr, true));
+}
+
 function e_log($level, $message, $errfile="", $errline="", $output=0) {
 	global $le;
 	switch($level) {
@@ -2080,11 +2059,7 @@ function importMarks($bookmarks, $uid) {
 		);
 	}
 
-	if(CONFIG['cexp'] == true && CONFIG['loglevel'] == 9) {
-		$filename = is_dir(CONFIG['logfile']) ? CONFIG['logfile']."/cexport_".time().".json":"cexport_".time().".json";
-		e_log(9,"Import bookmarks saved to $filename");
-		file_put_contents($filename, print_r($data2, true));
-	}
+	saveDebugJSON("cexport", $data2);
 	
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query($query, $data2);
