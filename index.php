@@ -750,8 +750,8 @@ function clientSaveOptions($client, $cOptions) {
 		$response['code'] = 200;
 		$lvl = 8;
 	} else {
-		$response['message'] = "Error saving client settings";
-		$response['code'] = 500;
+		$response['message'] = "No client data changed";
+		$response['code'] = 200;
 		$lvl = 1;
 	}
 
