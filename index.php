@@ -737,7 +737,8 @@ function pushGet($client, $uid) {
 function clientSaveOptions($client, $cOptions) {
 	e_log(8,"Save client options to database");
 	$jOptions = json_encode($cOptions);
-	$query = "UPDATE `clients` SET `cOptions` = '$jOptions' WHERE `cid` = '$client';";
+	$name = $cOptions['name'];
+	$query = "UPDATE `clients` SET `cOptions` = '$jOptions', `cname` = '$name' WHERE `cid` = '$client';";
 	$result = db_query($query);
 
 	if($result == 1) {
