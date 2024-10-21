@@ -665,21 +665,16 @@ function clientRemove($client, $data) {
 	$new = $data['new'];
 	$res = 0;
 
-	e_log(8, "A client has been restored from the server configuration. The temporary client '$old' will now be removed");
-	$query = "UPDATE `c_token` SET `tHash` = (SELECT `tHash` FROM `c_token` WHERE `cid` = '$old') WHERE `cid` = '$new';";
-	if(db_query($query) == 1) {
-		$query = "DELETE FROM `clients` WHERE `cid` = '$old';";
-		$res = db_query($query);
-	} else {
-		$res = 0;
-	}
+	e_log(8, "A client has been restored from the server configuration. This new client requested to remove the old client '$old'");
+	$query = "DELETE FROM `clients` WHERE `cid` = '$old';";
+	$res = db_query($query);
 
 	if($res == 1) {
-		$response['message'] = "Temporary client removed";
+		$response['message'] = "Old client removed";
 		$response['code'] = 200;
 		$res = 8;
 	} else {
-		$response['message'] = "Could not remove temporary client";
+		$response['message'] = "Could not remove old client";
 		$response['code'] = 500;
 		$res = 1;
 	}
