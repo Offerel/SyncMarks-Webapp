@@ -167,8 +167,7 @@ if (isset($_GET['api'])) {
 
 			switch($action) {
 				case "clientCheck":
-					$tbt = (isset($data['usebasic'])) ? filter_var($data['usebasic'], FILTER_VALIDATE_BOOLEAN):false;
-					$response = clientCheck($client, $tbt, $time, $ctype);
+					$response = clientCheck($client, $time, $ctype, $uid);
 					break;
 				case "clientRename":
 					$response = clientRename($client, $data, $uid);
@@ -976,36 +975,29 @@ function clientRename($client, $data, $uid, $add = null) {
 	return $data;
 }
 
-function clientCheck($client, $tbt, $ctime, $type) {
-	$tm = ($tbt) ? "Basic login from client '$client'":"Token request from client '$client'";
-	e_log(8, $tm);
+function clientCheck($client, $ctime, $type, $userID) {
+	e_log(8, "Token request from client '$client'");
 	$tResponse['message'] = updateClient($client, $type, $ctime);
-	$userID = $_SESSION['sud']['userID'];
-
-	if(!$tbt) {
-		$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `c_token`.`userID` = $userID;";
-		$tData = db_query($query);
-		$expireTime = time()+60*60*24*CONFIG['expireDays'];
-		$token = bin2hex(openssl_random_pseudo_bytes(32));
-		$thash = password_hash($token, PASSWORD_DEFAULT);
-		if(count($tData) > 0) {
-			$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
-			$tResponse['cname'] = $tData[0]['cname'];
-		} else {
-			$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
-			$tResponse['cname'] = '';
-		}
-		db_query($query);
-
-		$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = $userID AND `cOptions` IS NOT NULL;";
-		$cOptions = db_query($query);
-		$tResponse['cOptions'] = $cOptions;
-		$tResponse['token'] = $token;
-		
-		e_log(8, "Send new token to $client");
+	$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = '$client' AND `c_token`.`userID` = $userID;";
+	$tData = db_query($query);
+	$expireTime = time()+60*60*24*CONFIG['expireDays'];
+	$token = bin2hex(openssl_random_pseudo_bytes(32));
+	$thash = password_hash($token, PASSWORD_DEFAULT);
+	if(count($tData) > 0) {
+		$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime' WHERE `cid` = '$client' AND `userID` = $userID;";
+		$tResponse['cname'] = $tData[0]['cname'];
 	} else {
-		e_log(8, "Send token to $client");
+		$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES ('$client', '$thash', '$expireTime', $userID);";
+		$tResponse['cname'] = '';
 	}
+	db_query($query);
+
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = $userID AND `cOptions` IS NOT NULL;";
+	$cOptions = db_query($query);
+	$tResponse['cOptions'] = $cOptions;
+	$tResponse['token'] = $token;
+	
+	e_log(8, "Send new token to $client");
 
 	$tResponse['code'] = 200;
 	e_log(8, "Logout $client");
