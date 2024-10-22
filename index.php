@@ -1916,7 +1916,7 @@ function htmlForms() {
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->addBookmark."</h6>
+		<h6>".$lang->actions->addBookmark."</h6>
 		<form id='bmadd' action='?' method='POST'>
 			<input placeholder='".$lang->messages->url."' type='text' id='url' name='url' value=''>
 			<div class='select'>
