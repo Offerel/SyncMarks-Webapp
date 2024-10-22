@@ -118,8 +118,8 @@ if(isset($_GET['reset'])){
 			echo htmlHeader();
 			echo "<div id='loginbody'>
 				<div id='loginform'>
-					<div id='loginformh'>Welcome to SyncMarks</div>
-					<div id='loginformt'>Password reset canceled. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
+					<div id='loginformh'>".$lang->messages->welcome."</div>
+					<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -151,8 +151,8 @@ if(isset($_GET['reset'])){
 				echo htmlHeader();
 				echo "<div id='loginbody'>
 					<div id='loginform'>
-						<div id='loginformh'>Welcome to SyncMarks</div>
-						<div id='loginformt'>Password reset successful, please check your mail. You can login now <a href='".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."'>login</a> with your new password.</div>
+						<div id='loginformh'>".$lang->messages->welcome."</div>
+						<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -160,8 +160,8 @@ if(isset($_GET['reset'])){
 				echo htmlHeader();
 				echo "<div id='loginbody'>
 					<div id='loginform'>
-						<div id='loginformh'>Welcome to SyncMarks</div>
-						<div id='loginformt'>Token expired, Password reset failed. You can try to <a data-reset='".$result['userName']."' id='preset' href='#'>reset</a> it again.</div>
+						<div id='loginformh'>".$lang->messages->welcome."</div>
+						<div id='loginformt'>".$lang->messages->tokenExpired."</div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -177,11 +177,19 @@ if(isset($_GET['reset'])){
 	die();
 }
 
+$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
+$lng = isset($lng) ? $lng:'en';
+$language = new language($lng);
+$lang = $language->translate();
+
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
 
-$language = new language(json_decode($_SESSION['sud']['uOptions'], true)['language']);
+$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
+$lng = isset($lng) ? $lng:'en';
+$language = new language($lng);
 $lang = $language->translate();
+
 
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
@@ -507,8 +515,8 @@ if(isset($_POST['action'])) {
 				echo htmlHeader();
 				echo "<div id='loginbody'>
 					<div id='loginform'>
-						<div id='loginformh'>Logout successful</div>
-						<div id='loginformt'>User logged out. <a href='?'>Login</a> again</div>
+						<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
+						<div id='loginformt'><a href='?'>".$lang->messages->logoutSuccessHint."</a></div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -542,6 +550,15 @@ if(isset($_POST['action'])) {
 			}
 			die();
 			break;
+		case "langupdate":
+			$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+			$oOptionsA['language'] = $nlng;
+			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+			(db_query($query) === 1) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
+			$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
+			die("1");
+			break;
 		case "uupdate":
 			e_log(8,"User change: Updating user name started");
 			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
@@ -567,8 +584,8 @@ if(isset($_POST['action'])) {
 			echo htmlHeader();
 			echo "<div id='loginbody'>
 				<div id='loginform'>
-					<div id='loginformh'>Logout successful</div>
-					<div id='loginformt'>User logged out. <a href='?'>Login</a> again</div>
+					<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
+					<div id='loginformt'>".$lang->messages->logoutSuccessHint."User logged out. <a href='?'>Login</a> again</div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -1700,13 +1717,17 @@ function delUsermarks($uid) {
 
 function htmlHeader() {
 	global $lang;
+
+	$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
+	$lng = isset($lng) ? $lng:'en';
+
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
 	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
 	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
 	
 	$htmlHeader = "<!DOCTYPE html>
-		<html lang='en'>
+		<html lang='$lng'>
 			<head>
 				<meta name='viewport' content='width=device-width, initial-scale=1'>
 				$js
@@ -1748,6 +1769,19 @@ function htmlForms() {
 
 	$ntfyInstance = (isset($uOptions['ntfy']['instance'])) ? $uOptions['ntfy']['instance']:'';
 	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
+	
+	$lfiles = glob("./locale/*.json");
+	$clang = $uOptions['language'] ? $uOptions['language'] : 'en';
+	
+	$lselect = "<select name='language' id='language'><option value=''>".$lang->messages->selectLanguage."</option>";
+	foreach ($lfiles as $key => $language) {
+		$lval = basename($language, ".json");
+		$lname = locale_get_display_language($lval, $clang)." ($lval)";
+		$selected = ($val === $clang) ? "selected":"";
+		$lselect.= "<option $selected value='$lval'>$lname</option>";
+		
+	}
+	$lselect.= "</select>";
 
 	$mngsettingsform = "
 	<div id='mngsform' class='mmenu'><h6>".$lang->messages->syncMarksSettings."</h6>
@@ -1760,7 +1794,8 @@ function htmlForms() {
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
 			<tr><td><span class='rdesc'>".$lang->messages->mail.":</span><span id='userMail'>$userMail</span></td><td class='bright'><button id='mmail'>&#9998;</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='clientedt'>".$lang->actions->showClients."</button></td></tr>
+			<tr><td style='height: 5px;'><span class='rdesc'>".$lang->messages->language.":</span>$lselect</td></tr>
+			<tr><td colspan=2 class='bcenter'><button id='clientedt'>".$lang->actions->showClients."</button></td><td></td></tr>
 			<tr><td colspan='2' style='height: 2px;'></td></tr>
 			<tr><td colspan=2 class='bcenter'><button id='ntfy'>".$lang->actions->ntfy."</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
@@ -2431,6 +2466,8 @@ function checkLogin() {
 						$query = "UPDATE `users` SET `userLastLogin` = $aTime, `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userID` = $uid;";
 						db_query($query);
 					}
+
+
 				} else {
 					unset($_SESSION['sauth']);
 					session_destroy();

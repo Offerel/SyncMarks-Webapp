@@ -40,6 +40,7 @@
 		"editBookmark": "Edit Bookmark",
 		"moveBookmark": "Move Bookmark",
 		"selectFolder": "Select Folder",
+		"selectLanguage": "Choose your language",
 		"title": "Title",
 		"username": "Username",
 		"password": "Password",
@@ -47,6 +48,7 @@
 		"newPassword": "New password",
 		"confirmPassword": "Confirm new password",
 		"mail": "E-Mail",
+		"language": "Language",
 		"ntfy": "Please enter the ntfy url including the topic and the token",
 		"url": "URL",
 		"token": "Token",
@@ -54,10 +56,15 @@
 		"accessDeniedHint": "Access denied. You must login to use this tool.",
 		"loginFailed": "Login failed",
 		"loginFailedHint": "You must authenticate to use this tool.",
+		"logoutSuccess": "Logout successful",
+		"logoutSuccessHint": "User logged out. Login again",
 		"forgetPassword": "Forgot your password? You can try to reset it.",
 		"forgetPasswordAdmin": "Forgot your password? Please contact the admin.",
 		"welcome": "Welcome to SyncMarks",
 		"welcomeHint": "Please use your credentials to login to SyncMarks",
+		"resetCancelHint": "Password reset canceled. You can still login with your old password.",
+		"resetSuccessHint": "Password reset successful, please check your mail. You can login now with your new password.",
+		"tokenExpired": "Token expired, Password reset failed. You can try to reset it again.",
 		"stay": "Stay logged in"
 	}
 }

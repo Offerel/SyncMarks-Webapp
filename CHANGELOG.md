@@ -1,6 +1,7 @@
 # ChangeLog
 ## 2.0.2 (2024-10-16)
 - Added JSON debug function
+- Added german GUI translation
 - Fix empty import data
 
 ## 2.0.1 (2024-10-15)

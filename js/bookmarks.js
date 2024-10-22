@@ -450,6 +450,10 @@ document.addEventListener("DOMContentLoaded",function() {
 
 		document.getElementById('mnubg').addEventListener('click', function() {hideMenu()});
 
+		if(document.getElementById('language')) document.getElementById('language').addEventListener('change', function(e) {
+			sendRequest(langupdate, this.value);
+		});
+
 		addBookmarkEvents();
 
 		navigator.serviceWorker.ready.then( registration => {
@@ -686,6 +690,10 @@ function getclients(response) {
 	addBD();
 	document.getElementById('mngcform').style.display = 'block';
 	document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+}
+
+function langupdate(response) {
+	location.reload();
 }
 
 function addmark(response) {

@@ -7,6 +7,9 @@
     overflow: hidden;
     white-space: nowrap;
 }
+#language {
+	width: 100%;
+}
 .dtext {
 	display: block;
 	margin: 10px 0;
