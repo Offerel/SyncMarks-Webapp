@@ -57,6 +57,13 @@
         "forgetPasswordAdmin": "Passwort vergessen? Bitte kontaktiere den Administrator.",
         "welcome": "Willkommen bei SyncMarks",
         "welcomeHint": "Bitte nutze deine Zugangsdaten um dich bei SyncMarks einzuloggen",
-        "stay": "Eingeloggt bleiben"
+        "stay": "Eingeloggt bleiben",
+        "selectLanguage": "Wähle deine Sprache",
+        "logoutSuccessHint": "Benutzer ausgeloggt. Bitte erneut einloggen",
+        "resetSuccessHint": "Passwort Wiederherstellung erfolgreich, bitte prüfe deine E-Mail. Du kannst dich mit dem neuen Passwort einloggen.",
+        "language": "Sprache",
+        "logoutSuccess": "Logout erfolgreich",
+        "resetCancelHint": "Passwort Wiederherstellung abgebrochen. Du kannst dich weiterhin mit dem alten Passwort einloggen.",
+        "tokenExpired": "Token abgelaufen, Passwort Wiederherstellung fehlgeschlagen. Du kannst eine neue Wiederherstellung versuchen."
     }
 }
