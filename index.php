@@ -178,7 +178,8 @@ if(isset($_GET['reset'])){
 }
 
 $lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
-$lng = isset($lng) ? $lng:'en';
+$blng = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+$lng = isset($lng) ? $lng:$blng;
 $language = new language($lng);
 $lang = $language->translate();
 
@@ -186,7 +187,7 @@ if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
 
 $lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
-$lng = isset($lng) ? $lng:'en';
+$lng = isset($lng) ? $lng:$blng;
 $language = new language($lng);
 $lang = $language->translate();
 
