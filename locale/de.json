@@ -1,21 +1,31 @@
 {
     "actions": {
-       "New": "Neu",
-       "Add": "Hinzufügen",
-       "Edit": "Anpassen",
-       "Delete": "Löschen",
-       "Apply": "Übernehmen",
-       "Close": "Schließen",
-       "Enable": "Aktivieren",
-       "Disable": "Deaktiveren",
-       "Yes": "Ja",
-       "No": "Nein"
+       
+       "logfile": "Logdatei",
+       "users": "Benutzer",
+       "refresh": "Aktualisieren",
+       "autorefresh": "Automatisch aktualisieren",
+       "clear": "Löschen",
+       "editE": "Bearbeiten",
+       "showClients": "Clients",
+       "ntfy": "ntfy",
+       "archived": "Archiviert",
+       "active": "Aktiv",
+       "cancel": "Abbrechen",
+       "save": "Speichern"
     },
   
     "messages": {
-       "Home": "Home",
-       "About": "Über",
-       "Contact": "Kontakt"
+       "enableNotifications": "Aktiviere/Deaktiviere Benachrichtigungen",
+       "syncMarksSettings": "SyncMarks Einstellungen",
+       "changePassword": "Passwort ändern",
+       "changePasswordHint": "Enter your current password and a new password and confirm the new password.",
+       "username": "Benutzername",
+       "password": "Passwort",
+       "mail": "E-Mail",
+       "ntfy": "Bitte gib den URL zu deiner ntfy Instanz ein, inklusive topic und token",
+       "url": "URL",
+       "token": "Token"
     }
   
  }

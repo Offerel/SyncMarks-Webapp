@@ -25,6 +25,37 @@ define("CONFIG", [
 	'expireDays'=> (!isset($expireDays)) ? 7:$expireDays
 ]);
 
+class language {
+	public $data;
+	function __construct($language) {
+		$defaultFile = "./locale/en.json";
+		$requestFile = "./locale/".$language.".json";
+		$languagFile = file_exists($requestFile) ? $requestFile:$defaultFile;
+
+		$rdata = file_get_contents($languagFile);
+		$ddata = file_get_contents($defaultFile);
+
+		$r_object = json_decode($rdata);
+		$d_object = json_decode($ddata);
+		
+		foreach ($d_object as $key => $area) {
+			foreach ($area as $index => $value) {
+				if(isset($r_object->$key->$index)) {
+					$d_object->$key->$index = $r_object->$key->$index;
+				} else {
+					$d_object->$key->$index = $d_object->$key->$index;
+				}
+			}
+		}
+		
+		$this->data = $d_object;
+	}
+
+	function translate() {
+		return $this->data;
+	}
+}
+
 $le = "";
 set_error_handler("e_log");
 $version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
@@ -148,6 +179,9 @@ if(isset($_GET['reset'])){
 
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
+
+$language = new language(json_decode($_SESSION['sud']['uOptions'], true)['language']);
+$lang = $language->translate();
 
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
@@ -1698,41 +1732,39 @@ function htmlHeader() {
 }
 
 function htmlForms() {
-	global $version;
+	global $version, $lang;
 	$clink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-	$bookmarklet = "javascript:void function(){window.open('$clink?title='+encodeURIComponent(document.title)+'&link='+encodeURIComponent(document.location.href),'bWindow','width=480,height=245',replace=!0)}();";
 	$userName = $_SESSION['sud']['userName'];
 	$userMail = $_SESSION['sud']['userMail'];
 	$userID = $_SESSION['sud']['userID'];
 	$userOldLogin = date("d.m.y H:i",$_SESSION['sud']['userOldLogin']);
-	$admenu = ($_SESSION['sud']['userType'] == 2) ? "<hr><li class='menuitem' id='mlog'>Logfile</li><li class='menuitem' id='mngusers'>Users</li>":"";
-	$logform = ($_SESSION['sud']['userType'] == 2) ? "<div id=\"logfile\"><div id=\"close\"><button id='mrefresh'>refresh</button><label for='arefresh'><input type='checkbox' id='arefresh' name='arefresh'>Auto Refresh</label> <button id='mclear'>clear</button> <button id='mclose'>&times;</button></div><div id='lfiletext' contenteditable='true'></div></div>":"";
+	$admenu = ($_SESSION['sud']['userType'] == 2) ? "<hr><li class='menuitem' id='mlog'>".$lang->actions->logfile."</li><li class='menuitem' id='mngusers'>".$lang->actions->users."</li>":"";
+	$logform = ($_SESSION['sud']['userType'] == 2) ? "<div id=\"logfile\"><div id=\"close\"><button id='mrefresh'>".$lang->actions->refresh."</button><label for='arefresh'><input type='checkbox' id='arefresh' name='arefresh'>".$lang->actions->autorefresh."</label> <button id='mclear'>".$lang->actions->clear."</button> <button id='mclose'>&times;</button></div><div id='lfiletext' contenteditable='true'></div></div>":"";
 
 	$uOptions = json_decode($_SESSION['sud']['uOptions'],true);
 	$oswitch = (isset($uOptions['notifications']) && $uOptions['notifications'] == 1) ? " checked":"";
-	$oswitch =  "<label class='switch' title='Enable/Disable Notifications'><input id='cnoti' type='checkbox'$oswitch><span class='slider round'></span></label>";
+	$oswitch =  "<label class='switch' title='".$lang->actions->refresh."'><input id='cnoti' type='checkbox'$oswitch><span class='slider round'></span></label>";
 
 	$ntfyInstance = (isset($uOptions['ntfy']['instance'])) ? $uOptions['ntfy']['instance']:'';
 	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
 
 	$mngsettingsform = "
-	<div id='mngsform' class='mmenu'><h6>SyncMarks Settings</h6>
+	<div id='mngsform' class='mmenu'><h6>".$lang->messages->syncMarksSettings."</h6>
 		<span class='dclose'>&times;</span>
 		<table>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>Username:</span>$userName</td><td class='bright'><button id='muser'>Edit</button></td></tr>
+			<tr><td><span class='rdesc'>".$lang->messages->username.":</span>$userName</td><td class='bright'><button id='muser'>&#9998;</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>Password:</span>**********</td><td class='bright'><button id='mpassword'>Edit</button></td></tr>
+			<tr><td><span class='rdesc'>".$lang->messages->password.":</span>**********</td><td class='bright'><button id='mpassword'>&#9998;</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>E-Mail:</span><span id='userMail'>$userMail</span></td><td class='bright'><button id='mmail'>Edit</button></td></tr>
+			<tr><td><span class='rdesc'>".$lang->messages->mail.":</span><span id='userMail'>$userMail</span></td><td class='bright'><button id='mmail'>&#9998;</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='clientedt'>Show Clients</button></td></tr>
+			<tr><td colspan=2 class='bcenter'><button id='clientedt'>".$lang->actions->showClients."</button></td></tr>
 			<tr><td colspan='2' style='height: 2px;'></td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='ntfy'>ntfy</button></td></tr>
+			<tr><td colspan=2 class='bcenter'><button id='ntfy'>".$lang->actions->ntfy."</button></td></tr>
 			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td>Notifications</td><td class='bright'>$oswitch</td></tr>
+			<tr><td>".$lang->actions->notifications."</td><td class='bright'>$oswitch</td></tr>
 		</table>
-		<div id='bmlet'><a href=\"$bookmarklet\">Bookmarklet</a></div>
 	</div>";
 
 	$mngclientform = "<div id='mngcform' class='mmenu'></div>";
@@ -1741,8 +1773,8 @@ function htmlForms() {
 	<div id='nmessagesform' class='mmenu'>
 		<span class='dclose'>&times;</span>
 		<div class='tab'>
-		<button class='tablinks active' data-val='aNoti'>Active</button>
-		<button class='tablinks' data-val='oNoti'>Archived</button>
+		<button class='tablinks active' data-val='aNoti'>".$lang->actions->active."</button>
+		<button class='tablinks' data-val='oNoti'>".$lang->actions->archived."</button>
 		$oswitch
 		</div>
 		<div id='aNoti' class='tabcontent'style='display: block'>
@@ -1760,26 +1792,26 @@ function htmlForms() {
 	$pushform = "
 	<div id='pushform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>ntfy</h6>
-		<div class='dialogdescr'>Please enter the ntfy url including the topic and the token</div>
+		<h6>".$lang->actions->ntfy."</h6>
+		<div class='dialogdescr'>".$lang->messages->ntfy."</div>
 		<form action='' method='POST'>$oswitch
-			<input required placeholder='URL' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
-			<input placeholder='Token' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
-			<input placeholder='Password' type='password' id='password' name='password' value='' autocomplete='current-password' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='ntfyupdate'>Save</button></div>
+			<input required placeholder='".$lang->messages->url."' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
+			<input placeholder='".$lang->messages->token."' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
+			<input placeholder='".$lang->messages->password."' type='password' id='password' name='password' value='' autocomplete='current-password' />
+			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='ntfyupdate'>".$lang->actions->save."</button></div>
 		</form>
 	</div>";
 
 	$passwordform = "
 	<div id='passwordform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Change Password</h6>
-		<div class='dialogdescr'>Enter your current password and a new password and confirm the new password.</div>
+		<h6>".$lang->messages->changePassword."</h6>
+		<div class='dialogdescr'>".$lang->messages->changePasswordHint."</div>
 		<form action='' method='POST'>					
-			<input required placeholder='Current password' type='password' id='opassword' name='opassword' autocomplete='current-password' value='' />
-			<input required placeholder='New password' type='password' id='npassword' name='npassword' autocomplete='new-password' value='' />
-			<input required placeholder='Confirm new password' type='password' id='cpassword' name='cpassword' autocomplete='new-password' value='' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='pupdate'>Save</button></div>
+			<input required placeholder='".$lang->messages->currentPassword."' type='password' id='opassword' name='opassword' autocomplete='current-password' value='' />
+			<input required placeholder='".$lang->messages->newPassword."' type='password' id='npassword' name='npassword' autocomplete='new-password' value='' />
+			<input required placeholder='".$lang->messages->confirmPassword."' type='password' id='cpassword' name='cpassword' autocomplete='new-password' value='' />
+			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='pupdate'>".$lang->actions->save."</button></div>
 		</form>
 	</div>";
 
@@ -1799,7 +1831,7 @@ function htmlForms() {
 	<div id='mainmenu' class='mmenu'>
 		<ul>
 			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>SyncMarks $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>Last login: $userOldLogin</span></li>
-			<li class='menuitem' id='nmessages'>Notifications</li>
+			<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
 			<li class='menuitem' id='bexport'>Export</li>
 			<li class='menuitem' id='duplicates'>Duplicates</li>
 			<li class='menuitem' id='psettings'>Settings</li>
