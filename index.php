@@ -1769,15 +1769,14 @@ function htmlForms() {
 	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
 	
 	$lfiles = glob("./locale/*.json");
-	$clang = $uOptions['language'] ? $uOptions['language'] : 'en';
+	$clang = $uOptions['language'] ? $uOptions['language']:'en';
 	
 	$lselect = "<select name='language' id='language'><option value=''>".$lang->messages->selectLanguage."</option>";
 	foreach ($lfiles as $key => $language) {
 		$lval = basename($language, ".json");
 		$lname = locale_get_display_language($lval, $clang)." ($lval)";
-		$selected = ($val === $clang) ? "selected":"";
+		$selected = ($lval == $clang) ? "selected":"";
 		$lselect.= "<option $selected value='$lval'>$lname</option>";
-		
 	}
 	$lselect.= "</select>";
 
