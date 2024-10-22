@@ -1,2 +1,0 @@
-msgid "welcome" 
-msgstr "Willkommen zum tutorial"
