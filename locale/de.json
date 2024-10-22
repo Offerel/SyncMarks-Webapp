@@ -1,0 +1,21 @@
+{
+    "actions": {
+       "New": "Neu",
+       "Add": "Hinzufügen",
+       "Edit": "Anpassen",
+       "Delete": "Löschen",
+       "Apply": "Übernehmen",
+       "Close": "Schließen",
+       "Enable": "Aktivieren",
+       "Disable": "Deaktiveren",
+       "Yes": "Ja",
+       "No": "Nein"
+    },
+  
+    "messages": {
+       "Home": "Home",
+       "About": "Über",
+       "Contact": "Kontakt"
+    }
+  
+ }
