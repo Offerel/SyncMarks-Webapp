@@ -177,8 +177,7 @@ if(isset($_GET['reset'])){
 	die();
 }
 
-$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
-$blng = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+$lng = isset($_SESSION['sud']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
 $lng = isset($lng) ? $lng:$blng;
 $language = new language($lng);
 $lang = $language->translate();
@@ -1719,9 +1718,7 @@ function delUsermarks($uid) {
 function htmlHeader() {
 	global $lang;
 
-	$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
-	$lng = isset($lng) ? $lng:'en';
-
+	$lng = (isset($_SESSION['sud'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
 	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
