@@ -882,9 +882,6 @@ span.error {
 	z-index: 2;
 	box-shadow: 8px 8px 10px -5px rgba(0,0,0,0.5);
 }
-#footer::before {
-		content: " + ";
-	}
 #footer:hover {
 	background: #05589D;
 }
@@ -1571,9 +1568,6 @@ input:checked + .slider:before {
 		height: 24px;
 		width: 100%;
 		border-radius: 0;
-	}
-	#footer::before {
-		content: "Add new Bookmark";
 	}
 	#footer:hover {
 		background: #b7b7b7;

@@ -1699,6 +1699,7 @@ function delUsermarks($uid) {
 }
 
 function htmlHeader() {
+	global $lang;
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
 	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
@@ -1713,7 +1714,7 @@ function htmlHeader() {
 				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
 				<link rel='manifest' href='manifest.json'>
 				<meta name='theme-color' content='#0879D9'>
-				<title>SyncMarks</title>
+				<title>".$lang->messages->syncmarks."</title>
 			</head>
 			<body>";
 
@@ -1725,7 +1726,7 @@ function htmlHeader() {
 			<div class='hline'></div>
 		</div>
 		<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value=''>
-		<div id='mprofile'>SyncMarks</div>
+		<div id='mprofile'>".$lang->messages->syncmarks."</div>
 	</div>";
 
 	return $htmlHeader;
@@ -1818,46 +1819,46 @@ function htmlForms() {
 	$userform = "
 	<div id='userform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Change Username</h6>
-		<div class='dialogdescr'>Here you can change your username. Type in your new username and your current password and click on save to change it.</div>
+		<h6>".$lang->messages->changeUsername."</h6>
+		<div class='dialogdescr'>".$lang->messages->changeUsernameHint."</div>
 		<form action='' method='POST'>
-			<input placeholder='Username' required type='text' name='username' id='username' autocomplete='username' value='$userName'>
-			<input placeholder='Password' required type='password' id='oopassword' name='opassword' autocomplete='current-password' value='' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>Cancel</button><button type='submit' name='action' value='uupdate'>Save</button></div>
+			<input placeholder='".$lang->messages->username."' required type='text' name='username' id='username' autocomplete='username' value='$userName'>
+			<input placeholder='".$lang->messages->password."' required type='password' id='oopassword' name='opassword' autocomplete='current-password' value='' />
+			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='uupdate'>".$lang->actions->save."</button></div>
 		</form>
 	</div>";
 
 	$mainmenu = "
 	<div id='mainmenu' class='mmenu'>
 		<ul>
-			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>SyncMarks $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>Last login: $userOldLogin</span></li>
+			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
 			<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
-			<li class='menuitem' id='bexport'>Export</li>
-			<li class='menuitem' id='duplicates'>Duplicates</li>
-			<li class='menuitem' id='psettings'>Settings</li>
+			<li class='menuitem' id='bexport'>".$lang->actions->export."</li>
+			<li class='menuitem' id='duplicates'>".$lang->actions->duplicates."</li>
+			<li class='menuitem' id='psettings'>".$lang->actions->settings."</li>
 			$admenu
 			<hr>
-			<li class='menuitem' id='logout'><form method='POST'><button name='action' id='loutaction' value='logout'>Logout</button></form></li>
+			<li class='menuitem' id='logout'><form method='POST'><button name='action' id='loutaction' value='logout'>".$lang->actions->logout."</button></form></li>
 		</ul>
 	</div>";
 
 	$bmMenu = "
 	<menu class='menu' id='cmenu'><input type='hidden' id='bmid' title='bmtitle' value=''>
 		<ul>
-			<li id='btnEdit' class='menu-item'>Edit</li>
-			<li id='btnMove' class='menu-item'>Move</li>
-			<li id='btnDelete' class='menu-item'>Delete</li>
-			<li id='btnFolder' class='menu-item'>New Folder</li>
+			<li id='btnEdit' class='menu-item'>".$lang->actions->edit."</li>
+			<li id='btnMove' class='menu-item'>".$lang->actions->move."</li>
+			<li id='btnDelete' class='menu-item'>".$lang->actions->delete."</li>
+			<li id='btnFolder' class='menu-item'>".$lang->actions->nfolder."</li>
 		</ul>
 	</menu>";
 
 	$bmDialog = "
 	<div id='reqdialog' class='mbmdialog'>
-		<h6>Delete Bookmark</h6>
+		<h6>".$lang->messages->newFolder."</h6>
 		<span class='dtext'></span>
 		<div class='btna'>
-			<button id='ydialog'>Yes</button>
-			<button id='ndialog'>No</button>
+			<button id='ydialog'>".$lang->actions->yes."</button>
+			<button id='ndialog'>".$lang->actions->no."</button>
 		</div>
 		<span class='dclose'>&times;</span>
 	</div>";
@@ -1865,18 +1866,18 @@ function htmlForms() {
 	$editForm = "
 	<div id='bmarkedt' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Edit Bookmark</h6>
+		<h6>".$lang->messages->editBookmark."</h6>
 		<form id='-' method='POST'>
-			<input placeholder='Title' type='text' id='edtitle' name='edtitle' value=''>
-			<input placeholder='URL' type='text' id='edurl' name='edurl' value=''>
+			<input placeholder='".$lang->messages->title."' type='text' id='edtitle' name='edtitle' value=''>
+			<input placeholder='".$lang->messages->url."' type='text' id='edurl' name='edurl' value=''>
 			<input type='hidden' id='edid' name='edid' value=''>
 			<div class='dbutton'>
-				<button type='submit' id='edsave' name='edsave' value='Save' disabled>Save</button>
+				<button type='submit' id='edsave' name='edsave' value='Save' disabled>".$lang->actions->save."</button>
 			</div>
 		</form>
 	</div>";
 
-	$sFolderOptions = "<option value='' hidden>Select Folder</option>";
+	$sFolderOptions = "<option value='' hidden>".$lang->messages->selectFolder."</option>";
 	$sFolderArr = getUserFolders($userID);
 	foreach ($sFolderArr as $key => $folder) {
 		if($folder['bmID'] === "unfiled_____")
@@ -1887,7 +1888,7 @@ function htmlForms() {
 	$moveForm = "
 	<div id='bmamove' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Move Bookmark</h6>
+		<h6>".$lang->messages->moveBookmark."</h6>
 		<form id='bmmv' method='POST'>
 			<span id='mvtitle'></span>
 			<div class='select'>
@@ -1895,36 +1896,38 @@ function htmlForms() {
 				<!-- <div class='select__arrow'></div> -->
 			</div>
 			<input type='hidden' id='mvid' name='mvid' value=''>
-			<div class='dbutton'><button type='submit' id='mvsave' name='mvsave' value='Save' disabled>Save</button></div>
+			<div class='dbutton'><button type='submit' id='mvsave' name='mvsave' value='Save' disabled>".$lang->actions->save."</button></div>
 		</form>
 	</div>";
 
 	$folderForm = "
 	<div id='folderf' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Create new folder</h6>
+		<h6>".$lang->messages->newFolder."</h6>
 		<form id='fadd' method='POST'>
 			<input placeholder='Foldername' type='text' id='fname' name='fname' value=''>
 			<input type='hidden' id='fbid' name='fbid' value=''>
-			<div class='dbutton'><button type='submit' id='fsave' name='fsave' value='Create' disabled>Create</button></div>
+			<div class='dbutton'><button type='submit' id='fsave' name='fsave' value='Create' disabled>".$lang->actions->create."</button></div>
 		</form>
 	</div>";
+
+	$ftext = (strstr(strtolower($_SERVER['HTTP_USER_AGENT']), 'mobile') || strstr(strtolower($_SERVER['HTTP_USER_AGENT']), 'android')) ? " + ":$lang->actions->addBookmark;
 
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>Add Bookmark</h6>
+		<h6>".$lang->messages->addBookmark."</h6>
 		<form id='bmadd' action='?' method='POST'>
-			<input placeholder='URL' type='text' id='url' name='url' value=''>
+			<input placeholder='".$lang->messages->url."' type='text' id='url' name='url' value=''>
 			<div class='select'>
 				<select id='folder' name='folder'>
 					$sFolderOptions
 				</select>
 			</div>
-			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>Save</button></div>
+			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>".$lang->actions->save."</button></div>
 		</form>
 	</div>
-	<div id='footer'></div>";
+	<div id='footer'>$ftext</div>";
 
 	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
 	return $htmlData;
@@ -2222,7 +2225,7 @@ function clearAuthCookie() {
 }
 
 function checkLogin() {
-	global $htmlFooter;
+	global $htmlFooter, $lang;
 	e_log(8,"Check login...");
 
 	if(isset($_COOKIE['syncmarks'])) 
@@ -2379,8 +2382,8 @@ function checkLogin() {
 			echo htmlHeader();
 			echo "<div id='loginbody'>
 				<div id='loginform'>
-					<div id='loginformh'>Access denied</div>
-					<div id='loginformt'>Access denied. You must <a href='?'>login</a> to use this tool.</div>
+					<div id='loginformh'>".$lang->messages->accessDenied."</div>
+					<div id='loginformt'><a href='?'>".$lang->messages->accessDeniedHint."</a></div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -2439,9 +2442,9 @@ function checkLogin() {
 					echo htmlHeader();
 					$lform = "<div id='loginbody'>
 						<div id='loginform'>
-							<div id='loginformh'>Login failed</div>
-							<div id='loginformt'>You must <a href='?'>authenticate</a> to use this tool.";
-					$lform.= (filter_var($udata[0]['userMail'], FILTER_VALIDATE_EMAIL)) ? "<br /><br />Forgot your password? You can try to <a data-reset='$user' id='preset' href=''>reset</a> it.":"<br /><br />Forgot your password? Please contact the admin.";
+							<div id='loginformh'>".$lang->messages->loginFailed."</div>
+							<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a>";
+					$lform.= (filter_var($udata[0]['userMail'], FILTER_VALIDATE_EMAIL)) ? "<br /><br /><a data-reset='$user' id='preset' href=''>".$lang->messages->forgetPassword."</a>":"<br /><br />".$lang->messages->forgetPasswordAdmin;
 					$lform.= "</div></div>
 					</div>";
 					echo $lform;
@@ -2459,8 +2462,8 @@ function checkLogin() {
 					echo htmlHeader();
 					echo "<div id='loginbody'>
 							<div id='loginform'>
-								<div id='loginformh'>Login failed</div>
-								<div id='loginformt'>You must <a href='?'>authenticate</a> to use this tool.</div>
+								<div id='loginformh'>".$lang->messages->loginFailed."</div>
+								<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a></div>
 							</div>
 						</div>";
 					echo $htmlFooter;
@@ -2474,14 +2477,14 @@ function checkLogin() {
 		echo "<div id='loginbody'>
 			<form method='POST' id='lform'>
 			<div id='loginform'>
-				<div id='loginformh'>Welcome to SyncMarks</div>
-				<div id='loginformt'>Please use your credentials to login to SyncMarks</div>
+				<div id='loginformh'>".$lang->messages->welcome."</div>
+				<div id='loginformt'>".$lang->messages->welcomeHint."</div>
 				<div id='loginformb'>
-					<input type='text' id='uf' name='username' placeholder='Username'>
-					<input type='password' name='password' placeholder='Password'>
+					<input type='text' id='uf' name='username' placeholder='".$lang->messages->username."'>
+					<input type='password' name='password' placeholder='".$lang->messages->password."'>
 					
-					<label for='remember'><input type='checkbox' id='remember' name='remember'>Stay logged in</label>
-					<button name='login' value='login'>Login</button>
+					<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
+					<button name='login' value='login'>".$lang->actions->login."</button>
 				</div>
 			</div>
 			</form>
