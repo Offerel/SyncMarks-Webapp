@@ -71,6 +71,7 @@ if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 
 saveRequest();
+$lang = setLang();
 
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
@@ -120,6 +121,7 @@ if(isset($_GET['reset'])){
 				<div id='loginform'>
 					<div id='loginformh'>".$lang->messages->welcome."</div>
 					<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -153,6 +155,7 @@ if(isset($_GET['reset'])){
 					<div id='loginform'>
 						<div id='loginformh'>".$lang->messages->welcome."</div>
 						<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -162,6 +165,7 @@ if(isset($_GET['reset'])){
 					<div id='loginform'>
 						<div id='loginformh'>".$lang->messages->welcome."</div>
 						<div id='loginformt'>".$lang->messages->tokenExpired."</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -177,19 +181,10 @@ if(isset($_GET['reset'])){
 	die();
 }
 
-$lng = isset($_SESSION['sud']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-$lng = isset($lng) ? $lng:$blng;
-$language = new language($lng);
-$lang = $language->translate();
-
 if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
 if(!isset($_SESSION['sud'])) getUserdataS();
 
-$lng = json_decode($_SESSION['sud']['uOptions'], true)['language'];
-$lng = isset($lng) ? $lng:$blng;
-$language = new language($lng);
-$lang = $language->translate();
-
+$lang = setLang();
 
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
@@ -516,7 +511,8 @@ if(isset($_POST['action'])) {
 				echo "<div id='loginbody'>
 					<div id='loginform'>
 						<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
-						<div id='loginformt'><a href='?'>".$lang->messages->logoutSuccessHint."</a></div>
+						<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 					</div>
 				</div>";
 				echo $htmlFooter;
@@ -585,7 +581,8 @@ if(isset($_POST['action'])) {
 			echo "<div id='loginbody'>
 				<div id='loginform'>
 					<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
-					<div id='loginformt'>".$lang->messages->logoutSuccessHint."User logged out. <a href='?'>Login</a> again</div>
+					<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -673,6 +670,14 @@ echo htmlHeader();
 echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
+
+function setLang() {
+	$lng = isset($_SESSION['sud']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+	$lng = isset($lng) ? $lng:'en';
+	$language = new language($lng);
+	$lang = $language->translate();
+	return $lang;
+}
 
 function tabsSend($jtabs, $user, $added) {
 	$urls = [];
@@ -1773,10 +1778,12 @@ function htmlForms() {
 	
 	$lselect = "<select name='language' id='language'><option value=''>".$lang->messages->selectLanguage."</option>";
 	foreach ($lfiles as $key => $language) {
-		$lval = basename($language, ".json");
-		$lname = locale_get_display_language($lval, $clang)." ($lval)";
-		$selected = ($lval == $clang) ? "selected":"";
-		$lselect.= "<option $selected value='$lval'>$lname</option>";
+		if(filesize($language) > 5) {
+			$lval = basename($language, ".json");
+			$lname = locale_get_display_language($lval, $clang)." ($lval)";
+			$selected = ($lval == $clang) ? "selected":"";
+			$lselect.= "<option $selected value='$lval'>$lname</option>";
+		}
 	}
 	$lselect.= "</select>";
 
@@ -2415,7 +2422,8 @@ function checkLogin() {
 			echo "<div id='loginbody'>
 				<div id='loginform'>
 					<div id='loginformh'>".$lang->messages->accessDenied."</div>
-					<div id='loginformt'><a href='?'>".$lang->messages->accessDeniedHint."</a></div>
+					<div id='loginformt'>".$lang->messages->accessDeniedHint."</div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 				</div>
 			</div>";
 			echo $htmlFooter;
@@ -2463,11 +2471,10 @@ function checkLogin() {
 						$query = "UPDATE `users` SET `userLastLogin` = $aTime, `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userID` = $uid;";
 						db_query($query);
 					}
-
-
 				} else {
 					unset($_SESSION['sauth']);
 					session_destroy();
+					
 					if(!isset($_POST['login']) || !isset($_POST['client']) ) {
 						header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
 						http_response_code(401);
@@ -2477,10 +2484,11 @@ function checkLogin() {
 					$lform = "<div id='loginbody'>
 						<div id='loginform'>
 							<div id='loginformh'>".$lang->messages->loginFailed."</div>
-							<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a>";
+							<div id='loginformt'>".$lang->messages->loginFailedHint;
 					$lform.= (filter_var($udata[0]['userMail'], FILTER_VALIDATE_EMAIL)) ? "<br /><br /><a data-reset='$user' id='preset' href=''>".$lang->messages->forgetPassword."</a>":"<br /><br />".$lang->messages->forgetPasswordAdmin;
-					$lform.= "</div></div>
-					</div>";
+					$lform.= "</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+					</div></div>";
 					echo $lform;
 					echo $htmlFooter;
 					exit;
@@ -2498,6 +2506,7 @@ function checkLogin() {
 							<div id='loginform'>
 								<div id='loginformh'>".$lang->messages->loginFailed."</div>
 								<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a></div>
+								<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 							</div>
 						</div>";
 					echo $htmlFooter;
@@ -2516,7 +2525,7 @@ function checkLogin() {
 				<div id='loginformb'>
 					<input type='text' id='uf' name='username' placeholder='".$lang->messages->username."'>
 					<input type='password' name='password' placeholder='".$lang->messages->password."'>
-					
+					<input name='client' type='hidden' value='0'>
 					<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
 					<button name='login' value='login'>".$lang->actions->login."</button>
 				</div>

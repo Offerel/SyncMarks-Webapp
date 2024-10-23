@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		e.preventDefault();
 		let data = "reset=request&u="+e.target.dataset.reset;
 		let url = location.protocol + '//' + location.host + location.pathname;
-		
+		const xhr = new XMLHttpRequest();
 		xhr.open("GET", url+"?"+data, true);
 		xhr.onreadystatechange = function() {
 			if(this.readyState == 4 && this.status == 200) {
