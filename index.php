@@ -75,7 +75,7 @@ $lang = setLang();
 
 if(isset($_GET['reset'])){
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
-	$headers = "From: SyncMarks <".CONFIG['sender'].">";
+	$headers = "From: SyncMarks <".CONFIG['sender'].">"."\r\n";
 	switch($reset) {
 		case "request":
 			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
@@ -96,7 +96,7 @@ if(isset($_GET['reset'])){
 			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES ($uid,'$time','$token');";
 			if(db_query($query)) {
 				$message = "Hello $user,\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=confirm&t=$token\r\nIf this request is not from your side, you should click the following link to chancel the request:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=chancel&t=$token";
-				if(!mail($mail, "Password request confirmation",$message,$headers)) {
+				if(!mail($mail, "Password request confirmation", $message, $headers)) {
 					e_log(1,"Error sending password reset request to user");
 				}
 			}
@@ -112,7 +112,7 @@ if(isset($_GET['reset'])){
 			if(db_query($query)) {
 				e_log(8,"Request removed successful");
 				$message = "Hello ".$result['userName'].",\r\nYour password request is canceled, You can login with your old credentials at ".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'].". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
-				if(!mail($result['userMail'], "Password request canceled",$message,$headers)) {
+				if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
 					e_log(1,"Error sending remove chancel to ".$result['userName']);
 				}
 			}
@@ -142,7 +142,7 @@ if(isset($_GET['reset'])){
 					if(db_query($query)) {
 						e_log(8,"New password set successful");
 						$message = "Hello ".$result['userName'].",\r\nYour new password is set successful, please use:\n$npwd\n\nYou can login at:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
-						if(!mail($result['userMail'], "New password",$message,$headers)) {
+						if(!mail($result['userMail'], "New password", $message, $headers)) {
 							e_log(1,"Error sending new password to ".$result['userName']);
 						}
 					}
@@ -390,7 +390,7 @@ if(isset($_POST['action'])) {
 				die();
 			}
 			$del = false;
-			$headers = "From: SyncMarks <".CONFIG['sender'].">";
+			$headers = "From: SyncMarks <".CONFIG['sender'].">"."\r\n";
 			$url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
 
 			$data = json_decode($_POST['data'], true);
