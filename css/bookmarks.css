@@ -1,4 +1,59 @@
 /* @media screen and (orientation:portrait) */
+.fcontainer {
+	display: block;
+	position: relative;
+	padding-left: 35px;
+	margin-bottom: 12px;
+	cursor: pointer;
+	font-size: 15px;
+	user-select: none;
+}
+.fcontainer input {
+	position: absolute;
+	opacity: 0;
+	cursor: pointer;
+}
+.fcontainer:hover input ~ .checkmark {
+	background-color: #ccc;
+}
+.fcontainer input:checked ~ .checkmark {
+	background-color: #2196F3;
+}
+.checkmark {
+	position: absolute;
+	top: 0;
+	left: 5px;
+	height: 20px;
+	width: 20px;
+	background-color: #eee;
+	border-radius: 50%;
+}
+fieldset {
+	border: 1px solid #d3d3d3;
+	padding: 10px 0 0 10px;
+	border-bottom: 0;
+	border-right: 0;
+	border-left: 0;
+}
+#ibfile {
+	display: none;
+}
+.checkmark::after {
+	content: "";
+	position: absolute;
+	display: none;
+}
+.fcontainer .checkmark::after {
+	top: 6px;
+	left: 6px;
+	height: 8px;
+	width: 8px;
+	background-color: #fff;
+	border-radius: 50%;
+}
+.fcontainer input:checked ~ .checkmark::after {
+	display: block;
+}
 #mvtitle {
     font-size: 1.1em;
     margin: .5em 0 0;

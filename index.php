@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.0.2
+ * @version 2.0.3
  * @author Offerel
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
@@ -295,6 +295,9 @@ if(isset($_POST['action'])) {
 		case "bexport":
 			$response = bookmarkExport($ctype, $time, $data, $client);
 			sendJSONResponse($response);
+			break;
+		case "bimport":
+			sendJSONResponse(bimport($data, $uid));
 			break;
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
@@ -672,7 +675,7 @@ echo showBookmarks(2);
 echo $htmlFooter;
 
 function setLang() {
-	$lng = isset($_SESSION['sud']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+	$lng = isset($_SESSION['sud']['uOptions']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
 	$lng = isset($lng) ? $lng:'en';
 	$language = new language($lng);
 	$lang = $language->translate();
@@ -1723,7 +1726,7 @@ function delUsermarks($uid) {
 function htmlHeader() {
 	global $lang;
 
-	$lng = (isset($_SESSION['sud'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
+	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
 	$hjs = hash_file('crc32','js/bookmarks.js');
 	$hcs = hash_file('crc32','css/bookmarks.css');
 	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
@@ -1774,7 +1777,7 @@ function htmlForms() {
 	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
 	
 	$lfiles = glob("./locale/*.json");
-	$clang = $uOptions['language'] ? $uOptions['language']:'en';
+	$clang = isset($uOptions['language']) ? $uOptions['language']:'en';
 	
 	$lselect = "<select name='language' id='language'><option value=''>".$lang->messages->selectLanguage."</option>";
 	foreach ($lfiles as $key => $language) {
@@ -1842,6 +1845,24 @@ function htmlForms() {
 		</form>
 	</div>";
 
+	$expimpform = "
+	<div id='expimpform' class='mbmdialog'>
+		<span class='dclose'>&times;</span>
+		<h6>".$lang->messages->expImp."</h6>
+		<div class='dialogdescr'>".$lang->messages->expimpHint."</div>
+		<form action='' method='POST'>
+			<input type='file' id='ibfile' name='ibfile' accept='application/json' />
+			<fieldset><legend>Export Format:</legend>
+			<label class='fcontainer' for='ejson'>JSON<input type='radio' id='ejson' name='eiformat' value='json' checked /><span class='checkmark'></span></label>
+			<label class='fcontainer' for='ehtml'>HTML<input type='radio' id='ehtml' name='eiformat' value='html' /><span class='checkmark'></span></label>
+			</fieldset>
+			<div class='dbutton'>
+				<button name='bmf_ex' id='bmf_ex' value='Export'>".$lang->actions->export."</button>
+				<button name='bmf_im' id='bmf_im' value='Import'>".$lang->actions->import."</button>
+			</div>
+		</form>
+	</div>";
+
 	$passwordform = "
 	<div id='passwordform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
@@ -1872,7 +1893,7 @@ function htmlForms() {
 		<ul>
 			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
 			<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
-			<li class='menuitem' id='bexport'>".$lang->actions->export."</li>
+			<li class='menuitem' id='bexport'>".$lang->messages->expImp."</li>
 			<li class='menuitem' id='duplicates'>".$lang->actions->duplicates."</li>
 			<li class='menuitem' id='psettings'>".$lang->actions->settings."</li>
 			$admenu
@@ -1968,7 +1989,7 @@ function htmlForms() {
 	</div>
 	<div id='footer'>$ftext</div>";
 
-	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
+	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$expimpform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
 	return $htmlData;
 }
 
@@ -2159,6 +2180,51 @@ function importMarks($bookmarks, $uid) {
 	
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query($query, $data2);
+
+	if($response) {
+		$response = [
+			"message" => "Bookmark import successful",
+			"code" => 200,
+		];
+		e_log(8, $response['message']);
+	} else {
+		$response = [
+			"message" => "Error importing bookmarks",
+			"code" => 500,
+		];
+		e_log(1, $response['message']);
+	}
+		
+	return $response;
+}
+
+function bimport($data, $uid) {
+	e_log(8, "Requesting import from WebApp");
+	$json = file_get_contents($_FILES['file']['tmp_name']);
+	$import_array = json_decode($json, true);
+	$data = array();
+	
+	foreach ($import_array as $key => $bookmark) {
+		$data[] = array(
+			$bookmark['bmID'],
+			$bookmark['bmParentID'],
+			$bookmark['bmIndex'],
+			$bookmark['bmTitle'],
+			$bookmark['bmType'],
+			$bookmark['bmURL'],
+			$bookmark['bmAdded'],
+			$bookmark['bmModified'],
+			$uid,
+			$key
+		);
+	}
+
+	saveDebugJSON("bimport", $data);
+
+	delUsermarks($uid);
+
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
+	$response = db_query($query, $data);
 
 	if($response) {
 		$response = [

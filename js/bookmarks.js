@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 2.0.2
+ * @version 2.0.3
  * @author Offerel
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
@@ -308,6 +308,13 @@ document.addEventListener("DOMContentLoaded",function() {
 			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
 		});
 
+		document.getElementById('bexport').addEventListener('click', function() {
+			hideMenu();
+			addBD();
+			showDialog('expimpform');
+			document.querySelector('#bookmarks').addEventListener('click',hideMenu, false);
+		});
+
 		document.getElementById('nmessages').addEventListener('click', function() {
 			hideMenu();
 			let loader = document.createElement('div');
@@ -337,10 +344,41 @@ document.addEventListener("DOMContentLoaded",function() {
 			document.querySelector('body').appendChild(loader);
 			sendRequest(checkdups);
 		});
-		
-		document.getElementById('bexport').addEventListener('click', function() {
-			hideMenu();
-			sendRequest(bexport, 'html');
+
+		document.getElementById('ibfile').addEventListener('change', async function(e) {
+			var data = new FormData()
+			data.append('file', this.files[0])
+			data.append('action', 'bimport')
+			data.append('data', 'bimport')
+			data.append('add', 'bimport')
+			
+			const response = await fetch('.', {
+				method: 'POST',
+				body: data
+			});
+
+			const result = await response.json();
+			if(result.code == 200) {
+				hideMenu();
+				pwaMessage("Import successful.", 'success');
+			} else {
+				pwaMessage("Import failed.", 'error');
+			}
+		});
+		document.getElementById("bmf_im").addEventListener('click', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			document.getElementById('ibfile').click();
+		});
+		document.getElementById("bmf_ex").addEventListener('click', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			let rformat = document.getElementsByName('eiformat');
+			let format = '';
+			for (i = 0; i < rformat.length; i++) {
+                if (rformat[i].checked) format = rformat[i].value;
+            }
+			sendRequest(bexport, format);
 		});
 
 		document.getElementById('footer').addEventListener('click', function() {
@@ -967,14 +1005,28 @@ function bexport(response) {
 	if(dd<10) dd='0'+dd;
 	if(mm<10) mm='0'+mm;
 	today = dd + '-' + mm + '-' + today.getFullYear();
-
-	let blob = new Blob([response.bookmarks], { type: 'text/html' });
+	
 	let link = document.createElement('a');
-	link.href = window.URL.createObjectURL(blob);
-	link.download = "bookmarks_" + today + ".html";
+
+	if (Array.isArray(response.bookmarks)) {
+		const cleanArray = response.bookmarks.map(item=>{
+			delete item.userID
+			return item
+		})
+
+		let blob = new Blob([JSON.stringify(cleanArray)], { type: 'application/json' });
+		link.href = window.URL.createObjectURL(blob);
+
+	} else {
+		let blob = new Blob([response.bookmarks], { type: 'text/html' });
+		link.href = window.URL.createObjectURL(blob);
+	}
+	
+	link.download = "bookmarks_" + today;
 	link.click();
-	console.info("HTML export successfully, please look in your download folder.");
-	pwaMessage("HTML export successfully, please look in your download folder.", 'success');
+	console.info("Export successfully, please look in your download folder.");
+	pwaMessage("Export successfully, please look in your download folder.", 'success');
+	hideMenu();
 }
 
 function mlog(response) {
