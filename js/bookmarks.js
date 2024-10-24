@@ -966,7 +966,6 @@ function checkdups(response) {
 	} else {
 		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 		console.info("No duplicates found");
-		show_noti({title:"Syncmarks - Info", url:"No duplicates found", key:""}, false);
 		pwaMessage("No duplicates found", 'warn');
 	}
 }

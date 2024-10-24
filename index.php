@@ -188,6 +188,7 @@ $lang = setLang();
 
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
+	$action = '';
 	$jerror = json_last_error();
 	$jerrmsg = parseJError($jerror);
 
@@ -224,7 +225,6 @@ if (isset($_GET['api'])) {
 					break;
 				case "clientGetOptions":					
 					$response = clientGetOptions($client, $uid);
-					e_log(2, print_r($response, true));
 					break;
 				case "pushURL":
 					$response = ntfyNotification($data, $uid);
@@ -272,51 +272,44 @@ if (isset($_GET['api'])) {
 		$response['code'] = 500;
 	}
 
-	sendJSONResponse($response);
+	sendJSONResponse($response, $action);
 }
 
 if(isset($_POST['action'])) {
 	$uid = $_SESSION['sud']['userID'];
 	$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
-	$data = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+	$data = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_SANITIZE_STRING):false;
 	$time = round(microtime(true) * 1000);
 	$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-	$add = filter_var($_POST['add'], FILTER_SANITIZE_STRING);
+	$add = isset($_POST['add']) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING):false;
+	$action = $_POST['action'];
 
-	switch($_POST['action']) {
+	switch($action) {
 		case "getclients":
 			$response = clientList($client, $uid);
-			sendJSONResponse($response);
 			break;
 		case "gurls":
 			$response = pushGet($client, $uid);
-			sendJSONResponse($response);
 			break;
 		case "bexport":
 			$response = bookmarkExport($ctype, $time, $data, $client);
-			sendJSONResponse($response);
-			break;
-		case "bimport":
-			sendJSONResponse(bimport($data, $uid));
 			break;
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
 			$response = bookmarkAdd($bookmark, $time, $ctype, $client, $add);
-			sendJSONResponse($response);
 			break;
 		case "pushHide":
 			e_log(8,"Hide notification");
 			$page = filter_var($_POST['data'], FILTER_VALIDATE_INT);
 			$query = "UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $page AND `userID` = $uid";
-			sendJSONResponse(db_query($query));
+			$response = db_query($query);
 			break;
 		case "arename":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
 			$response = clientRename($add, $data, $uid, true);
-			sendJSONResponse($response);
 			break;
 		case "cfolder":
-			sendJSONResponse(cfolder($time, $data, $add));
+			$response = cfolder($time, $data, $add);
 			break;
 		case "rmessage":
 			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
@@ -327,7 +320,7 @@ if(isset($_POST['action'])) {
 				$count = db_query($query);
 				($count === 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
-			sendJSONResponse(notiList($uid, $loop));
+			$response = notiList($uid, $loop);
 			break;
 		case "soption":
 			$value = filter_var(filter_var($_POST['add'], FILTER_SANITIZE_NUMBER_INT), FILTER_VALIDATE_INT);
@@ -338,13 +331,12 @@ if(isset($_POST['action'])) {
 			header("Content-Type: application/json");
 			if(db_query($query) !== false) {
 				e_log(8,"Option saved");
-				sendJSONResponse(json_encode(true));
+				$response = json_encode(true);
 			} else {
 				e_log(9,"Error, saving option");
-				sendJSONResponse(json_encode(false));
+				$response = json_encode(false);
 			}
 			break;
-
 		case "bmedt":
 			$bookmark = json_decode($_POST['data'], true);
 			$title = filter_var($bookmark['title'], FILTER_SANITIZE_STRING);
@@ -353,7 +345,7 @@ if(isset($_POST['action'])) {
 			e_log(8, "Edit entry '$title'");
 			$query = "UPDATE `bookmarks` SET `bmTitle` = '$title', `bmURL` = $url, `bmAdded` = '$time' WHERE `bmID` = '$id' AND `userID` = $uid;";
 			$count = db_query($query);
-			($count > 0) ? sendJSONResponse(true):sendJSONResponse(false);
+			$response = ($count > 0) ? true:false;
 			break;
 		case "bmmv":
 			e_log(8,"Move bookmark $add");
@@ -364,15 +356,14 @@ if(isset($_POST['action'])) {
 			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$data', `bmAdded` = '$time' WHERE `bmID` = '$add' AND `userID` = $uid;";
 			$count = db_query($query);
 			reIndex($oFolder, $folderData[0]['index']);
-			$response = array("id" => $add, "folder" => $data);
-			($count > 0) ? sendJSONResponse($response):sendJSONResponse(false);
+			$response = ($count > 0) ? array("id" => $add, "folder" => $data):false;
 			break;
 		case "adel":
 			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Delete client $client");
 			$query = "DELETE FROM `clients` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '$client';";
 			$count = db_query($query);
-			($count > 0) ? sendJSONResponse(bClientlist($_SESSION['sud']['userID'])):sendJSONResponse(false);
+			$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID']):false;
 			break;
 		case "cmail":
 			e_log(8,"Change e-mail for ".$_SESSION['sud']['userName']);
@@ -468,26 +459,23 @@ if(isset($_POST['action'])) {
 					$response = "Unknown action for managing users";
 					e_log(1,$response);
 			}
-			sendJSONResponse($response);
 			break;
 		case "mlog":
 			if($_SESSION['sud']['userType'] > 1) {
 			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				sendJSONResponse(file_get_contents($lfile));
+				$response = file_get_contents($lfile);
 			} else {
-				$message = "Not allowed to read server logfile.";
-				e_log(2,$message);
-				sendJSONResponse($message);
+				$response = "Not allowed to read server logfile.";
+				e_log(2,$response);
 			}
 			break;
 		case "mrefresh":
 			if($_SESSION['sud']['userType'] > 1) {	
 			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				sendJSONResponse(file_get_contents($lfile));
+				$response = file_get_contents($lfile);
 			} else {
-				$message = "Not allowed to read server logfile.";
-				e_log(2,$message);
-				sendJSONResponse($message);
+				$response = "Not allowed to read server logfile.";
+				e_log(2,$response);
 			}
 			break;
 		case "mclear":
@@ -495,14 +483,12 @@ if(isset($_POST['action'])) {
 			if($_SESSION['sud']['userType'] > 1) {
 				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
 				file_put_contents($lfile,"");
-				sendJSONResponse(file_get_contents($lfile));
+				$response = file_get_contents($lfile);
 			}
-			die();
 			break;
 		case "mdel":
-			$bmID = json_decode($_POST['data'], true);
-			$response = delMark($bmID);
-			sendJSONResponse($bmID);
+			$response = json_decode($_POST['data'], true);
+			$response = delMark($response);
 			break;
 		case "logout":
 			e_log(8,"Logout user ".$_SESSION['sauth']);
@@ -613,13 +599,13 @@ if(isset($_POST['action'])) {
 				}
 				$dubData[$key]['subs'] = $subData;
 			}
-
-			e_log(2, print_r($dubData, true));
-			sendJSONResponse($dubData);
+			$response = $dubData;
 			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
+
+	sendJSONResponse($response, $action);
 }
 
 if(isset($_GET['link'])) {
@@ -929,7 +915,7 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 	$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle(trim($bookmark['url'])):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
 	
 	e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
-	e_log(9, print_r($bookmark, true));
+	saveDebugJSON('bookmarkAdd', $bookmark);
 	if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
 	if($ctype != "firefox") $bookmark = cfolderMatching($bookmark);
 	if($bookmark['type'] == 'bookmark' && isset($bookmark['url'])) {
@@ -1065,8 +1051,11 @@ function clientCheck($client, $ctime, $type, $userID) {
 	return $tResponse;
 }
 
-function sendJSONResponse($response) {
+function sendJSONResponse($response, $name = '') {
 	global $version;
+	
+	if(isset($name)) saveDebugJSON($name, $response);
+
 	$code = isset($response['code']) ? $response['code']:200;
 	header('Content-Type: application/json; charset=utf-8');
 	header("X-SyncMarks: $version");
@@ -1662,9 +1651,9 @@ function saveDebugJSON($prefix, $jarr) {
 	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
 	$tstamp = time();
 
-	if(isset($_GET['api']) && is_array($jarr)) {
+	if(is_array($jarr)) {
 		$filename = $logpath."/".$prefix."_".$tstamp.".json";
-		e_log(9,"JSON file saved to $filename");
+		e_log(9,"JSON saved: $filename");
 		file_put_contents($filename, json_encode($jarr, true));
 	}
 }
@@ -1678,7 +1667,7 @@ function saveRequest() {
 	$tstamp = time();
 
 	$filename = $logpath."/request_".$tstamp.".txt";
-	e_log(9,"Request file saved to $filename");
+	e_log(9,"Request saved: $filename");
 	file_put_contents($filename, $_SERVER['REQUEST_METHOD'].PHP_EOL, FILE_APPEND);
 	file_put_contents($filename, var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
 }
@@ -2525,7 +2514,7 @@ function checkLogin() {
 						$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $udata[0]['userName'], 'token' => $dtoken)), 1);
 
 						setcookie('syncmarks', $cookieData, $cOptions);
-						e_log(8,"Cookie saved. Valid until $expireTime");
+						e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
 						$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
 						
 						$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES ('".$udata[0]['userName']."', '$dtoken', '$rtknh', '$expireTime');";
