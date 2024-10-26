@@ -902,7 +902,7 @@ function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
 		} else {
 			foreach ($jmarks as $key => $bookmark) {
 				if(isset($bookmark['title'])) {
-					bookmarkAdd($bookmark, $ctime, $ctype, $client)
+					bookmarkAdd($bookmark, $ctime, $ctype, $client);
 				} else {
 					$response['message'] = "Invalid import data";
 					$response['code'] = 500;
