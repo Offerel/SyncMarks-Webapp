@@ -900,10 +900,18 @@ function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
 			$armarks = parseJSON($jmarks);
 			$response = importMarks($armarks, $user);
 		} else {
-			$response['message'] = "Invalid import data";
-			$response['code'] = 500;
+			foreach ($jmarks as $key => $bookmark) {
+				if(isset($bookmark['title'])) {
+					bookmarkAdd($bookmark, $ctime, $ctype, $client)
+				} else {
+					$response['message'] = "Invalid import data";
+					$response['code'] = 500;
+					saveDebugJSON('import_invalid', $jmarks);
+					exit;
+				}
+			}
 		}
-	 } else {
+	} else {
 		$response['message'] = "Import data is not an array";
 		$response['code'] = 500;
 	 }
@@ -1002,8 +1010,6 @@ function clientInfo($client, $uid) {
 		if(isset($clientData['cinfo'])) {
 			$clientData['cinfo'] = json_decode($clientData['cinfo'], true);
 		}
-
-		saveDebugJSON("cinfo", $clientData);
 	} else {
 		e_log(2,"Client not found.");
 		$clientData['lastseen'] = 0;
