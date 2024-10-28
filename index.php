@@ -19,7 +19,6 @@ define("CONFIG", [
 	'sender'	=> $sender,
 	'suser'		=> $suser,
 	'spwd'		=> $spwd,
-	'cexp'		=> $cexpjson,
 	'enckey'	=> $enckey,
 	'enchash'	=> $enchash,
 	'expireDays'=> (!isset($expireDays)) ? 7:$expireDays
@@ -1660,7 +1659,7 @@ function unique_code($limit) {
 }
 
 function saveDebugJSON($prefix, $jarr) {
-	if(!CONFIG['cexp'] && CONFIG['loglevel'] < 9) return false;
+	if(CONFIG['loglevel'] < 9) return false;
 
 	$logfile = CONFIG['logfile'];
 	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
@@ -1674,7 +1673,7 @@ function saveDebugJSON($prefix, $jarr) {
 }
 
 function saveRequest() {
-	if(!CONFIG['cexp'] && CONFIG['loglevel'] < 9) return false;
+	if(CONFIG['loglevel'] < 9) return false;
 	if(empty($_REQUEST) || isset($_GET['api'])) return false;
 
 	$logfile = CONFIG['logfile'];
