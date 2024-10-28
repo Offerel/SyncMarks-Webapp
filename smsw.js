@@ -10,8 +10,8 @@ const cacheName = 'SyncMarksPWA-v3';
 const cacheResources = [
 	'./',
 	'./manifest.json',
-	'./js/bookmarks.js',
-	'./js/bookmarks.min.js',
+	'./js/syncmarks.js',
+	'./js/syncmarks.min.js',
 	'./images/bookmarks.ico',
 	'./images/bookmarks.png',
 	'./images/maskable_icon.png',
@@ -22,8 +22,8 @@ const cacheResources = [
 	'./images/bookmarks144.png',
 	'./images/bookmarks192.png',
 	'./images/bookmarks512.png',
-	'./css/bookmarks.css',
-	'./css/bookmarks.min.css',
+	'./css/syncmarks.css',
+	'./css/syncmarks.min.css',
 	'./smsw.js',
 ];
 

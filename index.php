@@ -1313,7 +1313,7 @@ function cfolderMatching($bookmark) {
 function html_export() {
 	header('Content-Description: File Transfer');
 	header('Content-Type: text/html');
-	header('Content-Disposition: attachment; filename="bookmarks.html"'); 
+	header('Content-Disposition: attachment; filename="bookmarks.html"');
 	header('Content-Transfer-Encoding: binary');
 	header('Connection: Keep-Alive');
 	header('Expires: 0');
@@ -1730,10 +1730,10 @@ function htmlHeader() {
 	global $lang;
 
 	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
-	$hjs = hash_file('crc32','js/bookmarks.js');
-	$hcs = hash_file('crc32','css/bookmarks.css');
-	$js = (file_exists("js/bookmarks.min.js")) ? "<script src='js/bookmarks.min.js'></script>":"<script src='js/bookmarks.js'></script>";
-	$css = (file_exists("css/bookmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/bookmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/bookmarks.css'>";
+	$hjs = hash_file('crc32','js/syncmarks.js');
+	$hcs = hash_file('crc32','css/syncmarks.css');
+	$js = (file_exists("js/syncmarks.min.js")) ? "<script src='js/syncmarks.min.js'></script>":"<script src='js/syncmarks.js'></script>";
+	$css = (file_exists("css/syncmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/syncmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/syncmarks.css'>";
 	
 	$htmlHeader = "<!DOCTYPE html>
 		<html lang='$lng'>
