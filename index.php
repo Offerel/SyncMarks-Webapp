@@ -98,7 +98,7 @@ if(isset($_GET['reset'])){
 
 			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES ($uid,'$time','$token');";
 			if(db_query($query)) {
-				$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=confirm&t=$token\r\nIf this request is not from your side, you should click the following link to chancel the request:\r\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME']."?reset=chancel&t=$token";
+				$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
 				if(!mail($mail, "Password request confirmation", $message, $headers)) {
 					e_log(1,"Error sending password reset request to user");
 				}
@@ -106,17 +106,17 @@ if(isset($_GET['reset'])){
 			
 			die(json_encode("1"));
 			break;
-		case "chancel":
+		case "cancel":
 			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
 			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
 			$result = db_query($query)[0];
-			e_log(8,"Password Reset chancel for token '$token', '".$result['userName']."'");
+			e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
 			$query = "DELETE FROM `reset` WHERE `token` = '$token';";
 			if(db_query($query)) {
 				e_log(8,"Request removed successful");
-				$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'].". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
+				$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
 				if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
-					e_log(1,"Error sending remove chancel to ".$result['userName']);
+					e_log(1,"Error sending remove cancel to ".$result['userName']);
 				}
 			}
 			echo htmlHeader();
@@ -144,7 +144,7 @@ if(isset($_GET['reset'])){
 					$query = "DELETE FROM `reset` WHERE `token` = '$token';";
 					if(db_query($query)) {
 						e_log(8,"New password set successful");
-						$message = "Hello ".$result['userName'].",\r\n\r\nYour new password is set successful, please use:\r\n$npwd\r\n\r\nYou can login at:\n".$_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
+						$message = "Hello ".$result['userName'].",\r\n\r\nYour new password is set successful, please use:\r\n$npwd\r\n\r\nYou can login at:\n".getLink();
 						if(!mail($result['userMail'], "New password", $message, $headers)) {
 							e_log(1,"Error sending new password to ".$result['userName']);
 						}
@@ -388,8 +388,6 @@ if(isset($_POST['action'])) {
 			}
 			$del = false;
 			$headers = "From: SyncMarks <".CONFIG['sender'].">"."\r\n";
-			$url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].$_SERVER['SCRIPT_NAME'];
-
 			$data = json_decode($_POST['data'], true);
 
 			$variant = filter_var($data['type'], FILTER_VALIDATE_INT);
@@ -407,7 +405,7 @@ if(isset($_POST['action'])) {
 					if($nuid > 0) {
 						if(filter_var($mail, FILTER_VALIDATE_EMAIL)) {
 							$response = $nuid;
-							$message = "Hello,\r\na new account with the following credentials is created for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at $url";
+							$message = "Hello,\r\na new account with the following credentials is created for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at ".getLink();
 							if(!mail ($mail, "Account created",$message,$headers)) {
 								e_log(1,"Error sending data for created user account to user");
 								$response = "User created successful, E-Mail could not send";
@@ -662,6 +660,33 @@ echo htmlHeader();
 echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
+
+function getLink($type = '', $token = '') {
+	$current_url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+	$parse_url = parse_url($current_url);
+	$base_url = $parse_url['scheme'].'://'.$parse_url['host'].$parse_url['path'];
+	$parameters = [];
+
+	switch ($type) {
+		case 'confirm':
+			$parameters = [
+				'reset' => 'confirm',
+				't' => $token
+			];
+			break;
+		case 'cancel':
+			$parameters = [
+				'reset' => 'cancel',
+				't' => $token
+			];
+		default:
+			break;
+	}
+
+	$link = $base_url.'?'.http_build_query($parameters, null, null, PHP_QUERY_RFC3986);
+
+	return $link;
+}
 
 function setLang() {
 	$lng = isset($_SESSION['sud']['uOptions']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
@@ -1355,7 +1380,7 @@ function editFolder($bm, $time, $uid) {
 		e_log(8, $response['message']);
 	} else {
 		$response = [
-			"message" => "Folder not found, chancel operation and send error to client",
+			"message" => "Folder not found, cancel operation and send error to client",
 			"code" => 500,
 		];
 		e_log(2, $response['message']);
@@ -1391,7 +1416,7 @@ function editBookmark($bm, $time, $uid) {
 			e_log(8,$response['message']);
 		} else {
 			$response = [
-				"message" => "No Unique entry found, chancel operation and send error to client",
+				"message" => "No Unique entry found, cancel operation and send error to client",
 				"code" => 500,
 			];
 			e_log(2, $response['message']);
@@ -1764,7 +1789,6 @@ function htmlHeader() {
 
 function htmlForms() {
 	global $version, $lang;
-	$clink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	$userName = $_SESSION['sud']['userName'];
 	$userMail = $_SESSION['sud']['userMail'];
 	$userID = $_SESSION['sud']['userID'];
