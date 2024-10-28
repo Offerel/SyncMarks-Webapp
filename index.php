@@ -876,9 +876,14 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			e_log(8,"Exporting in JSON format");
 			$bookmarks = getBookmarks();
 			saveDebugJSON("export", $bookmarks);
-			$bcount = count($bookmarks);
-			e_log(8,"Send $bcount bookmarks to '$client'");
-			updateClient($client, $ctype, $ctime);
+			
+			if($client != "0") {
+				$bcount = count($bookmarks);
+				e_log(8,"Send $bcount bookmarks to '$client'");
+				updateClient($client, $ctype, $ctime);
+			} else {
+				e_log(8,"Export bookmarks as Browser Download");
+			}
 			$response['bookmarks'] = $bookmarks;
 			break;
 		default:
@@ -1554,7 +1559,7 @@ function getSort($parentid, $bmIndex, $uid) {
 
 function updateClient($cl, $ct, $time) {
 	$fclients = array("bookmarkTab", "Android");
-	if(in_array($cl, $fclients)) return 0;
+	if(in_array($cl, $fclients) || $cl == "0") return 0;
 
 	$uid = $_SESSION['sud']["userID"];
 	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND `userID` = ".$uid.";";
