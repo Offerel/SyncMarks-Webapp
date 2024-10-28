@@ -83,12 +83,6 @@ CREATE TABLE `reset` (
 	FOREIGN KEY(`userID`) REFERENCES `users`(`userID`) ON DELETE CASCADE
 );
 
-CREATE TABLE `system` (
-	`app_version`	varchar(10),
-	`db_version`	INTEGER,
-	`updated`	INTEGER
-);
-
 -- Create index
 CREATE INDEX `i1` ON `bookmarks` (`bmURL`, `bmTitle`);
 CREATE INDEX `i2` ON `users` ( `userID`);
@@ -112,8 +106,6 @@ CREATE TRIGGER IF NOT EXISTS `update_tokenchange`
 BEGIN
 	DELETE FROM `auth_token` WHERE `exDate` < strftime('%s') OR expired <> 0;
 END;
-
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.10.0', '11', '1727281092');
 
 PRAGMA user_version = 11;
 

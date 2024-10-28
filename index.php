@@ -2740,31 +2740,9 @@ function db_query($query, $data=null) {
 }
 
 function checkDB() {
-	$vInfoa = db_query("SELECT * FROM `system` ORDER BY `updated` DESC LIMIT 1;");
-	if(is_array($vInfoa) && count($vInfoa) > 0) {
-		$vInfo = $vInfoa[0];
-	} else {
-		$vInfo['updated'] = 0;
-		$vInfo['db_version'] = 0;
-	}
-	
-	$olddate = $vInfo['updated'];
-	$newdate = filemtime(__FILE__);
-	$dbv = 9;
-	$aversion = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
-	$aversion = substr($aversion,0,strpos($aversion, " "));
+	$test = db_query("SELECT `cOptions` FROM `clients` ORDER BY `lastseen` LIMIT 1,1;");
 
-	if($vInfo['db_version'] && $vInfo['db_version'] < $dbv) {
-		e_log(8,"Database update needed. Starting DB update...");
-		if(CONFIG['db']['type'] == "sqlite") {
-			db_query(file_get_contents("./sql/sqlite_update.sql"));
-		} elseif (CONFIG['db']['type'] == "mysql") {
-			db_query(file_get_contents("./sql/mysql_update.sql"));
-		}
-		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
-	} elseif ($vInfo['db_version'] && $vInfo['db_version'] >= $dbv) {
-		if($olddate <> $newdate) db_query("UPDATE `system` SET `updated` = '$newdate' WHERE `updated` = '$olddate';");
-	} else {
+	if(!is_array($test)) {
 		e_log(2,"Database not ready. Initialize database now");
 		if(CONFIG['db']['type'] == "sqlite") {
 			if(!file_exists(CONFIG['db']['dbname'])) {
@@ -2788,7 +2766,7 @@ function checkDB() {
 		}
 
 		$bmAdded = round(microtime(true) * 1000);
-		$userPWD = password_hash(CONFIG['spwd'],PASSWORD_DEFAULT);
+		$userPWD = password_hash(CONFIG['spwd'], PASSWORD_DEFAULT);
 		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".CONFIG['suser']."',2,'$userPWD');";		
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
@@ -2797,7 +2775,6 @@ function checkDB() {
 		db_query($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
-		db_query("INSERT INTO `system`(`app_version`,`db_version`,`updated`) VALUES ('$aversion','$dbv','$newdate');");
 	}
 }
 ?>

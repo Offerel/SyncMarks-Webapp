@@ -80,13 +80,6 @@ CREATE TABLE IF NOT EXISTS `reset` (
   CONSTRAINT `reset_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Create system table
-CREATE TABLE IF NOT EXISTS  `system` (
-  `app_version` varchar(10) DEFAULT NULL,
-  `db_version` varchar(10) DEFAULT NULL,
-  `updated` varchar(250) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 -- CREATE tokens table
 CREATE TABLE IF NOT EXISTS `auth_token` (
   `tID` int(11) NOT NULL AUTO_INCREMENT,
@@ -137,5 +130,3 @@ END;
 %%%
 @delimiter ; 
 %%%
-
-INSERT INTO `system` (`app_version`, `db_version`, `updated`) VALUES ('1.10.0', '11', '1727281092');
