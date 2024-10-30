@@ -7,184 +7,16 @@
  * @copyright Copyright (c) 2024, Offerel
  * @license GNU General Public License, version 3
  */
-session_start();
-include_once "config.inc.php.dist";
-include_once "config.inc.php";
-
-define("CONFIG", [
-	'db'		=> $database,
-	'logfile'	=> $logfile,
-	'realm'		=> $realm,
-	'loglevel'	=> $loglevel,
-	'sender'	=> $sender,
-	'suser'		=> $suser,
-	'spwd'		=> $spwd,
-	'enckey'	=> $enckey,
-	'enchash'	=> $enchash,
-	'expireDays'=> (!isset($expireDays)) ? 7:$expireDays
-]);
-
-class language {
-	public $data;
-	function __construct($language) {
-		$defaultFile = "./locale/en.json";
-		$requestFile = "./locale/".$language.".json";
-		$languagFile = file_exists($requestFile) ? $requestFile:$defaultFile;
-
-		$rdata = file_get_contents($languagFile);
-		$ddata = file_get_contents($defaultFile);
-
-		$r_object = json_decode($rdata);
-		$d_object = json_decode($ddata);
-		
-		foreach ($d_object as $key => $area) {
-			foreach ($area as $index => $value) {
-				if(isset($r_object->$key->$index)) {
-					$d_object->$key->$index = $r_object->$key->$index;
-				} else {
-					$d_object->$key->$index = $d_object->$key->$index;
-				}
-			}
-		}
-		
-		$this->data = $d_object;
-	}
-
-	function translate() {
-		return $this->data;
-	}
-}
+define("CONFIG", init());
 
 $le = "";
-set_error_handler("e_log");
-foreach (explode ("\n", file_get_contents(__FILE__,NULL,NULL,0,60)) as $line) if(str_contains(strtolower($line), 'version')) $version = end(explode(" ", $line));
-
-$headers = getallheaders();
-if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
-	header("X-SyncMarks: $version");
-	die(http_response_code(204));
-}
-
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
-
 saveRequest();
 $lang = setLang();
 
-if(isset($_GET['reset'])){
-	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
-	$headers = [
-		"From" => "SyncMarks <".CONFIG['sender'].">",
-		"Return-Path" => CONFIG['sender'],
-	];
-
-	switch($reset) {
-		case "request":
-			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
-			e_log(8,"Password Reset request for '$user'");
-			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `userID`, `userMail` FROM `users` WHERE `userName` = '$user';";
-			$result = db_query($query)[0];
-			$uid = $result['userID'];
-			$mail = $result['userMail'];
-
-			$token = openssl_random_pseudo_bytes(16);
-			$token = bin2hex($token);
-			$time = time();
-
-			$query = "DELETE FROM `reset` WHERE `userID` = $uid;";
-			db_query($query);
-
-			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES ($uid,'$time','$token');";
-			if(db_query($query)) {
-				$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
-				if(!mail($mail, "Password request confirmation", $message, $headers)) {
-					e_log(1,"Error sending password reset request to user");
-				}
-			}
-			
-			die(json_encode("1"));
-			break;
-		case "cancel":
-			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
-			$result = db_query($query)[0];
-			e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
-			$query = "DELETE FROM `reset` WHERE `token` = '$token';";
-			if(db_query($query)) {
-				e_log(8,"Request removed successful");
-				$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
-				if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
-					e_log(1,"Error sending remove cancel to ".$result['userName']);
-				}
-			}
-			echo htmlHeader();
-			echo "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>".$lang->messages->welcome."</div>
-					<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
-					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-				</div>
-			</div>";
-			echo $htmlFooter;
-			die();
-			break;
-		case "confirm":
-			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
-			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
-			$result = db_query($query)[0];
-			e_log(8,"Password Reset confirmation for token '$token', '".$result['userName']."'");
-			$tdiff = time() - $result['tokenTime'];
-			if($tdiff <= 300) {
-				$npwd = gpwd(16);
-				$pwd = password_hash($npwd,PASSWORD_DEFAULT);
-				$query = "UPDATE `users` SET `userHash` = '$pwd' WHERE `userID` = ".$result['userID'].";";
-				if(db_query($query)) {
-					$query = "DELETE FROM `reset` WHERE `token` = '$token';";
-					if(db_query($query)) {
-						e_log(8,"New password set successful");
-						$message = "Hello ".$result['userName'].",\r\n\r\nYour new password is set successful, please use:\r\n$npwd\r\n\r\nYou can login at:\n".getLink();
-						if(!mail($result['userMail'], "New password", $message, $headers)) {
-							e_log(1,"Error sending new password to ".$result['userName']);
-						}
-					}
-				} else {
-					e_log(1,"Password reset failed");
-					die(json_encode("Password reset failed"));
-				}
-				echo htmlHeader();
-				echo "<div id='loginbody'>
-					<div id='loginform'>
-						<div id='loginformh'>".$lang->messages->welcome."</div>
-						<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-					</div>
-				</div>";
-				echo $htmlFooter;
-			} else {
-				echo htmlHeader();
-				echo "<div id='loginbody'>
-					<div id='loginform'>
-						<div id='loginformh'>".$lang->messages->welcome."</div>
-						<div id='loginformt'>".$lang->messages->tokenExpired."</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-					</div>
-				</div>";
-				echo $htmlFooter;
-				e_log(1,"Token expired, Password reset failed");
-				$query = "DELETE FROM `reset` WHERE `token` = '$token';";
-				db_query($query);
-				die();
-			}
-			break;
-		default:
-			die(e_log(1,"Undefined Request"));
-	}
-	die();
-}
-
-if(!isset($_SESSION['sauth'])) checkLogin(CONFIG['realm']);
-if(!isset($_SESSION['sud'])) getUserdataS();
+if(isset($_GET['reset'])) handleReset();
+if(!isset($_SESSION['sauth'])) checkLogin();
 
 $lang = setLang();
 
@@ -659,6 +491,182 @@ echo htmlHeader();
 echo htmlForms();
 echo showBookmarks(2);
 echo $htmlFooter;
+
+function init() {
+	session_start();
+	include_once "config.inc.php.dist";
+	include_once "config.inc.php";
+	
+	foreach (explode ("\n", file_get_contents(__FILE__,NULL,NULL,0,60)) as $line) {
+		if(str_contains(strtolower($line), 'version')) $version = end(explode(" ", $line));
+	}
+
+	set_error_handler("e_log");
+
+	$headers = getallheaders();
+	if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
+		header("X-SyncMarks: $version");
+		die(http_response_code(204));
+	}
+	
+	$config = [
+		'db'		=> $database,
+		'logfile'	=> $logfile,
+		'realm'		=> $realm,
+		'loglevel'	=> $loglevel,
+		'sender'	=> $sender,
+		'suser'		=> $suser,
+		'spwd'		=> $spwd,
+		'enckey'	=> $enckey,
+		'enchash'	=> $enchash,
+		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
+		'version'	=> $version
+	];
+
+	class language {
+		public $data;
+		function __construct($language) {
+			$defaultFile = "./locale/en.json";
+			$requestFile = "./locale/".$language.".json";
+			$languagFile = file_exists($requestFile) ? $requestFile:$defaultFile;
+	
+			$rdata = file_get_contents($languagFile);
+			$ddata = file_get_contents($defaultFile);
+	
+			$r_object = json_decode($rdata);
+			$d_object = json_decode($ddata);
+			
+			foreach ($d_object as $key => $area) {
+				foreach ($area as $index => $value) {
+					if(isset($r_object->$key->$index)) {
+						$d_object->$key->$index = $r_object->$key->$index;
+					} else {
+						$d_object->$key->$index = $d_object->$key->$index;
+					}
+				}
+			}
+			
+			$this->data = $d_object;
+		}
+	
+		function translate() {
+			return $this->data;
+		}
+	}
+
+	return $config;
+}
+
+function handleReset() {
+	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
+	$headers = [
+		"From" => "SyncMarks <".CONFIG['sender'].">",
+		"Return-Path" => CONFIG['sender'],
+	];
+
+	switch($reset) {
+		case "request":
+			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
+			e_log(8,"Password Reset request for '$user'");
+			$query = "SELECT `userID`, `userMail` FROM `users` WHERE `userName` = '$user';";
+			$result = db_query($query)[0];
+			$uid = $result['userID'];
+			$mail = $result['userMail'];
+
+			$token = openssl_random_pseudo_bytes(16);
+			$token = bin2hex($token);
+			$time = time();
+
+			$query = "DELETE FROM `reset` WHERE `userID` = $uid;";
+			db_query($query);
+
+			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES ($uid,'$time','$token');";
+			if(db_query($query)) {
+				$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
+				if(!mail($mail, "Password request confirmation", $message, $headers)) {
+					e_log(1,"Error sending password reset request to user");
+				}
+			}
+			
+			die(json_encode("1"));
+			break;
+		case "cancel":
+			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
+			$result = db_query($query)[0];
+			e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
+			$query = "DELETE FROM `reset` WHERE `token` = '$token';";
+			if(db_query($query)) {
+				e_log(8,"Request removed successful");
+				$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
+				if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
+					e_log(1,"Error sending remove cancel to ".$result['userName']);
+				}
+			}
+			echo htmlHeader();
+			echo "<div id='loginbody'>
+				<div id='loginform'>
+					<div id='loginformh'>".$lang->messages->welcome."</div>
+					<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+				</div>
+			</div>";
+			echo $htmlFooter;
+			die();
+			break;
+		case "confirm":
+			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
+			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = '$token';";
+			$result = db_query($query)[0];
+			e_log(8,"Password Reset confirmation for token '$token', '".$result['userName']."'");
+			$tdiff = time() - $result['tokenTime'];
+			if($tdiff <= 300) {
+				$npwd = gpwd(16);
+				$pwd = password_hash($npwd,PASSWORD_DEFAULT);
+				$query = "UPDATE `users` SET `userHash` = '$pwd' WHERE `userID` = ".$result['userID'].";";
+				if(db_query($query)) {
+					$query = "DELETE FROM `reset` WHERE `token` = '$token';";
+					if(db_query($query)) {
+						e_log(8,"New password set successful");
+						$message = "Hello ".$result['userName'].",\r\n\r\nYour new password is set successful, please use:\r\n$npwd\r\n\r\nYou can login at:\n".getLink();
+						if(!mail($result['userMail'], "New password", $message, $headers)) {
+							e_log(1,"Error sending new password to ".$result['userName']);
+						}
+					}
+				} else {
+					e_log(1,"Password reset failed");
+					die(json_encode("Password reset failed"));
+				}
+				echo htmlHeader();
+				echo "<div id='loginbody'>
+					<div id='loginform'>
+						<div id='loginformh'>".$lang->messages->welcome."</div>
+						<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+					</div>
+				</div>";
+				echo $htmlFooter;
+			} else {
+				echo htmlHeader();
+				echo "<div id='loginbody'>
+					<div id='loginform'>
+						<div id='loginformh'>".$lang->messages->welcome."</div>
+						<div id='loginformt'>".$lang->messages->tokenExpired."</div>
+						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+					</div>
+				</div>";
+				echo $htmlFooter;
+				e_log(1,"Token expired, Password reset failed");
+				$query = "DELETE FROM `reset` WHERE `token` = '$token';";
+				db_query($query);
+				die();
+			}
+			break;
+		default:
+			die(e_log(1,"Undefined Request"));
+	}
+	die();
+}
 
 function getLink($type = '', $token = '') {
 	$current_url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
@@ -1656,18 +1664,8 @@ function getSiteTitle($url) {
 	return $convTitle;
 }
 
-function getUserdata() {
-	$query = "SELECT * FROM `users` WHERE `userName`='".$_SESSION['sauth']."'";
-	$userData = db_query($query);
-	if (!empty($userData)) {
-		return $userData[0];
-	} else {
-		unset($_SESSION['sauth']);
-	}
-}
-
-function getUserdataS() {
-	$query = "SELECT * FROM `users` WHERE `userName`='".$_SESSION['sauth']."'";
+function getUserdata($user) {
+	$query = "SELECT * FROM `users` WHERE `userName`='$user'";
 	$userData = db_query($query);
 	if (!empty($userData)) {
 		$_SESSION['sud'] = $userData[0];
@@ -1732,6 +1730,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 			$mode = "unknown";
 			break;
 	}
+
 	$le = $message;
 	if($errfile != "") $message = $message." in ".$errfile." on line ".$errline;
 	$user = '';
@@ -1752,7 +1751,6 @@ function delUsermarks($uid) {
 
 function htmlHeader() {
 	global $lang;
-
 	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
 	$hjs = hash_file('crc32','js/syncmarks.js');
 	$hcs = hash_file('crc32','css/syncmarks.css');
@@ -2401,6 +2399,7 @@ function checkLogin() {
 			$seid = session_id();
 			$oTime = $tkdata[0]['userLastLogin'];
 			$_SESSION['sauth'] = $tkdata[0]['userName'];
+			getUserdata($_SESSION['sauth']);
 			
 			$expireTime = time()+60*60*24*CONFIG['expireDays'];
 			$rtkn = unique_code(32);
@@ -2452,6 +2451,7 @@ function checkLogin() {
 					if($dbdata[0]['exDate'] > time()) {
 						e_log(8,"$client login successful");
 						$_SESSION['sauth'] = $dbdata[0]['userName'];
+						getUserdata($_SESSION['sauth']);
 						$expireTime = time()+60*60*24*CONFIG['expireDays'];
 						$token = bin2hex(openssl_random_pseudo_bytes(32));
 						$thash = password_hash($token, PASSWORD_DEFAULT);
@@ -2531,6 +2531,7 @@ function checkLogin() {
 					$oTime = $udata[0]['userLastLogin'];
 					$uid = $udata[0]['userID'];
 					$_SESSION['sauth'] = $udata[0]['userName'];
+					getUserdata($_SESSION['sauth']);
 					e_log(8,"Login successful");
 					
 					if(isset($_POST['remember']) && $_POST['remember'] == true) {
