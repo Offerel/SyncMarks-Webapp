@@ -71,8 +71,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		//confirm('sw changed');
 	});
 
-	setLanguage('en');
-	console.log(translation);
+	setLanguage(document.documentElement.lang);
 
 	if(window.location.href.slice(-1) === '?') window.history.replaceState({}, null, window.location.href.substring(0, window.location.href.length - 1));
 	 
@@ -87,7 +86,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				if(JSON.parse(this.responseText) == 1) {
 					let div = document.getElementById('loginformt');
 					div.classList.toggle('info');
-					div.innerText = 'Password request confirmation is send to your E-Mail. Request is valid for 5 minutes.';
+					div.innerText = translation.messages.passwordResetSend;
 				}
 			}
 		}
@@ -255,7 +254,7 @@ document.addEventListener("DOMContentLoaded",function() {
 			mailform.id = 'mailform';
 			mailform.classList.add('mbmdialog');
 			let heading = document.createElement('h6');
-			heading.appendChild(document.createTextNode("Change E-Mail"));
+			heading.appendChild(document.createTextNode(translation.messages.changeMail));
 			let mput = document.createElement('input');
 			mput.id = 'mput';
 			mput.value = document.getElementById('userMail').innerText;
@@ -266,7 +265,7 @@ document.addEventListener("DOMContentLoaded",function() {
 			mchange.id = 'mchange';
 			mchange.type = 'submit';
 			mchange.disabled = true;
-			mchange.innerText = 'Save';
+			mchange.innerText = translation.actions.save;
 			dbutton.appendChild(mchange);
 			
 			mput.addEventListener('input', function(){
@@ -363,9 +362,9 @@ document.addEventListener("DOMContentLoaded",function() {
 			const result = await response.json();
 			if(result.code == 200) {
 				hideMenu();
-				pwaMessage("Import successful.", 'success');
+				pwaMessage(translation.messages.importOK, 'success');
 			} else {
-				pwaMessage("Import failed.", 'error');
+				pwaMessage(translation.messages.importFail, 'error');
 			}
 		});
 		document.getElementById("bmf_im").addEventListener('click', function(e) {
@@ -588,10 +587,8 @@ function addBookmarkEvents() {
 }
 
 async function setLanguage(lang) {
-	console.log(lang);
 	var response = await fetch('locale/' + lang + '.json');
 	translation = await response.json();
-	console.log(translation);
 }
 
 function clicCheck(e) {
@@ -638,7 +635,9 @@ function openFolderBookmarks(event) {
 
 function rmBm(key) {
 	if(key.keyCode == 46 && bmIDs.length > 0) {
-		mconfirm("Would you like to delete these " + bmIDs.length + " marked bookmarks?", JSON.stringify(bmIDs));
+		let message = translation.messages.delCount;
+		message.replace("%count%", bmIDs.length);
+		mconfirm(message, JSON.stringify(bmIDs));
 	}
 }
 
@@ -745,10 +744,10 @@ function langupdate(response) {
 }
 
 function addmark(response) {
-	let message = 'Bookmark added successfully.';
+	let message = translation.messages.bmAddedOK;
 
 	if(response.code !== 200) {
-		message = 'Bookmark not added';
+		message = translation.messages.bmAddedFail;
 	} else {
 		document.getElementById('bookmarks').innerHTML = response.html_bookmarks;
 		document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
@@ -794,7 +793,7 @@ function getUsers(response) {
 		let userSelect = document.createElement('select');
 		userSelect.id = 'userSelect';
 		let uOptionA = document.createElement('option');
-		uOptionA.text = '-- Add new user --';
+		uOptionA.text = translation.messages.newUser;
 		uOptionA.value = 0;
 		userSelect.appendChild(uOptionA);
 
@@ -802,14 +801,14 @@ function getUsers(response) {
 
 		let nuser = document.createElement('input');
 		nuser.id = 'nuser';
-		nuser.placeholder = 'E-Mail';
+		nuser.placeholder = translation.messages.mail;
 		nuser.type = 'text';
 		nuser.required = true;
 		nuser.autocomplete = 'username';
 
 		let npwd = document.createElement('input');
 		npwd.id = 'npwd';
-		npwd.placeholder = 'Password';
+		npwd.placeholder = translation.messages.password;
 		npwd.type = 'password';
 		npwd.autocomplete = 'password';
 
@@ -831,12 +830,12 @@ function getUsers(response) {
 		muadd.id = 'muadd';
 		muadd.type = 'submit';
 		muadd.disabled = true;
-		muadd.innerText = 'Save';
+		muadd.innerText = translation.actions.save;
 		let mudel = document.createElement('button');
 		mudel.id = 'mudel';
 		mudel.type = 'submit';
 		mudel.disabled = true;
-		mudel.innerText = 'Delete';
+		mudel.innerText = translation.actions.delete;
 		dbutton.appendChild(muadd);
 		dbutton.appendChild(mudel);
 
@@ -929,9 +928,11 @@ function checkdups(response) {
 	if(dubData.length > 0) {
 		let dubDIV = document.createElement('div');
 		let head = document.createElement('h6');
-		head.innerText = dubData.length + ' duplicates found';
+		let message = translation.messages.duplicatesFound;
+		message.replace('%count%', dubData.length);
+		head.innerText = message;
 		let hspan = document.createElement('span');
-		hspan.innerText = 'Click on a entry to delete the duplicate';
+		hspan.innerText = translation.messages.duplicateDelete;
 		dubDIV.id = 'dubDIV';
 		dubDIV.classList.add('mbmdialog');
 		dubDIV.appendChild(head);
@@ -976,7 +977,7 @@ function checkdups(response) {
 	} else {
 		if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 		console.info("No duplicates found");
-		pwaMessage("No duplicates found", 'warn');
+		pwaMessage(translation.messages.duplicateNo, 'warn');
 	}
 }
 
@@ -1034,7 +1035,7 @@ function bexport(response) {
 	link.download = "bookmarks_" + today;
 	link.click();
 	console.info("Export successfully, please look in your download folder.");
-	pwaMessage("Export successfully, please look in your download folder.", 'success');
+	pwaMessage(translation.messages.exportOK, 'success');
 	hideMenu();
 }
 
@@ -1116,7 +1117,7 @@ function cfolder(response) {
 	if(response == 1)
 		location.href = location.href;
 	else {
-		let message = "There was a problem adding the new folder.";
+		let message = translation.messages.folderFail;
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		pwaMessage(message, 'error');
@@ -1128,7 +1129,7 @@ function bmedt(response) {
 	if(response == 1) {
 		location.reload();
 	} else {
-		let message = "There was a problem changing that bookmark.";
+		let message = translation.messages.changeBMFail;
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		pwaMessage(message, 'error');
@@ -1144,7 +1145,7 @@ function bmmv(response) {
 		obm.children[0].classList.remove('bmMarked');
 		bmIDs.shift();
 	} else {
-		let message = "Error moving bookmark";
+		let message = translation.messages.moveFail;
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		console.error(message);
 		pwaMessage(message, 'error');
@@ -1184,9 +1185,9 @@ function mdel(response) {
 function soption(response) {
 	if(response == 'true') {
 		console.info("Option saved.");
-		pwaMessage("Option saved.", 'success');
+		pwaMessage(translation.messages.optionsSaved, 'success');
 	} else {
-		let message = "There was a problem, saving the option";
+		let message = translation.messages.optionsIssue;
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		console.error(message);
 		pwaMessage(message, 'error');
@@ -1197,7 +1198,7 @@ function pushHide(response) {
 	if(response == "1") {
 		console.info("Notification removed");
 	} else {
-		let message = "Problem removing notification, please check server log.";
+		let message = translation.messages.notificationIssue;
 		console.error(message);
 		show_noti({title:"Syncmarks - Error", url:message, key:""}, false);
 		pwaMessage(message, 'error');
@@ -1255,7 +1256,9 @@ function moveEnd() {
 
 function delBookmark(id, title) {
 	const bookmarks = [id];
-	mconfirm("Would you like to delete \"" + title + "\"?", JSON.stringify(bookmarks));
+	let message = translation.messages.delTitle;
+	message.replace("%bookmark%", title);
+	mconfirm(message, JSON.stringify(bookmarks));
 }
 
 function enableSave() {
@@ -1440,11 +1443,11 @@ function eNoti(e) {
 	var nval = e.target.checked;
 	if(nval) {
 		if (!("Notification" in window)) {
-			alert("This browser does not support desktop notification");
+			alert(translation.messages.notificationUnsupported);
 			sendRequest(soption, "notifications", 0);
 		} else if (Notification.permission === "granted") {
 			var notification = new Notification("Syncmarks", {
-				body: "Notifications will be enabled for Syncmarks.",
+				body: translation.messages.notificationEnabled,
 				icon: './images/bookmarks192.png'
 			});
 			sendRequest(soption, "notifications", 1);
@@ -1452,7 +1455,7 @@ function eNoti(e) {
 			Notification.requestPermission().then(function (permission) {
 				if (permission === "granted") {
 					var notification = new Notification("Syncmarks", {
-						body: "Notifications will be enabled for Syncmarks.",
+						body: translation.messages.notificationEnabled,
 						icon: './images/bookmarks192.png'
 					});
 					sendRequest(soption, "notifications", 1);

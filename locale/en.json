@@ -69,6 +69,27 @@
 		"resetCancelHint": "Password reset canceled. You can still login with your old password.",
 		"resetSuccessHint": "Password reset successful, please check your mail. You can login now with your new password.",
 		"tokenExpired": "Token expired, Password reset failed. You can try to reset it again.",
-		"stay": "Stay logged in"
+		"stay": "Stay logged in",
+		"passwordResetSend": "Password request confirmation is send to your E-Mail. Request is valid for 5 minutes.",
+		"changeMail": "Change E-Mail",
+		"importOK":"Import successful.",
+		"importFail": "Import failed.",
+		"delCount": "Would you like to delete these %count% marked bookmarks?",
+		"delTitle": "Would you like to delete \"%bookmark%\"?",
+		"bmAddedOK": "Bookmark added successfully.",
+		"bmAddedFail": "Bookmark not added",
+		"newUser": "-- Add new user --",
+		"duplicatesFound": "%count% duplicates found",
+		"duplicateDelete": "Click on a entry to delete the duplicate",
+		"duplicateNo": "No duplicates found",
+		"exportOK": "Export successfully, please look in your download folder.",
+		"folderFail": "There was a problem adding the new folder.",
+		"changeBMFail": "There was a problem changing that bookmark.",
+		"moveFail": "Error moving bookmark",
+		"optionsSaved": "Option saved.",
+		"optionsIssue": "There was a problem, saving the option",
+		"notificationIssue": "Problem removing notification, please check server log.",
+		"notificationUnsupported": "This browser does not support desktop notification",
+		"notificationEnabled": "Notifications will be enabled for Syncmarks."
 	}
 }
