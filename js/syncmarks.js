@@ -8,7 +8,7 @@
  */
 const dbName = "syncmarks";
 const dbStoreName = "bookmarks";
-let db;
+let db, translation;
 let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded",function() {
@@ -70,6 +70,9 @@ document.addEventListener("DOMContentLoaded",function() {
 	navigator.serviceWorker.addEventListener("controllerchange", event => {
 		//confirm('sw changed');
 	});
+
+	setLanguage('en');
+	console.log(translation);
 
 	if(window.location.href.slice(-1) === '?') window.history.replaceState({}, null, window.location.href.substring(0, window.location.href.length - 1));
 	 
@@ -582,6 +585,13 @@ function addBookmarkEvents() {
 	document.querySelectorAll('.file').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('mouseup', clicCheck, false));
 	document.querySelectorAll('.folder').forEach(bookmark => bookmark.addEventListener('contextmenu', onContextMenu, false));
+}
+
+async function setLanguage(lang) {
+	console.log(lang);
+	var response = await fetch('locale/' + lang + '.json');
+	translation = await response.json();
+	console.log(translation);
 }
 
 function clicCheck(e) {
