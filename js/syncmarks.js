@@ -636,8 +636,7 @@ function openFolderBookmarks(event) {
 function rmBm(key) {
 	if(key.keyCode == 46 && bmIDs.length > 0) {
 		let message = translation.messages.delCount;
-		message.replace("%count%", bmIDs.length);
-		mconfirm(message, JSON.stringify(bmIDs));
+		mconfirm(message.replace("%count%", bmIDs.length), JSON.stringify(bmIDs));
 	}
 }
 
@@ -929,8 +928,7 @@ function checkdups(response) {
 		let dubDIV = document.createElement('div');
 		let head = document.createElement('h6');
 		let message = translation.messages.duplicatesFound;
-		message.replace('%count%', dubData.length);
-		head.innerText = message;
+		head.innerText = message.replace('%count%', dubData.length);
 		let hspan = document.createElement('span');
 		hspan.innerText = translation.messages.duplicateDelete;
 		dubDIV.id = 'dubDIV';
@@ -1257,8 +1255,7 @@ function moveEnd() {
 function delBookmark(id, title) {
 	const bookmarks = [id];
 	let message = translation.messages.delTitle;
-	message.replace("%bookmark%", title);
-	mconfirm(message, JSON.stringify(bookmarks));
+	mconfirm(message.replace('%bookmark%', title), JSON.stringify(bookmarks));
 }
 
 function enableSave() {
