@@ -1179,7 +1179,7 @@ function delMark($bmID) {
 		reIndex($dData['bmParentID']);
 	}
 
-	return $count;
+	return $bmID;
 }
 
 function reIndex($parentid, $bmIndex = null) {

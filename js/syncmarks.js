@@ -1502,7 +1502,7 @@ function mconfirm(message, ids) {
 }
 
 function delbm(e) {
-	if(this.textContent == "Yes") {
+	if(this.id == "ydialog") {
 		sendRequest(mdel, e.target.myparam);
 		let loader = document.createElement('div');
 		loader.classList.add('db-spinner');
