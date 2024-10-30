@@ -1098,13 +1098,10 @@ function clientCheck($client, $ctime, $type, $userID) {
 }
 
 function sendJSONResponse($response, $name = '') {
-	global $version;
-	
 	if(isset($name)) saveDebugJSON($name, $response);
-
 	$code = isset($response['code']) ? $response['code']:200;
 	header('Content-Type: application/json; charset=utf-8');
-	header("X-SyncMarks: $version");
+	header("X-SyncMarks: ".CONFIG['version']);
 	if(is_array($response)) {
 		http_response_code($code);
 	}
@@ -1785,7 +1782,7 @@ function htmlHeader() {
 }
 
 function htmlForms() {
-	global $version, $lang;
+	global $lang;
 	$userName = $_SESSION['sud']['userName'];
 	$userMail = $_SESSION['sud']['userMail'];
 	$userID = $_SESSION['sud']['userID'];
@@ -1915,7 +1912,7 @@ function htmlForms() {
 	$mainmenu = "
 	<div id='mainmenu' class='mmenu'>
 		<ul>
-			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." $version</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
+			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." ".CONFIG['version']."</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
 			<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
 			<li class='menuitem' id='bexport'>".$lang->messages->expImp."</li>
 			<li class='menuitem' id='duplicates'>".$lang->actions->duplicates."</li>
