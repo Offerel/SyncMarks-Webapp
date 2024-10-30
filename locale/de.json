@@ -74,7 +74,7 @@
         "importOK": "Import erfolgreich.",
         "importFail": "Der Import ist fehlgeschlagen.",
         "delCount": "Möchten Sie die markierten %count% Bookmarks löschen?",
-        "delTitle": "Möchten Sie „%bookmark%“ löschen?",
+        "delTitle": "Möchten Sie \"%bookmark%\" löschen?",
         "bmAddedOK": "Bookmark erfolgreich hinzugefügt.",
         "bmAddedFail": "Bookmark nicht hinzugefügt",
         "newUser": "-- Neuen Benutzer --",
