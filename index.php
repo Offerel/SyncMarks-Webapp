@@ -57,8 +57,7 @@ class language {
 
 $le = "";
 set_error_handler("e_log");
-$version = explode ("\n", file_get_contents('./CHANGELOG.md',NULL,NULL,0,30))[1];
-$version = explode(" ", $version)[1];
+foreach (explode ("\n", file_get_contents(__FILE__,NULL,NULL,0,60)) as $line) if(str_contains(strtolower($line), 'version')) $version = end(explode(" ", $line));
 
 $headers = getallheaders();
 if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
