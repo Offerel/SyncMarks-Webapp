@@ -1368,12 +1368,12 @@ function onMenuClick(e){
 
 			if(document.getElementById(document.getElementById('bmid').value)) {
 				document.getElementById('edurl').value = document.getElementById(document.getElementById('bmid').value).dataset.url;
-				document.getElementById('bmarkedt').firstChild.innerText = 'Edit Bookmark';
+				document.getElementById('bmarkedt').firstChild.innerText = translation.messages.editBookmark;
 				document.getElementById('edurl').type = 'text';
 			} else {
 				document.getElementById('edurl').value = '';
 				document.getElementById('edurl').type = 'hidden';
-				document.getElementById('bmarkedt').firstChild.innerText = 'Edit Folder';
+				document.getElementById('bmarkedt').firstChild.innerText = translation.messages.editFolder;
 			}
 			
 			hideMenu();

@@ -1935,7 +1935,7 @@ function htmlForms() {
 
 	$bmDialog = "
 	<div id='reqdialog' class='mbmdialog'>
-		<h6>".$lang->messages->newFolder."</h6>
+		<h6>".$lang->actions->nfolder."</h6>
 		<span class='dtext'></span>
 		<div class='btna'>
 			<button id='ydialog'>".$lang->actions->yes."</button>
@@ -1984,7 +1984,7 @@ function htmlForms() {
 	$folderForm = "
 	<div id='folderf' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->newFolder."</h6>
+		<h6>".$lang->actions->nfolder."</h6>
 		<form id='fadd' method='POST'>
 			<input placeholder='Foldername' type='text' id='fname' name='fname' value=''>
 			<input type='hidden' id='fbid' name='fbid' value=''>
