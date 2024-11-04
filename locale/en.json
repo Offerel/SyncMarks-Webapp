@@ -90,6 +90,7 @@
 		"optionsIssue": "There was a problem, saving the option",
 		"notificationIssue": "Problem removing notification, please check server log.",
 		"notificationUnsupported": "This browser does not support desktop notification",
-		"notificationEnabled": "Notifications will be enabled for Syncmarks."
+		"notificationEnabled": "Notifications will be enabled for Syncmarks.",
+		"searchHint": "Search for Bookmarks"
 	}
 }

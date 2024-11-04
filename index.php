@@ -1774,8 +1774,8 @@ function htmlHeader() {
 			<div class='hline'></div>
 			<div class='hline'></div>
 		</div>
-		<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value=''>
-		<div id='mprofile'>".$lang->messages->syncmarks."</div>
+		<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value='' placeholder='".$lang->messages->searchHint."'>
+		<div id='tbar'>".$lang->messages->syncmarks."</div>
 	</div>";
 
 	return $htmlHeader;

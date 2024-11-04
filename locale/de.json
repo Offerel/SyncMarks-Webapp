@@ -89,6 +89,7 @@
         "notificationIssue": "Problem beim Löschen der Benachrichtigung, bitte prüfe das Serverprotokoll.",
         "notificationUnsupported": "Dieser Browser unterstützt keine Desktop-Benachrichtigung",
         "notificationEnabled": "Die Benachrichtigungen wurden für Syncmarks aktiviert.",
-        "optionsSaved": "Optionen gespeichert."
+        "optionsSaved": "Optionen gespeichert.",
+		"searchHint": "Suche nach Bookmarks"
     }
 }

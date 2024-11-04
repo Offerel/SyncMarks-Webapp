@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu button').classList.remove('asform');
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
-				document.getElementById('mprofile').style.display = 'block';
+				document.getElementById('tbar').style.display = 'block';
 				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
 			}
 			else {				
@@ -141,14 +141,14 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu button').classList.add('asform');
 				document.querySelector('#menu input').classList.remove('isform');
 				document.querySelector('#menu input').classList.add('asform');
-				document.getElementById('mprofile').style.display = 'none';
+				document.getElementById('tbar').style.display = 'none';
 				document.querySelector('#menu input').focus();
 			}
 			document.querySelector('#menu input').value = '';
 			hideMenu();
 		});
 
-		document.getElementById('mprofile').addEventListener('click', function() {
+		document.getElementById('tbar').addEventListener('click', function() {
 			document.querySelector('#menu input').value = '';
 			if(document.querySelector('#menu button').innerHTML == '\u00D7') {				
 				document.querySelector('#menu input').blur();
@@ -156,14 +156,14 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu button').classList.remove('asform');
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
-				document.getElementById('mprofile').style.display = 'block';
+				document.getElementById('tbar').style.display = 'block';
 			}
 			else {
 				document.querySelector('#menu button').innerHTML = '\u00D7';
 				document.querySelector('#menu button').classList.add('asform');
 				document.querySelector('#menu input').classList.remove('isform');
 				document.querySelector('#menu input').classList.add('asform');
-				document.getElementById('mprofile').style.display = 'none';
+				document.getElementById('tbar').style.display = 'none';
 				document.querySelector('#menu input').focus();
 			}
 			hideMenu();
@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu button').classList.remove('asform');
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
-				document.getElementById('mprofile').style.display = 'block';
+				document.getElementById('tbar').style.display = 'block';
 				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
 			}
 		});
@@ -517,7 +517,7 @@ window.addEventListener("keydown",function (e) {
 		document.querySelector('#menu button').classList.add('asform');
 		document.querySelector('#menu input').classList.remove('isform');
 		document.querySelector('#menu input').classList.add('asform');
-		document.getElementById('mprofile').style.display = 'none';
+		document.getElementById('tbar').style.display = 'none';
 		document.querySelector('#menu input').focus();
 	}
 
