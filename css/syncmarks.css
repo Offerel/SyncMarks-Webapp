@@ -2,6 +2,10 @@
 #bmsearch::-webkit-search-cancel-button {
     display: none;
 }
+#bmsearch::placeholder {
+    color: lightskyblue;
+    opacity: .7;
+}
 .fcontainer {
 	display: block;
 	position: relative;
