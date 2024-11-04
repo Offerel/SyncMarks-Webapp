@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
 				document.getElementById('mprofile').style.display = 'block';
+				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
 			}
 			else {				
 				document.querySelector('#menu button').innerHTML = '\u00D7';
