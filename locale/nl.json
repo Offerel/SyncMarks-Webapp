@@ -1,1 +1,41 @@
-{}
+{
+    "actions": {
+        "notifications": "Meldingen",
+        "logfile": "Logboek",
+        "users": "Gebruikers",
+        "refresh": "Vernieuwen",
+        "settings": "Instellingen",
+        "autorefresh": "Automatisch vernieuwen",
+        "clear": "Wissen",
+        "edit": "Bewerken",
+        "create": "Maken",
+        "move": "Verplaatsen",
+        "delete": "Verwijderen",
+        "nfolder": "Nieuwe map",
+        "showClients": "Clients",
+        "ntfy": "Melden",
+        "archived": "Gearchiveerd",
+        "active": "Actief",
+        "cancel": "Annuleren",
+        "save": "Opslaan",
+        "export": "Exporteren",
+        "duplicates": "Duplicaten",
+        "import": "Importeren",
+        "login": "Inloggen",
+        "logout": "Uitloggen",
+        "yes": "Ja",
+        "no": "Nee",
+        "addBookmark": "Bladwijzer toevoegen"
+    },
+    "messages": {
+        "changeUsernameHint": "Hier kunt u uw gebruikersnaam wĳzigen. Voer een nieuwe gebruikersnaam in, gevolgd door het huidige wachtwoord en klik vervolgens op opslaan.",
+        "syncmarks": "SyncMarks",
+        "lastLogin": "Vorige sessie",
+        "enableNotifications": "Meldingen in-/uitschakelen",
+        "syncMarksSettings": "SyncMarks-instellingen",
+        "changePassword": "Wachtwoord wĳzigen",
+        "changePasswordHint": "Voer uw huidige wachtwoord in, gevolgd door een nieuw wachtwoord en herhaal dat vervolgens.",
+        "changeUsername": "Gebruikersnaam wĳzigen",
+        "expImp": "Ex-/Importeren"
+    }
+}
