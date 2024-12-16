@@ -544,8 +544,6 @@ function addBookmarkEvents() {
 	const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 	
 	document.querySelectorAll('.file').forEach(function(bookmark){
-		
-		//bookmark.setAttribute('draggable', false);
 		if (isMobile) bookmark.children[0].setAttribute('draggable', false);
 
 		bookmark.addEventListener('contextmenu', onContextMenu, false);
