@@ -530,8 +530,7 @@ const isValidUrl = urlString=> {
 	let url;
 	try { 
 		url =new URL(urlString); 
-	}
-	catch(e){
+	} catch(e){
 		return false; 
 	}
 	return url.protocol === "http:" || url.protocol === "https:";
@@ -541,8 +540,14 @@ function addBookmarkEvents() {
 	document.addEventListener("mouseup", function(){
 		document.removeEventListener("mousemove", resize, false);
 	}, false);
+
+	const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 	
 	document.querySelectorAll('.file').forEach(function(bookmark){
+		
+		//bookmark.setAttribute('draggable', false);
+		if (isMobile) bookmark.children[0].setAttribute('draggable', false);
+
 		bookmark.addEventListener('contextmenu', onContextMenu, false);
 		bookmark.addEventListener('mouseup', clicCheck, false);
 		bookmark.addEventListener('dragstart', function(event){

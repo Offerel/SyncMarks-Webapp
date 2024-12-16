@@ -244,10 +244,11 @@ fieldset {
 .menu li.menu-item {
 	background-repeat: no-repeat;
 	background-position-x: 8px;
-	line-height: 21px !important;
+	line-height: 25px !important;
 	background-size: 24px;
 	padding: 2px 0 2px 38px;
 	cursor: pointer;
+	width: calc(100% - 28px);
 }
 #dubDIV {
 	padding: 10px 0;
@@ -1098,15 +1099,15 @@ span.rdesc {
 }
 .menu {
 	position: absolute;
-	width: 130px;
-	padding: 0;
+	min-width: 130px;
+	padding: 0 10px 0 0;
 	margin: 0;
 	border: 1px solid #bbb;
-	background-color: white;
+	background-color: #fff;
 	z-index: 100;
 	border-radius: 3px;
 	box-shadow: 1px 1px 4px rgba(0,0,0,.2);
-	transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+	transition: transform .1s ease-out,opacity .1s ease-out;
 	visibility: hidden;
 }
 .menu ul {
@@ -1121,7 +1122,7 @@ span.rdesc {
 	white-space: nowrap;
 	font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif !important;
 	line-height: 25px !important;
-	font-size: 0.95em !important;
+	font-size: 1.2em !important;
 }
 .menu-item:hover {
 	background-color: #EEEEEE;
@@ -1527,6 +1528,12 @@ input:checked + .slider:before {
 	}
 }
 @media screen and (min-device-width: 1024px) {
+	.menu li.menu-item {
+		line-height: 21px !important;
+	}
+	.menu-item {
+		font-size: 0.95em !important;
+	}
 	#meheader {
 		border-radius: 4px 4px 0 0;
 	}
