@@ -105,6 +105,8 @@ document.addEventListener("DOMContentLoaded",function() {
 		});
 	});
 
+	window.addEventListener('resize', wsize);
+
 	if(document.getElementById('bookmarks')) {
 		document.querySelector('#menu input').addEventListener('keyup', function(e) {
 			var sfilter = this.value;
@@ -540,11 +542,9 @@ function addBookmarkEvents() {
 	document.addEventListener("mouseup", function(){
 		document.removeEventListener("mousemove", resize, false);
 	}, false);
-
-	const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 	
 	document.querySelectorAll('.file').forEach(function(bookmark){
-		if (isMobile) bookmark.children[0].setAttribute('draggable', false);
+		if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) bookmark.children[0].setAttribute('draggable', false);
 
 		bookmark.addEventListener('contextmenu', onContextMenu, false);
 		bookmark.addEventListener('mouseup', clicCheck, false);
@@ -591,8 +591,13 @@ function addBookmarkEvents() {
 }
 
 async function setLanguage(lang) {
-	var response = await fetch('locale/' + lang + '.json');
+	let response = await fetch('locale/' + lang + '.json');
 	translation = await response.json();
+	wsize();
+}
+
+function wsize() {
+	document.getElementById('footer').innerText = (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) ? ' + ':translation.actions.addBookmark;
 }
 
 function clicCheck(e) {

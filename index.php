@@ -1992,8 +1992,6 @@ function htmlForms() {
 		</form>
 	</div>";
 
-	$ftext = (strstr(strtolower($_SERVER['HTTP_USER_AGENT']), 'mobile') || strstr(strtolower($_SERVER['HTTP_USER_AGENT']), 'android')) ? " + ":$lang->actions->addBookmark;
-
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
@@ -2008,7 +2006,7 @@ function htmlForms() {
 			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>".$lang->actions->save."</button></div>
 		</form>
 	</div>
-	<div id='footer'>$ftext</div>";
+	<div id='footer'></div>";
 
 	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$expimpform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
 	return $htmlData;
