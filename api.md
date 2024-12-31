@@ -112,7 +112,7 @@ This removes a URL once it has been pushed. This request is sent when the URL ha
 ### Example
 ```
 {
-  "action": "pushGet",
+  "action": "pushHide",
   "client": "c0dfd20c-122e-48f1-ba6d-c5632rf08d9",
   "data": 12
 }

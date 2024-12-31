@@ -995,8 +995,6 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 }
 
 function bookmarkDel($bookmark, $user) {
-	$bookmark = json_decode($bookmark, true);
-
 	e_log(8,"Try to identify bookmark to delete");
 	if(isset($bookmark['url'])) {
 		$query = "SELECT DISTINCT a.bmID FROM `bookmarks` a INNER JOIN `bookmarks` b ON a.bmParentID = b.bmID WHERE a.`bmURL` = '".$bookmark['url']."' AND a.`userID` = $user AND b.bmTitle = '".$bookmark['nfolder']."';";
