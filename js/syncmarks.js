@@ -3,7 +3,7 @@
  *
  * @version 2.0.3
  * @author Offerel
- * @copyright Copyright (c) 2024, Offerel
+ * @copyright Copyright (c) 2025, Offerel
  * @license GNU General Public License, version 3
  */
 const dbName = "syncmarks";
@@ -60,7 +60,6 @@ document.addEventListener("DOMContentLoaded",function() {
 
 				getRecord.onsuccess = function(event) {
 					document.getElementById('bookmarks').innerHTML = getRecord.result;
-					document.getElementById('hmarks').innerHTML = getRecord.result;
 					addBookmarkEvents();
 				};
 			}
@@ -70,6 +69,8 @@ document.addEventListener("DOMContentLoaded",function() {
 	navigator.serviceWorker.addEventListener("controllerchange", event => {
 		//confirm('sw changed');
 	});
+
+	var clone = document.getElementById('bookmarks').cloneNode(true);
 
 	setLanguage(document.documentElement.lang);
 
@@ -123,7 +124,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				}
 			});
 			if((sfilter == "") || (e.keyCode == 27)) {
-				bdiv.innerHTML = document.getElementById('hmarks').innerHTML;
+				bdiv.innerHTML = clone.innerHTML;
 				document.querySelector('#menu input').value = '';
 			}
 		});
@@ -136,7 +137,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
 				document.getElementById('tbar').style.display = 'block';
-				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
+				document.getElementById('bookmarks').innerHTML = clone.innerHTML;
 			}
 			else {				
 				document.querySelector('#menu button').innerHTML = '\u00D7';
@@ -179,7 +180,7 @@ document.addEventListener("DOMContentLoaded",function() {
 				document.querySelector('#menu input').classList.remove('asform');
 				document.querySelector('#menu input').classList.add('isform');
 				document.getElementById('tbar').style.display = 'block';
-				document.getElementById('bookmarks').innerHTML = document.getElementById('hmarks').innerHTML;
+				document.getElementById('bookmarks').innerHTML = clone.innerHTML;
 			}
 		});
 

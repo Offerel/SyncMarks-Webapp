@@ -4,7 +4,7 @@
  *
  * @version 2.0.3
  * @author Offerel
- * @copyright Copyright (c) 2024, Offerel
+ * @copyright Copyright (c) 2025, Offerel
  * @license GNU General Public License, version 3
  */
 define("CONFIG", init());
@@ -489,7 +489,7 @@ if(isset($_GET['push'])) {
 
 echo htmlHeader();
 echo htmlForms();
-echo showBookmarks(2);
+echo showBookmarks();
 echo $htmlFooter;
 
 function init() {
@@ -2010,10 +2010,9 @@ function htmlForms() {
 	return $htmlData;
 }
 
-function showBookmarks($mode) {
+function showBookmarks() {
 	$bmTree = bmTree();
 	$htmlData = "<div id='bookmarks'>$bmTree</div>";
-	if($mode === 2) $htmlData.= "<div id='hmarks' style='display: none'>$bmTree</div>";
 	return $htmlData;
 }
 

@@ -3,7 +3,7 @@
  *
  * @version 2.0.3
  * @author Offerel
- * @copyright Copyright (c) 2024, Offerel
+ * @copyright Copyright (c) 2025, Offerel
  * @license GNU General Public License, version 3
  */
 const cacheName = 'SyncMarksPWA-v3';

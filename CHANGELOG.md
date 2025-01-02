@@ -1,7 +1,8 @@
 # ChangeLog
-## 2.0.3 (2024-10-23)
+## 2.0.3 (2025-01-02)
 - Added Export/Import Dialog
 - Fix sync import
+- Removed hmarks
 
 ## 2.0.2 (2024-10-16)
 - Added JSON debug function
