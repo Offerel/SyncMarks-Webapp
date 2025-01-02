@@ -70,8 +70,6 @@ document.addEventListener("DOMContentLoaded",function() {
 		//confirm('sw changed');
 	});
 
-	var clone = document.getElementById('bookmarks').cloneNode(true);
-
 	setLanguage(document.documentElement.lang);
 
 	if(window.location.href.slice(-1) === '?') window.history.replaceState({}, null, window.location.href.substring(0, window.location.href.length - 1));
@@ -109,6 +107,8 @@ document.addEventListener("DOMContentLoaded",function() {
 	window.addEventListener('resize', wsize);
 
 	if(document.getElementById('bookmarks')) {
+		var clone = document.getElementById('bookmarks').cloneNode(true);
+
 		document.querySelector('#menu input').addEventListener('keyup', function(e) {
 			var sfilter = this.value;
 			var allmarks = document.querySelectorAll('#bookmarks li.file');
@@ -594,7 +594,7 @@ function addBookmarkEvents() {
 async function setLanguage(lang) {
 	let response = await fetch('locale/' + lang + '.json');
 	translation = await response.json();
-	wsize();
+	if(document.getElementById('footer')) wsize();
 }
 
 function wsize() {

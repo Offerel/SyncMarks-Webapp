@@ -1837,7 +1837,6 @@ function htmlForms() {
 		<div class='tab'>
 		<button class='tablinks active' data-val='aNoti'>".$lang->actions->active."</button>
 		<button class='tablinks' data-val='oNoti'>".$lang->actions->archived."</button>
-		$oswitch
 		</div>
 		<div id='aNoti' class='tabcontent'style='display: block'>
 		<div class='NotiTable'>
@@ -1857,6 +1856,7 @@ function htmlForms() {
 		<h6>".$lang->actions->ntfy."</h6>
 		<div class='dialogdescr'>".$lang->messages->ntfy."</div>
 		<form action='' method='POST'>$oswitch
+			<input hidden type='text' name='username' autocomplete='username'>
 			<input required placeholder='".$lang->messages->url."' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
 			<input placeholder='".$lang->messages->token."' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
 			<input placeholder='".$lang->messages->password."' type='password' id='password' name='password' value='' autocomplete='current-password' />
@@ -1887,7 +1887,8 @@ function htmlForms() {
 		<span class='dclose'>&times;</span>
 		<h6>".$lang->messages->changePassword."</h6>
 		<div class='dialogdescr'>".$lang->messages->changePasswordHint."</div>
-		<form action='' method='POST'>					
+		<form action='' method='POST'>
+			<input hidden type='text' name='username' autocomplete='username'>
 			<input required placeholder='".$lang->messages->currentPassword."' type='password' id='opassword' name='opassword' autocomplete='current-password' value='' />
 			<input required placeholder='".$lang->messages->newPassword."' type='password' id='npassword' name='npassword' autocomplete='new-password' value='' />
 			<input required placeholder='".$lang->messages->confirmPassword."' type='password' id='cpassword' name='cpassword' autocomplete='new-password' value='' />
@@ -2608,8 +2609,8 @@ function checkLogin() {
 				<div id='loginformh'>".$lang->messages->welcome."</div>
 				<div id='loginformt'>".$lang->messages->welcomeHint."</div>
 				<div id='loginformb'>
-					<input type='text' id='uf' name='username' placeholder='".$lang->messages->username."'>
-					<input type='password' name='password' placeholder='".$lang->messages->password."'>
+					<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
+					<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
 					<input name='client' type='hidden' value='0'>
 					<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
 					<button name='login' value='login'>".$lang->actions->login."</button>
