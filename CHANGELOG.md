@@ -1,6 +1,8 @@
 # ChangeLog
 ## 2.0.3 (2025-01-02)
 - Added Export/Import Dialog
+- Added Dutch translation
+- Added Chinese translation
 - Fix sync import
 - Removed hmarks
 
