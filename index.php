@@ -2464,6 +2464,7 @@ function checkLogin() {
 						unset($_SESSION['sauth']);
 						session_destroy();
 						header("X-Request-Info: 0");
+						e_log(8,"New token set to 0 for $client");
 						header("Content-Type: application/json");
 						$cInfo['task'] = 'cInfo';
 						die(json_encode($cInfo));
@@ -2479,6 +2480,7 @@ function checkLogin() {
 					unset($_SESSION['sauth']);
 					session_destroy();
 					header("X-Request-Info: 0");
+					e_log(8,"New token set to 0 for $client");
 					header("Content-Type: application/json");
 					die(json_encode($cInfo));
 				}
@@ -2487,6 +2489,7 @@ function checkLogin() {
 				unset($_SESSION['sauth']);
 				session_destroy();
 				header("X-Request-Info: 0");
+				e_log(8,"New token set to 0 for $client");
 				header("Content-Type: application/json");
 				die(json_encode(""));
 			}
