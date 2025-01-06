@@ -320,7 +320,11 @@ if(isset($_POST['action'])) {
 			break;
 		case "mdel":
 			$response = json_decode($_POST['data'], true);
-			$response = delMark($response);
+			$erg = delMark($response);
+			$response = [];
+			foreach ($erg as $key => $value) {
+				$response = array_push($value[$bm]);
+			}
 			break;
 		case "logout":
 			e_log(8,"Logout user ".$_SESSION['sauth']);
@@ -1009,8 +1013,13 @@ function bookmarkDel($bookmark, $user) {
 		foreach ($bData as $key => $bookmark) {
 			$bookmarks[] = $bookmark['bmID'];
 		}
-		
-		$erg = delMark($bookmarks);
+
+		$erg = 1;
+		$res = delMark($bookmarks);
+		foreach ($res as $key => $value) {
+			if ($value['rm'] != 1) $erg = 0;
+		}
+
 		$message = ($erg == 1) ? "Bookmark deleted":"Delete Bookmark failed";
 		$code = ($erg == 1) ? 200:500;
 	} else {
@@ -1021,6 +1030,8 @@ function bookmarkDel($bookmark, $user) {
 
 	$response['message'] = $message;
 	$response['code'] = $code;
+
+	e_log(8, print_r($response, true));
 
 	return $response;
 }
@@ -1160,24 +1171,25 @@ function delMark($bmID) {
 	$count = 0;
 	$bms = implode(", ", $bmID);
 	$uid = $_SESSION['sud']['userID'];
+	$res = [];
 	e_log(8,"Delete bookmark(s) $bms");
 
 	foreach ($bmID as $key => $value) {
-		$bm = $value;
-		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL`, `bmSort` FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = $uid;";
+		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL`, `bmSort` FROM `bookmarks` WHERE `bmID` = '$value' AND `userID` = $uid;";
 		$dData = db_query($query)[0];
-
 		$bmSort = $dData['bmSort'];
 		e_log(8,"Re-Sort bookmarks");
 		db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`-1 WHERE `userID` = $uid AND `bmSort` > $bmSort ORDER BY `bmSort`");
-
-		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$bm' AND `userID` = $uid;";
-		$count = db_query($query);
+		$query = "DELETE FROM `bookmarks` WHERE `bmID` = '$value' AND `userID` = $uid;";
+		$res[] = [
+			"bm" => $value,
+			"rm" => db_query($query)
+		];
 
 		reIndex($dData['bmParentID']);
 	}
 
-	return $bmID;
+	return $res;
 }
 
 function reIndex($parentid, $bmIndex = null) {
