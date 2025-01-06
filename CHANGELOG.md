@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.0.4 (2025-01-06)
+- Fix delete bookmark
+
 ## 2.0.3 (2025-01-02)
 - Added Export/Import Dialog
 - Added Dutch translation
