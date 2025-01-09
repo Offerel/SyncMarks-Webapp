@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.0.5 (2025-01-09)
+- Fix change user
+
 ## 2.0.4 (2025-01-06)
 - Fix delete bookmark
 
