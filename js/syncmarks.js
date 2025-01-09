@@ -895,6 +895,7 @@ function getUsers(response) {
 				"nuser":nuser.value,
 				"userSelect":userSelect.options[userSelect.selectedIndex].value
 			});
+			console.log(data);
 			sendRequest(muedt, data);
 		});
 

@@ -258,11 +258,14 @@ if(isset($_POST['action'])) {
 				case 2:
 					e_log(8,"Updating user $user");
 					$uID = filter_var($data['userSelect'], FILTER_VALIDATE_INT);
-					$query = "UPDATE `users` SET `userName`= '$user', `userType`= '$userLevel' WHERE `userID` = $uID;";
+					$pwd = password_hash($password,PASSWORD_DEFAULT);
+					$p = ($data['p'] != '') ? ", `userHash` = '$pwd'":"";
+
+					$query = "UPDATE `users` SET `userName`= '$user', `userType`= '$userLevel'$p WHERE `userID` = $uID;";
 					if(db_query($query) == 1) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User changed successful, Try to send E-Mail to user";
-							$message = "Hello,\r\nyour account is changed for SyncMarks. You can login at $url";
+							$message = "Hello,\r\nyour account is changed for SyncMarks. You can login at ".getLink();
 							if(!mail ($user, "Account changed",$message,$headers)) e_log(1,"Error sending email for changed user account");
 						} else {
 							$response = "User changed successful, No mail send to user";
@@ -278,7 +281,7 @@ if(isset($_POST['action'])) {
 					if(db_query($query) == 1) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User deleted, Try to send E-Mail to user";
-							$message = "Hello,\r\nyour account '$user' and all it's data is removed from $url.";
+							$message = "Hello,\r\nyour account '$user' and all it's data is removed from ".getlink();
 							if(!mail ($user, "Account removed",$message,$headers)) e_log(1,"Error sending data for created user account to user");
 						} else {
 							$response = "User deleted successful, No mail send to user";
