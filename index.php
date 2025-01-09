@@ -565,6 +565,7 @@ function init() {
 }
 
 function handleReset() {
+	global $lang;
 	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
 	$headers = [
 		"From" => "SyncMarks <".CONFIG['sender'].">",
