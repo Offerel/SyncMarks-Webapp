@@ -1698,7 +1698,7 @@ function saveDebugJSON($prefix, $jarr) {
 	if(is_array($jarr)) {
 		$filename = $logpath."/".$prefix."_".$tstamp.".json";
 		e_log(9,"JSON saved: $filename");
-		file_put_contents($filename, json_encode($jarr, JSON_PRETTY_PRINT));
+		file_put_contents($filename, json_encode($jarr, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 	}
 }
 
