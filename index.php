@@ -712,26 +712,23 @@ function setLang() {
 }
 
 function tabsSend($jtabs, $user, $added) {
-	$urls = [];
-	foreach ($jtabs as $tab) {
-		$urls[] = $tab['url'];
-	}
-
-	$jurls = trim(json_encode($urls, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), '[]');
-	$query = "DELETE FROM `bookmarks` WHERE `bmID` IN (SELECT `bmID` FROM `bookmarks` WHERE `bmURL` NOT IN ($jurls) AND `bmType` = 'tab' AND `userID` = $user);";
+	$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user;";
 	$res = db_query($query);
 	
 	foreach ($jtabs as $key => $tab) {
-		$tID = unique_code(12);
-		$title = trim($tab['title']);
-		$url = $tab['url'];
-		$query = "SELECT count(*) AS count FROM `bookmarks` WHERE `bmType` = 'tab' AND `bmURL` = '$url' AND `userID` = $user;";
-		$res = db_query($query)[0]['count'];
-		if($res == 0) {
-			$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmTitle`, `bmType`, `bmURL`, `bmAdded`, `userID`) VALUES ('$tID', $key, '$title', 'tab', '$url', '$added', $user);";
-			$res = db_query($query);
-		}
+		$data[] = array(
+			unique_code(12),
+			1,
+			trim($tab['title']),
+			'tab',
+			$tab['url'],
+			$added,
+			$user
+		);
 	}
+
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES (?,?,?,?,?,?,?)";
+	$response = db_query($query, $data);
 
 	$response['tabs'] = count($jtabs);
 	return $response;
@@ -1701,7 +1698,7 @@ function saveDebugJSON($prefix, $jarr) {
 	if(is_array($jarr)) {
 		$filename = $logpath."/".$prefix."_".$tstamp.".json";
 		e_log(9,"JSON saved: $filename");
-		file_put_contents($filename, json_encode($jarr, true));
+		file_put_contents($filename, json_encode($jarr, JSON_PRETTY_PRINT));
 	}
 }
 

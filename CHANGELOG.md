@@ -1,6 +1,7 @@
 # ChangeLog
-## 2.0.5 (2025-01-09)
+## 2.0.5 (2025-01-10)
 - Fix change user
+- Fix tabSync
 
 ## 2.0.4 (2025-01-06)
 - Fix delete bookmark
