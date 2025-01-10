@@ -728,7 +728,7 @@ function tabsSend($jtabs, $user, $added) {
 	}
 
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES (?,?,?,?,?,?,?)";
-	$response = db_query($query, $data);
+	$res = db_query($query, $data);
 
 	$response['tabs'] = count($jtabs);
 	return $response;
