@@ -1,47 +1,53 @@
 # ChangeLog
-## 2.0.5 (2025-01-10)
+## 2.0.5
 - Fix change user
 - Fix tabSync
 
-## 2.0.4 (2025-01-06)
+## 2.0.4
 - Fix delete bookmark
 
-## 2.0.3 (2025-01-02)
+## 2.0.3
 - Added Export/Import Dialog
 - Added Dutch translation
-- Added Chinese translation
+- Added Chinese translation by Outbreak2096
+- Added French translation
+- Added Hungarian translation
+- Added Dutch translation by Vistaus
+- Added Polish translation
+- Added Portugese translation
+- Added Swedish translation
 - Fix sync import
 - Removed hmarks
 
-## 2.0.2 (2024-10-16)
+## 2.0.2
 - Added JSON debug function
 - Added german GUI translation
 - Fix empty import data
 
-## 2.0.1 (2024-10-15)
+## 2.0.1
 - Removed unused db column
 - Fixed issue with remove bookmark
 - Add support for backup/restore client options
 
-## 2.0.0 (2024-09-25)
+## 2.0.0
 - Added API and API description
 - Added sort field for bookmarks
 - Added ntfy support
 - Removed Pushbullet support
 - Fix some issues
 
-## 1.9.1 (2024-04-28)
+## 1.9.1
 - Fix #80 for Extension
 - Fix #81 for Extension
 - Fix initial SQL
 - Add function to remove questionmark from urlbar
 - Added .htaccess file for Apache FastCGI workaround
 
-## 1.9.0 (2023-11-24)
+## 1.9.0
 - Fix response
 - Fix contextmenu Edge sidebar
 
-## 1.8.9 (2023-11-18)
+## 1.8.9
 - Fix response
 - Fix variable initialization
 - Fix CSS
@@ -54,7 +60,7 @@
 - Added send later functions
 - Removed background sync for privacy reasons
 
-## 1.8.8 (2023-07-20)
+## 1.8.8
 - Added mouse middle click
 - Fixed MySQL
 - Fixed empty titles
