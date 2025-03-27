@@ -2,6 +2,7 @@
 ## 2.0.5
 - Fix change user
 - Fix tabSync
+- Fix mdel
 
 ## 2.0.4
 - Fix delete bookmark

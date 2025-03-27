@@ -322,12 +322,15 @@ if(isset($_POST['action'])) {
 			}
 			break;
 		case "mdel":
-			$response = json_decode($_POST['data'], true);
-			$erg = delMark($response);
-			$response = [];
+			$bookmarks = json_decode($_POST['data'], true);
+			$erg = delMark($bookmarks);
+			
+			$bookmarks = [];
 			foreach ($erg as $key => $value) {
-				$response = array_push($value[$bm]);
+				$bookmarks[] = $value['bm'];
 			}
+
+			$response['bookmarks'] = $bookmarks;
 			break;
 		case "logout":
 			e_log(8,"Logout user ".$_SESSION['sauth']);
