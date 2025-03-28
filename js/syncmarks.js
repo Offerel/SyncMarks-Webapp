@@ -1181,7 +1181,7 @@ function mdel(response) {
 	hideMenu();
 	if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 	if(Array.isArray(response)) {
-		response.forEach(function(element) {
+		response[0].forEach(function(element) {
 			document.getElementById(element).parentNode.remove();
 		});
 	} else {
