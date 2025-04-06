@@ -419,6 +419,47 @@ if(isset($_POST['action'])) {
 			echo $htmlFooter;
 			die();
 			break;
+		case "pupdate":
+			e_log(8,"User change: Updating user password started");
+			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
+			$npassword = filter_var($_POST['npassword'], FILTER_SANITIZE_STRING);
+			$cpassword = filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING);
+
+			if($opassword != "" && $npassword !="" && $cpassword !="") {
+				e_log(8,"User change: Data complete entered");
+				if(password_verify($opassword,$_SESSION['sud']['userHash'])) {
+					e_log(8,"User change: Verify original password");
+					if($npassword === $cpassword) {
+						e_log(8,"User change: New and confirmed password");
+						if($npassword != $opassword) {
+							$password = password_hash($npassword,PASSWORD_DEFAULT);
+							$query = "UPDATE `users` SET `userHash`='$password' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+							db_query($query);
+							e_log(8,"User change: Password changed");
+						} else {
+							e_log(2,"User change: Old and new password identical, user not changed");
+						}
+					}
+				} else {
+					e_log(2,"User change: Old password mismatch");
+				}
+			} else {
+				e_log(2,"User change: Data missing, process failed");
+			}
+
+			unset($_SESSION['sauth']);
+			e_log(8,"User logged out");
+			echo htmlHeader();
+			echo "<div id='loginbody'>
+				<div id='loginform'>
+					<div id='loginformh'>Logout successful</div>
+					<div id='loginformt'>User logged out. <a href='".$_SERVER['SCRIPT_NAME']."'>Login</a> again</div>
+				</div>
+			</div>";
+			echo $htmlFooter;
+
+			die();
+			break;
 		case "getUsers":
 			header("Content-Type: application/json");
 			if($_SESSION['sud']['userType'] == 2) {

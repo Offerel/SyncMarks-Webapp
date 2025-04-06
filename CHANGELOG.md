@@ -3,6 +3,7 @@
 - Fix change user
 - Fix tabSync
 - Fix mdel
+- Fix password change
 
 ## 2.0.4
 - Fix delete bookmark
