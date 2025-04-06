@@ -449,16 +449,16 @@ if(isset($_POST['action'])) {
 
 			unset($_SESSION['sauth']);
 			e_log(8,"User logged out");
-			echo htmlHeader();
-			echo "<div id='loginbody'>
+			$html = htmlHeader();
+			$html.= "<div id='loginbody'>
 				<div id='loginform'>
 					<div id='loginformh'>Logout successful</div>
 					<div id='loginformt'>User logged out. <a href='".$_SERVER['SCRIPT_NAME']."'>Login</a> again</div>
 				</div>
 			</div>";
-			echo $htmlFooter;
-
-			die();
+			$html.= $htmlFooter;
+			clearAuthCookie();
+			die($html);
 			break;
 		case "getUsers":
 			header("Content-Type: application/json");
