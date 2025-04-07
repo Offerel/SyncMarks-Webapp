@@ -333,23 +333,8 @@ if(isset($_POST['action'])) {
 			$response['bookmarks'] = $bookmarks;
 			break;
 		case "logout":
-			e_log(8,"Logout user ".$_SESSION['sauth']);
-			unset($_SESSION['sauth']);
-			clearAuthCookie();
-			e_log(8,"User logged out");
-			if(!isset($_POST['client'])) {
-				echo htmlHeader();
-				echo "<div id='loginbody'>
-					<div id='loginform'>
-						<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
-						<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-					</div>
-				</div>";
-				echo $htmlFooter;
-			}
-			session_destroy();
-			exit;
+			$html = logout();
+			die($html);
 			break;
 		case "ntfyupdate":
 			e_log(8,"ntfy: Updating ntfy information.");
@@ -392,7 +377,6 @@ if(isset($_POST['action'])) {
 			$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
 
 			if($opassword != "") {
-				e_log(8,"User change: Data complete entered");
 				if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
 					e_log(8,"User change: Verify original password");
 					$query = "UPDATE `users` SET `userName`='$username' WHERE `userID`=".$_SESSION['sud']['userID'].";";
@@ -404,61 +388,14 @@ if(isset($_POST['action'])) {
 				}
 			}
 			else {
-				e_log(2,"User change: Data missing");
+				e_log(2,"User change: Password missing");
 			}
-			unset($_SESSION['sauth']);
-			e_log(8,"User logged out");
-			echo htmlHeader();
-			echo "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
-					<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
-					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-				</div>
-			</div>";
-			echo $htmlFooter;
-			die();
+
+			die(logout());
 			break;
 		case "pupdate":
-			e_log(8,"User change: Updating user password started");
-			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
-			$npassword = filter_var($_POST['npassword'], FILTER_SANITIZE_STRING);
-			$cpassword = filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING);
-
-			if($opassword != "" && $npassword !="" && $cpassword !="") {
-				e_log(8,"User change: Data complete entered");
-				if(password_verify($opassword,$_SESSION['sud']['userHash'])) {
-					e_log(8,"User change: Verify original password");
-					if($npassword === $cpassword) {
-						e_log(8,"User change: New and confirmed password");
-						if($npassword != $opassword) {
-							$password = password_hash($npassword,PASSWORD_DEFAULT);
-							$query = "UPDATE `users` SET `userHash`='$password' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-							db_query($query);
-							e_log(8,"User change: Password changed");
-						} else {
-							e_log(2,"User change: Old and new password identical, user not changed");
-						}
-					}
-				} else {
-					e_log(2,"User change: Old password mismatch");
-				}
-			} else {
-				e_log(2,"User change: Data missing, process failed");
-			}
-
-			unset($_SESSION['sauth']);
-			e_log(8,"User logged out");
-			$html = htmlHeader();
-			$html.= "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>Logout successful</div>
-					<div id='loginformt'>User logged out. <a href='".$_SERVER['SCRIPT_NAME']."'>Login</a> again</div>
-				</div>
-			</div>";
-			$html.= $htmlFooter;
-			clearAuthCookie();
-			die($html);
+			$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
+			die($response);
 			break;
 		case "getUsers":
 			header("Content-Type: application/json");
@@ -606,6 +543,55 @@ function init() {
 	}
 
 	return $config;
+}
+
+function pupdate($opassword, $npassword, $cpassword) {
+	e_log(8,"User change: Updating user password started");
+	if($opassword != "" && $npassword !="" && $cpassword !="") {
+		if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
+			e_log(8,"User change: Verify original password");
+			if($npassword === $cpassword) {
+				e_log(8,"User change: Compare passwords");
+				if($npassword != $opassword) {
+					$password = password_hash($npassword,PASSWORD_DEFAULT);
+					$query = "UPDATE `users` SET `userHash`='$password' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+					db_query($query);
+					e_log(8,"User change: Password changed");
+				} else {
+					e_log(2,"User change: Old and new password identical, user not changed");
+				}
+			}
+		} else {
+			e_log(2,"User change: Old password mismatch");
+		}
+	} else {
+		e_log(2,"User change: Data missing, process failed");
+	}
+
+	return logout();
+}
+
+function logout() {
+	global $htmlFooter, $lang;
+	e_log(8,"Logout user ".$_SESSION['sauth']);
+	unset($_SESSION['sauth']);
+	clearAuthCookie();
+	session_destroy();
+	e_log(8,"User logged out");
+
+	if(!isset($_POST['client'])) {
+		$html =  htmlHeader();
+		$html.= "<div id='loginbody'>
+			<div id='loginform'>
+				<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
+				<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
+				<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+			</div>
+		</div>";
+		$html.= $htmlFooter;
+	}
+
+	return $html;
 }
 
 function handleReset() {
@@ -2613,7 +2599,7 @@ function checkLogin() {
 					}
 					
 					if($seid != $udata[0]['sessionID']) {
-						e_log(8,"Save session to database.");
+						e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
 						$query = "UPDATE `users` SET `userLastLogin` = $aTime, `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userID` = $uid;";
 						db_query($query);
 					}
