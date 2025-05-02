@@ -1031,6 +1031,14 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 
 function bookmarkDel($bookmark, $user) {
 	e_log(8,"Try to identify bookmark to delete");
+
+	if(in_array($bookmark['folder'], array("root________", "toolbar_____", "unfiled_____", "mobile______", "0", "1", "2", "3"))) {
+		e_log(8,"Bookmark is in internal folder, get correct name for it");
+		$query = "SELECT `bmTitle` from `bookmarks` WHERE `bmID` = '".$bookmark['folder']."' AND `userID` = $user;";
+		$req = db_query($query);
+		$bookmark['nfolder'] = $req[0]['bmTitle'];
+	}
+
 	if(isset($bookmark['url'])) {
 		$query = "SELECT DISTINCT a.bmID FROM `bookmarks` a INNER JOIN `bookmarks` b ON a.bmParentID = b.bmID WHERE a.`bmURL` = '".$bookmark['url']."' AND a.`userID` = $user AND b.bmTitle = '".$bookmark['nfolder']."';";
 	} else {

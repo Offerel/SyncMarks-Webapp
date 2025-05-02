@@ -4,6 +4,7 @@
 - Fix tabSync
 - Fix mdel
 - Fix password change
+- Fix Bookmark identify
 
 ## 2.0.4
 - Fix delete bookmark
