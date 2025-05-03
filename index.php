@@ -1032,7 +1032,16 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 function bookmarkDel($bookmark, $user) {
 	e_log(8,"Try to identify bookmark to delete");
 
-	if(in_array($bookmark['folder'], array("root________", "toolbar_____", "unfiled_____", "mobile______", "0", "1", "2", "3"))) {
+	if(strlen($bookmark['folder'] === 1)) {
+		switch($bookmark['folder']) {
+			case "0": $bookmark['folder'] = "root________"; break;
+			case "1": $bookmark['folder'] = "toolbar_____"; break;
+			case "2": $bookmark['folder'] = "unfiled_____"; break;
+			case "3": $bookmark['folder'] = "mobile______"; break;
+		}
+	}
+
+	if(in_array($bookmark['folder'], array("root________", "toolbar_____", "unfiled_____", "mobile______"))) {
 		e_log(8,"Bookmark is in internal folder, get correct name for it");
 		$query = "SELECT `bmTitle` from `bookmarks` WHERE `bmID` = '".$bookmark['folder']."' AND `userID` = $user;";
 		$req = db_query($query);
