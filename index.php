@@ -484,9 +484,9 @@ function init() {
 	session_start();
 	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
-	
-	foreach (explode ("\n", file_get_contents(__FILE__,NULL,NULL,0,60)) as $line) {
-		if(str_contains(strtolower($line), 'version')) $version = end(explode(" ", $line));
+	$version = "";
+	foreach (explode ("\n", file_get_contents(__FILE__,false,NULL,0,60)) as $line) {
+		$version = (str_contains(strtolower($line), 'version')) ? explode(" ", $line)[3]:$version;
 	}
 
 	set_error_handler("e_log");
