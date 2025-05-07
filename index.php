@@ -421,6 +421,9 @@ if(isset($_POST['action'])) {
 			}
 			$response = $dubData;
 			break;
+		case "testDB":
+			testDB($_POST['data']);
+			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
@@ -481,7 +484,7 @@ echo showBookmarks();
 echo $htmlFooter;
 
 function init() {
-	checkInstall();
+	if(!isset($_POST['action'])) checkInstall();
 	session_start();
 	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
@@ -2735,6 +2738,7 @@ function db_query($query, $data=null) {
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
 	];
+
 	try {
 		if(CONFIG['db']['type'] == 'mysql') {
 			$hs = (substr(CONFIG['db']['host'],0,1) === '/') ? 'unix_socket':'host';
@@ -2891,5 +2895,39 @@ function checkDB() {
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
 	}
+}
+
+function testDB($data) {
+	e_log(8, "Check database");
+	$db = json_decode($data, true);
+
+	if($db['type'] === 'sqlite') {
+		try{
+			$database = new SQLite3($db['name']);
+			$code = (is_file($db['name']) && is_writeable($db['name'])) ? 200:500;
+			$message = "Database created";
+		} catch(Exception $exception) {
+			$message = $exception->getMessage();
+			e_log(1, $message);
+			$code = 500;
+		}
+	} elseif ($db['type'] === 'mysql') {
+		CONFIG['db']['type'] = $db['type'];
+		CONFIG['db']['host'] = $db['host'];
+		CONFIG['db']['dbname'] = $db['name'];
+		CONFIG['db']['user'] = $db['user'];
+		CONFIG['db']['pwd'] = $db['pwd'];
+		
+	} else {
+		$code = 500;
+		$message = 'Stopped...';
+	}
+
+	$response = [
+		'code' => $code,
+		'message' => $message
+	];
+
+	return $response;
 }
 ?>

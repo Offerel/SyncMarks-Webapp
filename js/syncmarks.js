@@ -530,7 +530,7 @@ document.addEventListener("DOMContentLoaded",function() {
 			}
 		});
 
-		cdb.addEventListener('click', testDB);
+		cdb.addEventListener('click', tDB);
 
 		let dbhost = document.getElementById('dbhost');
 		let dbname = document.getElementById('dbname');
@@ -553,30 +553,27 @@ document.addEventListener("DOMContentLoaded",function() {
 				valid = (dbpath.value.length > 0) ? true:false;
 			}
 
-			cdb.dataset.database = database.value;
+		//	cdb.dataset.database = database.value;
 			cdb.style.display = (valid) ? 'block':'none';
 		}
 
-		function testDB() {
-			console.log(this.dataset.database);
-			
+		function tDB() {
 			let db = {};
-			db.type = this.dataset.database;
-			if(this.dataset.database === 'mysql') {
+			db.type = database.value;
+			if(database.value === 'mysql') {
 				console.log('db connection works, can insert and update');
 				db.host = dbhost.value;
 				db.name = dbname.value,
 				db.user = dbuser.value;
 				db.pwd = dbpwd.value;
 				//sendRequest(testDB, JSON.stringify(db,null));
-			} else if (this.dataset.database === 'sqlite') {
+			} else if (database.value === 'sqlite') {
 				console.log('file ist path, is writable, file exists (after create)?');
 				db.name = dbpath.value;
 				//sendRequest(testDB);
 			}
 
-			sendRequest(testDB, JSON.stringify(db,null));
-			
+			sendRequest(testDB, JSON.stringify(db));
 		}
 	}
 }, false);
@@ -766,6 +763,10 @@ function pwaMessage(message, state) {
 		mdiv.className = mdiv.classList.remove("show");
 	}, 10000);
 	return false;
+}
+
+function testDB(response) {
+	console.log(response);
 }
 
 function getclients(response) {
