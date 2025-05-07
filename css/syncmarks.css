@@ -1668,3 +1668,10 @@ input:checked + .slider:before {
 		background: #b7b7b7;
 	}
 }
+
+.dbsetup {
+    display: none;
+}
+#cdb {
+    display: none;
+}

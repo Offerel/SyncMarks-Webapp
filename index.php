@@ -481,9 +481,11 @@ echo showBookmarks();
 echo $htmlFooter;
 
 function init() {
+	checkInstall();
 	session_start();
 	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
+
 	$version = '';
 	foreach (explode ("\n", file_get_contents(__FILE__,false,NULL,0,60)) as $line) {
 		$version = (str_contains(strtolower($line), 'version')) ? array_slice(explode(" ", $line), -1)[0]:$version;
@@ -1807,8 +1809,6 @@ function delUsermarks($uid) {
 function htmlHeader() {
 	global $lang;
 	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:'en';
-	$hjs = hash_file('crc32','js/syncmarks.js');
-	$hcs = hash_file('crc32','css/syncmarks.css');
 	$js = (file_exists("js/syncmarks.min.js")) ? "<script src='js/syncmarks.min.js'></script>":"<script src='js/syncmarks.js'></script>";
 	$css = (file_exists("css/syncmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/syncmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/syncmarks.css'>";
 	
@@ -2793,6 +2793,65 @@ function db_query($query, $data=null) {
 
 	$db = NULL;
 	return $queryData;
+}
+
+function checkInstall() {
+	if(!file_exists('install')) return false;
+	
+	$error = 0;
+	$loaded = get_loaded_extensions();
+	$used = [
+		"date",
+		"openssl",
+		"json",
+		"session",
+		"pdo_mysql",
+		"pdo_sqlite",
+		"curl",
+		"dom",
+		"fileinfo",
+		"readline"
+	];
+
+	echo htmlHeader();
+
+	foreach ($used as $key => $extension) {
+		if(in_array($extension, $loaded)) {
+			echo "PHP Extension $extension loaded successfully</br>";
+		} else {
+			echo "ERROR: PHP Extension $extension not available</br>";
+			$error = 1;
+		}
+	}
+
+	if($error === 0) {
+		echo "Which database do you want to use?</br>
+		<select name='database' id='sdatabase'>
+			<option value=''>Choose Database</option>
+			<option value='mysql'>MySQL/MariaDB</option>
+			<option value='sqlite'>SQLite 3</option>
+		</select>";
+	
+		$mform = "<div id='mform' class='dbsetup'>
+		<input type='text' name='dbhost' id='dbhost' placeholder='IP, Hostname or Socketpath' required>
+		<input type='text' name='dbname' id='dbname' placeholder='Name of the database' required>
+		<input type='text' name='dbuser' id='dbuser' placeholder='Database Username' required>
+		<input type='password' name='dbpwd' id='dbpwd' placeholder='Database Password' required>
+		</div>
+		";
+	
+		$sform = "<div id='sform' class='dbsetup'>
+		<input type='text' name='dbpath' id='dbpath' placeholder='Path to the SQLite 3 database' required>
+		</div>
+		";
+	
+		echo $mform;
+		echo $sform;
+	
+		echo "<button id='cdb'>Check DB Access</button>";
+	}
+
+	die();
 }
 
 function checkDB() {
