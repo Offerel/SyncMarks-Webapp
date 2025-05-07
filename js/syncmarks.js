@@ -558,8 +558,8 @@ document.addEventListener("DOMContentLoaded",function() {
 		}
 
 		function testDB() {
-			console.log(this.dataset);
-			/*
+			console.log(this.dataset.database);
+			
 			let db = {};
 			db.type = this.dataset.database;
 			if(this.dataset.database === 'mysql') {
@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded",function() {
 			}
 
 			sendRequest(testDB, JSON.stringify(db,null));
-			*/
+			
 		}
 	}
 }, false);
