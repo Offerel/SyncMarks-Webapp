@@ -1672,22 +1672,15 @@ input:checked + .slider:before {
 .dbsetup {
     display: none;
 }
-/*
-#cdb {
-    display: none;
-}
-#icdb {
-    display: none;
-}
-*/
 input.valid {
     border: 2px solid;
     border-color: lightgreen;
     border-radius: 3px;
 }
-button.valid {
-	background-color: #228b22;
-	color: white;
+button.valid::before {
+	color: #3ace05;
+	content: '\2713';
+	padding: 0 5px 0 0;
 }
 button.warn {
 	background-color: orange;
@@ -1703,21 +1696,35 @@ button.invalid {
 	color: white;
 }
 .installer {
-    position: relative;
-    top: 4em;
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 0 5px;
-    font-family: sans-serif;
-    font-size: .9em;
-    background: antiquewhite;
+	position: relative;
+	top: 50%;
+	max-width: 400px;
+	margin: 0 auto;
+	padding: 0 5px;
+	font-family: sans-serif;
+	font-size: .9em;
+	background: #faebd7;
+	display: none;
+	transform: translateY(50%);
+	height: 350px;
+	border-radius: 7px;
+	box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
 }
 .next {
-    margin-top: 1em!important;
-    margin-bottom: .5em !important;
+	margin-top: 1em !important;
+	bottom: 5px;
+	position: absolute;
+	width: unset !important;
+	left: 5px;
+	right: 5px;
 }
-#php_extensions {
-    font-family: monospace;
+#php_extensions span {
+	font-family: monospace;
+	font-size: 1.5em;
+}
+.installer h3 {
+	font-size: x-large;
+	margin-bottom: .5em;
 }
 .installer button, .installer input, .installer select {
     width: 100%;
@@ -1731,11 +1738,25 @@ button.invalid {
 .installer input, .installer button {
     margin: 0;
 }
+.installer button {
+	text-transform: uppercase;
+	font-weight: 501;
+	padding: 3px 6px;
+	box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12);
+	font-family: Roboto,"Segoe UI",BlinkMacSystemFont,system-ui;
+	line-height: 20px;
+	outline: 0;
+	font-size: .97em;
+	border: none;
+}
+.installer button:not(:disabled) {
+	background-color: #2196f3;
+	color: #fff;
+	cursor: pointer;
+}
+.installer button:not(:disabled):hover {
+	background-color: #0879d9;
+}
 .bset {
     margin: .5em 0 0;
 }
-/*
-#seform {
-    display: none;
-}
-*/

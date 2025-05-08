@@ -9,11 +9,13 @@
  */
 define("CONFIG", init());
 
+if(!isset($_POST['action'])) checkInstall();
+
 $le = "";
 if(!isset($_SESSION['sauth'])) checkDB();
 $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 saveRequest();
-$lang = setLang();
+$lang = setLang(); 
 
 if(isset($_GET['reset'])) handleReset();
 if(!isset($_SESSION['sauth'])) checkLogin();
@@ -427,6 +429,9 @@ if(isset($_POST['action'])) {
 		case "initDB":
 			$response = initDB($_POST['data']);
 			break;
+		case "saveSettings":
+			$response = saveSettings($_POST['data']);
+			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
@@ -487,7 +492,6 @@ echo showBookmarks();
 echo $htmlFooter;
 
 function init() {
-	if(!isset($_POST['action'])) checkInstall();
 	session_start();
 	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
@@ -2804,7 +2808,6 @@ function db_query($query, $data=null) {
 
 function checkInstall() {
 	if(!file_exists('install')) return false;
-	
 	$loaded = get_loaded_extensions();
 	$used = [
 		"date",
@@ -2818,26 +2821,27 @@ function checkInstall() {
 		"fileinfo",
 		"readline"
 	];
-
+	$error = 0;
 	echo htmlHeader();
 
-	echo "<div id='php_extensions' class='installer'><h3>PHP Extensions</h3>";
+	echo "<div id='php_extensions' class='installer' style='display: block'><h3>PHP Extensions</h3>";
 	foreach ($used as $key => $extension) {
 		if(in_array($extension, $loaded)) {
-			echo "$extension available</br>";
+			echo "<span class='success'>$extension available</span></br>";
 			$error = ($error === 0) ? 0:1;
 		} else {
-			echo "<span class='error'>ERROR: $extension missing</span></br>";
+			echo "<span class='error'>$extension missing</span></br>";
 			$error = 1;
 		}
 	}
-	echo "<button id='nextDB' class='next'>>> DB Setup</button></div>";
-	
+
+	$enabled = ($error === 0) ? '':'disabled';
+	echo "<button id='nextDB' $enabled class='next'>>> DB Setup</button></div>";
 	echo "<div id='db_setup' class='installer'><h3>Database Setup</h3>";
 
 	echo "Which database do you want to use?</br>
 	<select name='database' id='sdatabase'>
-		<option value=''>Choose Database</option>
+		<option value='' disabled selected>Choose Database</option>
 		<option value='mysql'>MySQL/MariaDB</option>
 		<option value='sqlite'>SQLite 3</option>
 	</select>";
@@ -2858,31 +2862,32 @@ function checkInstall() {
 	echo $mform;
 	echo $sform;
 
-	echo "<div class='bset'><button id='cdb' disabled>Check DB Access</button><button id='idb' disabled>Init DB</button></div>";
-	echo "<button id='nextSetup' class='next'>>> Settings</button></div>";
+	echo "<div class='bset'><button id='cdb' disabled>Check Permissions</button><button id='idb' disabled>Init DB</button></div>";
+	echo "<button id='nextSetup' disabled class='next'>>> Settings</button></div>";
 
 	$seform = "<div id='seform' class='installer'><h3>Settings</h3>
-		<input type='text' name='lfpath' id='lfpath' placeholder='Path for Logfile' required>
-		<input type='text' name='realm' id='realm' placeholder='Realm used for login' required>
+		<input type='text' name='lfpath' id='lfpath' value='".CONFIG['logfile']."' placeholder='Path for Logfile' required>
+		<input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='Realm used for login' required>
 		<select name='loglevel' id='loglevel'>
-			<option value=''>Choose Loglevel</option>
+			<option value='' disabled>Choose Loglevel</option>
 			<option value='1'>Error</option>
-			<option value='2'>Warn</option>
+			<option value='2' selected>Warn</option>
 			<option value='4'>Parse</option>
 			<option value='8'>Notice</option>
 			<option value='9'>Debug</option>
 		</select>
-		<input type='text' name='sender' id='sender' placeholder='Sender for E-Mails' required>
-		<input type='text' name='suser' id='suser' value='admin' placeholder='Admin Username' required>
-		<input type='password' name='spwd' id='spwd' placeholder='Password for Adminuser' required>
+		<input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='Sender for E-Mails' required>
+		<input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='Admin Username' required>
+		<input type='password' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='Password for Adminuser' required>
 		<input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
 		<input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
-		<input type='text' name='expireDays' id='expireDays' value='7' placeholder='Days in future' required>
-		<button id='nextSetup' class='next'>>> Save</button>
+		<input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='Days in future' required>
+		<button id='nextSettings' class='next'>>> Save</button>
 	</div>";
 
 	echo $seform;
-
+	$_SESSION['sauth'] = CONFIG['suser'];
+	$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
@@ -2976,7 +2981,7 @@ $database = [
 	"pwd"	 => '.$pwd.',
 ];';
 
-		file_put_contents('config.test.php', $data);
+		file_put_contents('config.tmp.php', $data);
 	}
 
 	$response = [
@@ -2990,7 +2995,7 @@ $database = [
 
 function initDB($data) {
 	e_log(8, "Init database");
-	include_once "config.test.php";
+	include_once "config.tmp.php";
 
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -3034,6 +3039,34 @@ function initDB($data) {
 		"message" => $message
 	];
 	
+	return $response;
+}
+
+function saveSettings($data) {
+	$settings = json_decode($data, true);
+
+	foreach ($settings as $key => $value) {
+		$value = (is_numeric($value)) ? $value:'\''.$value.'\'';
+		$ctext = "\$$key = $value;\n";
+		file_put_contents('config.tmp.php', $ctext, FILE_APPEND);
+	}
+
+	file_put_contents('config.tmp.php', "?>", FILE_APPEND);
+
+	if (!file_exists('config.inc.php')) {
+		rename('config.tmp.php', 'config.inc.php');
+		$message = 'Config file saved as \'config.inc.php\'';
+		$code = 200;
+	} else {
+		$message = 'Config exists already. Saved as \'config.tmp.php\'';
+		$code = 250;
+	}
+
+	$response = [
+		"code" => $code,
+		"message" => $message
+	];
+
 	return $response;
 }
 ?>

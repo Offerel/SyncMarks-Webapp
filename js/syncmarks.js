@@ -518,6 +518,35 @@ document.addEventListener("DOMContentLoaded",function() {
 		let cdb = document.getElementById('cdb');
 		let idb = document.getElementById('idb');
 
+		let dbhost = document.getElementById('dbhost');
+		let dbname = document.getElementById('dbname');
+		let dbuser = document.getElementById('dbuser');
+		let dbpwd = document.getElementById('dbpwd');
+		let dbpath = document.getElementById('dbpath');
+
+		document.querySelectorAll(".next").forEach(button => {
+			button.addEventListener('click', e => {
+				
+				if(e.target.id === 'nextSettings') {
+					let data = {};
+					data.logfile = document.getElementById('lfpath').value;
+					data.realm = document.getElementById('realm').value;
+					data.logfile = document.getElementById('loglevel').value;
+					data.sender = document.getElementById('sender').value;
+					data.suser = document.getElementById('suser').value;
+					data.spwd = document.getElementById('spwd').value;
+					data.enckey = document.getElementById('enckey').value;
+					data.enchash = document.getElementById('enchash').value;
+					data.expireDays = document.getElementById('expireDays').value;
+
+					sendRequest(saveSettings, JSON.stringify(data));
+				} else {
+					e.target.parentElement.style.display = 'none';
+					e.target.parentElement.nextElementSibling.style.display = 'block';
+				}
+			});
+		});
+
 		database.addEventListener('change', () => {
 			sform.style.display = 'none';
 			mform.style.display = 'none';
@@ -526,26 +555,22 @@ document.addEventListener("DOMContentLoaded",function() {
 			if(database.value === 'mysql') {
 				mform.style.display = 'block';
 				sform.style.display = 'none';
+				dbhost.focus();
 			} else if(database.value === 'sqlite') {
 				mform.style.display = 'none';
 				sform.style.display = 'block';
+				dbpath.focus();
 			}
 		});
 
 		cdb.addEventListener('click', tDB);
 		idb.addEventListener('click', iDB);
 
-		let dbhost = document.getElementById('dbhost');
-		let dbname = document.getElementById('dbname');
-		let dbuser = document.getElementById('dbuser');
-		let dbpwd = document.getElementById('dbpwd');
-		let dbpath = document.getElementById('dbpath');
-
-		dbhost.addEventListener('input', cform);
-		dbname.addEventListener('input', cform);
-		dbuser.addEventListener('input', cform);
-		dbpwd.addEventListener('input', cform);
-		dbpath.addEventListener('input', cform);
+		dbhost.addEventListener('change', cform);
+		dbname.addEventListener('change', cform);
+		dbuser.addEventListener('change', cform);
+		dbpwd.addEventListener('change', cform);
+		dbpath.addEventListener('change', cform);
 
 		function cform() {
 			let valid = false;
@@ -811,14 +836,15 @@ function testDB(response) {
 }
 
 function initDB(response) {
-	console.log(response);
-
 	let idb = document.getElementById('idb');
+	let next = document.getElementById('nextSetup');
 
 	switch (response.code) {
 		case 200:
 			idb.classList.add('valid');
+			idb.classList.remove('warn');
 			idb.disabled = true
+			next.disabled = false;
 			break;
 		case 250:
 			idb.classList.add('warn');
@@ -828,6 +854,10 @@ function initDB(response) {
 			break;
 	}
 	
+}
+
+function saveSettings(response) {
+	console.log(response);
 }
 
 function getclients(response) {
