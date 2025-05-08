@@ -509,73 +509,6 @@ document.addEventListener("DOMContentLoaded",function() {
 			}
 		});
 	}
-
-	if(document.getElementById('sdatabase')) {
-		let database = document.getElementById('sdatabase');
-		let mform = document.getElementById('mform');
-		let sform = document.getElementById('sform');
-		let cdb = document.getElementById('cdb');
-
-		database.addEventListener('change', () => {
-			sform.style.display = 'none';
-			mform.style.display = 'none';
-			cdb.style.display = 'none';
-
-			if(database.value === 'mysql') {
-				mform.style.display = 'block';
-				sform.style.display = 'none';
-			} else if(database.value === 'sqlite') {
-				mform.style.display = 'none';
-				sform.style.display = 'block';
-			}
-		});
-
-		cdb.addEventListener('click', tDB);
-
-		let dbhost = document.getElementById('dbhost');
-		let dbname = document.getElementById('dbname');
-		let dbuser = document.getElementById('dbuser');
-		let dbpwd = document.getElementById('dbpwd');
-		let dbpath = document.getElementById('dbpath');
-
-		dbhost.addEventListener('input', cform);
-		dbname.addEventListener('input', cform);
-		dbuser.addEventListener('input', cform);
-		dbpwd.addEventListener('input', cform);
-		dbpath.addEventListener('input', cform);
-
-		function cform() {
-			let valid = false;
-
-			if(database.value === 'mysql') {
-				valid = (dbhost.value.length > 0 && dbname.value.length > 0 && dbuser.value.length > 0 && dbpwd.value.length > 0) ? true:false;
-			} else if (database.value === 'sqlite') {
-				valid = (dbpath.value.length > 0) ? true:false;
-			}
-
-		//	cdb.dataset.database = database.value;
-			cdb.style.display = (valid) ? 'block':'none';
-		}
-
-		function tDB() {
-			let db = {};
-			db.type = database.value;
-			if(database.value === 'mysql') {
-				console.log('db connection works, can insert and update');
-				db.host = dbhost.value;
-				db.name = dbname.value,
-				db.user = dbuser.value;
-				db.pwd = dbpwd.value;
-				//sendRequest(testDB, JSON.stringify(db,null));
-			} else if (database.value === 'sqlite') {
-				console.log('file ist path, is writable, file exists (after create)?');
-				db.name = dbpath.value;
-				//sendRequest(testDB);
-			}
-
-			sendRequest(testDB, JSON.stringify(db));
-		}
-	}
 }, false);
 
 window.addEventListener("keydown",function (e) {
@@ -763,10 +696,6 @@ function pwaMessage(message, state) {
 		mdiv.className = mdiv.classList.remove("show");
 	}, 10000);
 	return false;
-}
-
-function testDB(response) {
-	console.log(response);
 }
 
 function getclients(response) {

@@ -421,9 +421,6 @@ if(isset($_POST['action'])) {
 			}
 			$response = $dubData;
 			break;
-		case "testDB":
-			testDB($_POST['data']);
-			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
@@ -484,7 +481,6 @@ echo showBookmarks();
 echo $htmlFooter;
 
 function init() {
-	if(!isset($_POST['action'])) checkInstall();
 	session_start();
 	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
@@ -2799,65 +2795,6 @@ function db_query($query, $data=null) {
 	return $queryData;
 }
 
-function checkInstall() {
-	if(!file_exists('install')) return false;
-	
-	$error = 0;
-	$loaded = get_loaded_extensions();
-	$used = [
-		"date",
-		"openssl",
-		"json",
-		"session",
-		"pdo_mysql",
-		"pdo_sqlite",
-		"curl",
-		"dom",
-		"fileinfo",
-		"readline"
-	];
-
-	echo htmlHeader();
-
-	foreach ($used as $key => $extension) {
-		if(in_array($extension, $loaded)) {
-			echo "PHP Extension $extension loaded successfully</br>";
-		} else {
-			echo "ERROR: PHP Extension $extension not available</br>";
-			$error = 1;
-		}
-	}
-
-	if($error === 0) {
-		echo "Which database do you want to use?</br>
-		<select name='database' id='sdatabase'>
-			<option value=''>Choose Database</option>
-			<option value='mysql'>MySQL/MariaDB</option>
-			<option value='sqlite'>SQLite 3</option>
-		</select>";
-	
-		$mform = "<div id='mform' class='dbsetup'>
-		<input type='text' name='dbhost' id='dbhost' placeholder='IP, Hostname or Socketpath' required>
-		<input type='text' name='dbname' id='dbname' placeholder='Name of the database' required>
-		<input type='text' name='dbuser' id='dbuser' placeholder='Database Username' required>
-		<input type='password' name='dbpwd' id='dbpwd' placeholder='Database Password' required>
-		</div>
-		";
-	
-		$sform = "<div id='sform' class='dbsetup'>
-		<input type='text' name='dbpath' id='dbpath' placeholder='Path to the SQLite 3 database' required>
-		</div>
-		";
-	
-		echo $mform;
-		echo $sform;
-	
-		echo "<button id='cdb'>Check DB Access</button>";
-	}
-
-	die();
-}
-
 function checkDB() {
 	$test = db_query("SELECT `cOptions` FROM `clients` ORDER BY `lastseen` LIMIT 1,1;");
 
@@ -2895,39 +2832,5 @@ function checkDB() {
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		db_query($query);
 	}
-}
-
-function testDB($data) {
-	e_log(8, "Check database");
-	$db = json_decode($data, true);
-
-	if($db['type'] === 'sqlite') {
-		try{
-			$database = new SQLite3($db['name']);
-			$code = (is_file($db['name']) && is_writeable($db['name'])) ? 200:500;
-			$message = "Database created";
-		} catch(Exception $exception) {
-			$message = $exception->getMessage();
-			e_log(1, $message);
-			$code = 500;
-		}
-	} elseif ($db['type'] === 'mysql') {
-		CONFIG['db']['type'] = $db['type'];
-		CONFIG['db']['host'] = $db['host'];
-		CONFIG['db']['dbname'] = $db['name'];
-		CONFIG['db']['user'] = $db['user'];
-		CONFIG['db']['pwd'] = $db['pwd'];
-		
-	} else {
-		$code = 500;
-		$message = 'Stopped...';
-	}
-
-	$response = [
-		'code' => $code,
-		'message' => $message
-	];
-
-	return $response;
 }
 ?>
