@@ -2878,6 +2878,7 @@ function checkInstall() {
 		<input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
 		<input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
 		<input type='text' name='expireDays' id='expireDays' value='7' placeholder='Days in future' required>
+		<button id='nextSetup' class='next'>>> Save</button>
 	</div>";
 
 	echo $seform;
