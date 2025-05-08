@@ -422,7 +422,10 @@ if(isset($_POST['action'])) {
 			$response = $dubData;
 			break;
 		case "testDB":
-			testDB($_POST['data']);
+			$response = testDB($_POST['data']);
+			break;
+		case "initDB":
+			$response = initDB($_POST['data']);
 			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
@@ -2802,7 +2805,6 @@ function db_query($query, $data=null) {
 function checkInstall() {
 	if(!file_exists('install')) return false;
 	
-	$error = 0;
 	$loaded = get_loaded_extensions();
 	$used = [
 		"date",
@@ -2819,41 +2821,66 @@ function checkInstall() {
 
 	echo htmlHeader();
 
+	echo "<div id='php_extensions' class='installer'><h3>PHP Extensions</h3>";
 	foreach ($used as $key => $extension) {
 		if(in_array($extension, $loaded)) {
-			echo "PHP Extension $extension loaded successfully</br>";
+			echo "$extension available</br>";
+			$error = ($error === 0) ? 0:1;
 		} else {
-			echo "ERROR: PHP Extension $extension not available</br>";
+			echo "<span class='error'>ERROR: $extension missing</span></br>";
 			$error = 1;
 		}
 	}
+	echo "<button id='nextDB' class='next'>>> DB Setup</button></div>";
+	
+	echo "<div id='db_setup' class='installer'><h3>Database Setup</h3>";
 
-	if($error === 0) {
-		echo "Which database do you want to use?</br>
-		<select name='database' id='sdatabase'>
-			<option value=''>Choose Database</option>
-			<option value='mysql'>MySQL/MariaDB</option>
-			<option value='sqlite'>SQLite 3</option>
-		</select>";
-	
-		$mform = "<div id='mform' class='dbsetup'>
-		<input type='text' name='dbhost' id='dbhost' placeholder='IP, Hostname or Socketpath' required>
-		<input type='text' name='dbname' id='dbname' placeholder='Name of the database' required>
-		<input type='text' name='dbuser' id='dbuser' placeholder='Database Username' required>
-		<input type='password' name='dbpwd' id='dbpwd' placeholder='Database Password' required>
-		</div>
-		";
-	
-		$sform = "<div id='sform' class='dbsetup'>
-		<input type='text' name='dbpath' id='dbpath' placeholder='Path to the SQLite 3 database' required>
-		</div>
-		";
-	
-		echo $mform;
-		echo $sform;
-	
-		echo "<button id='cdb'>Check DB Access</button>";
-	}
+	echo "Which database do you want to use?</br>
+	<select name='database' id='sdatabase'>
+		<option value=''>Choose Database</option>
+		<option value='mysql'>MySQL/MariaDB</option>
+		<option value='sqlite'>SQLite 3</option>
+	</select>";
+
+	$mform = "<div id='mform' class='dbsetup'>
+	<input type='text' name='dbhost' id='dbhost' placeholder='IP, Hostname or Socketpath' required>
+	<input type='text' name='dbname' id='dbname' placeholder='Name of the database' required>
+	<input type='text' name='dbuser' id='dbuser' placeholder='Database Username' required>
+	<input type='password' name='dbpwd' id='dbpwd' placeholder='Database Password' required>
+	</div>
+	";
+
+	$sform = "<div id='sform' class='dbsetup'>
+	<input type='text' name='dbpath' id='dbpath' placeholder='Path to the SQLite 3 database' required>
+	</div>
+	";
+
+	echo $mform;
+	echo $sform;
+
+	echo "<div class='bset'><button id='cdb' disabled>Check DB Access</button><button id='idb' disabled>Init DB</button></div>";
+	echo "<button id='nextSetup' class='next'>>> Settings</button></div>";
+
+	$seform = "<div id='seform' class='installer'><h3>Settings</h3>
+		<input type='text' name='lfpath' id='lfpath' placeholder='Path for Logfile' required>
+		<input type='text' name='realm' id='realm' placeholder='Realm used for login' required>
+		<select name='loglevel' id='loglevel'>
+			<option value=''>Choose Loglevel</option>
+			<option value='1'>Error</option>
+			<option value='2'>Warn</option>
+			<option value='4'>Parse</option>
+			<option value='8'>Notice</option>
+			<option value='9'>Debug</option>
+		</select>
+		<input type='text' name='sender' id='sender' placeholder='Sender for E-Mails' required>
+		<input type='text' name='suser' id='suser' value='admin' placeholder='Admin Username' required>
+		<input type='password' name='spwd' id='spwd' placeholder='Password for Adminuser' required>
+		<input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
+		<input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='Random Key for encryption' required>
+		<input type='text' name='expireDays' id='expireDays' value='7' placeholder='Days in future' required>
+	</div>";
+
+	echo $seform;
 
 	die();
 }
@@ -2899,35 +2926,113 @@ function checkDB() {
 
 function testDB($data) {
 	e_log(8, "Check database");
-	$db = json_decode($data, true);
 
-	if($db['type'] === 'sqlite') {
-		try{
-			$database = new SQLite3($db['name']);
-			$code = (is_file($db['name']) && is_writeable($db['name'])) ? 200:500;
-			$message = "Database created";
-		} catch(Exception $exception) {
-			$message = $exception->getMessage();
-			e_log(1, $message);
-			$code = 500;
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+
+	$database = json_decode($data, true);
+
+	try {
+		if($database['type'] == 'mysql') {
+			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = $database['type'].':'.$hs.'='.$database['host'].';dbname='.$database['name'];
+			$db = new PDO($constr, $database['user'], $database['pwd'], $options);
+			$stmt = $db->query("SHOW GRANTS");
+
+			while ($row = $stmt->fetch()) {
+				$privs = $row['0'];
+			}
+
+			$perms = preg_match('/SELECT, INSERT, UPDATE, DELETE|ALL PRIVILEGES/', $privs) ? true:false;
+		} elseif($database['type'] == 'sqlite') {
+			$db = new PDO($database['type'].':'.$database['name'], null, null, $options);
+			$perms = (is_file($database['name']) && is_writeable($database['name'])) ? true:false;
 		}
-	} elseif ($db['type'] === 'mysql') {
-		CONFIG['db']['type'] = $db['type'];
-		CONFIG['db']['host'] = $db['host'];
-		CONFIG['db']['dbname'] = $db['name'];
-		CONFIG['db']['user'] = $db['user'];
-		CONFIG['db']['pwd'] = $db['pwd'];
-		
-	} else {
-		$code = 500;
-		$message = 'Stopped...';
+
+		$message = "Database connected";
+		$code = 200;
+	} catch (PDOException $e) {
+		$message = 'DB connection failed: '.$e->getMessage();
+		e_log(1, $message);
+		$code = 250;
+		$perms = null;
+	}
+
+	if($code === 200) {
+		$host = isset($database['host']) ? '\''.$database['host'].'\'':"null";
+		$user = isset($database['user']) ? '\''.$database['user'].'\'':"null";
+		$pwd = isset($database['pwd']) ? '\''.$database['pwd'].'\'':"null";
+
+		$data = '<?php
+$database = [
+	"type"	 => \''.$database['type'].'\',
+	"host"	 => '.$host.',
+	"dbname" => \''.$database['name'].'\',
+	"user"	 => '.$user.',
+	"pwd"	 => '.$pwd.',
+];';
+
+		file_put_contents('config.test.php', $data);
 	}
 
 	$response = [
 		'code' => $code,
-		'message' => $message
+		'message' => $message,
+		'permissions' => $perms
 	];
 
+	return $response;
+}
+
+function initDB($data) {
+	e_log(8, "Init database");
+	include_once "config.test.php";
+
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+	
+	try {
+		if($database['type'] == 'mysql') {
+			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = $database['type'].':'.$hs.'='.$database['host'].';dbname='.$database['dbname'];
+			$db = new PDO($constr, $database['user'], $database['pwd'], $options);
+		} elseif($database['type'] == 'sqlite') {
+			$db = new PDO($database['type'].':'.$database['dbname'], null, null, $options);
+		}
+
+		$code = 200;
+		$message = "DB Connected";
+	} catch (PDOException $e) {
+		$message = 'DB init connection failed: '.$e->getMessage();
+		e_log(1, $message);
+		$code = 500;
+	}
+
+	if($code === 200) {
+		$query = file_get_contents("./sql/".$database['type']."_init.sql");
+
+		try {
+			$queryData = $db->exec($query);
+			$code = 200;
+			$message = "DB init finished";
+		} catch(PDOException $e) {
+			$message = "DB init failed: ".$e->getMessage();
+			e_log(1, $message);
+			$code = 250;
+		}
+	}
+	
+	$response = [
+		"code" => $code,
+		"message" => $message
+	];
+	
 	return $response;
 }
 ?>
