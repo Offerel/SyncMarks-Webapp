@@ -98,7 +98,7 @@ fieldset {
 }
 #pwamessage.show {
   visibility: visible;
-  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s;
 }
 #pwamessage.error {
 	background-color: #f2dede;
@@ -1683,8 +1683,8 @@ button.valid::before {
 	padding: 0 5px 0 0;
 }
 button.warn {
-	background-color: orange;
-	color: orangered;
+    background-color: orange !important;
+    color: #ff4500;
 }
 input.invalid {
     border: 2px solid;
@@ -1696,58 +1696,65 @@ button.invalid {
 	color: white;
 }
 .installer {
-	position: relative;
-	top: 50%;
-	max-width: 400px;
-	margin: 0 auto;
-	padding: 0 5px;
-	font-family: sans-serif;
-	font-size: .9em;
-	background: #faebd7;
-	display: none;
-	transform: translateY(50%);
-	height: 350px;
-	border-radius: 7px;
-	box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
+    position: relative;
+    top: 50%;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 0 15px;
+    font-family: sans-serif;
+    font-size: .9em;
+    background: lightsteelblue;
+    display: none;
+    transform: translateY(50%);
+    height: 350px;
+    border-radius: 7px;
+    box-shadow: rgba(0,0,0,.2) 0 2px 4px -1px,rgba(0,0,0,.14) 0 4px 5px 0,rgba(0,0,0,.12) 0 1px 10px 0;
 }
 .next {
-	margin-top: 1em !important;
-	bottom: 5px;
-	position: absolute;
-	width: unset !important;
-	left: 5px;
-	right: 5px;
+    margin-top: 1em!important;
+    bottom: 15px;
+    position: absolute;
+    width: unset!important;
+    left: 15px;
+    right: 15px;
 }
 #php_extensions span {
-	font-family: monospace;
-	font-size: 1.5em;
+    font-family: monospace;
+    font-size: 1.5em;
+    display: contents;
+    user-select: all;
 }
 .installer h3 {
-	font-size: x-large;
-	margin-bottom: .5em;
+    font-size: x-large;
+    margin-bottom: .5em;
+    padding-top: 10px;
 }
 .installer button, .installer input, .installer select {
-    width: 100%;
+    width: 235px;
     box-sizing: border-box;
     border: 1px solid tan;
     font-size: 1.2em;
     outline: 0;
     border-radius: 5px;
-    margin: 5px 0;
 }
-.installer input, .installer button {
-    margin: 0;
+.installer button, .installer input {
+    margin: 1px 0;
 }
 .installer button {
-	text-transform: uppercase;
-	font-weight: 501;
-	padding: 3px 6px;
-	box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12);
-	font-family: Roboto,"Segoe UI",BlinkMacSystemFont,system-ui;
-	line-height: 20px;
-	outline: 0;
-	font-size: .97em;
-	border: none;
+    text-transform: uppercase;
+    font-weight: 501;
+    padding: 3px 6px;
+    box-shadow: 0 3px 1px -2px rgba(0,0,0,.2),0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12);
+    font-family: Roboto,"Segoe UI",BlinkMacSystemFont,system-ui;
+    line-height: 20px;
+    outline: 0;
+    font-size: .97em;
+    border: none;
+    width: 100%;
+}
+.installer > span {
+    margin-bottom: 10px;
+    display: inline-block;
 }
 .installer button:not(:disabled) {
 	background-color: #2196f3;
@@ -1756,6 +1763,17 @@ button.invalid {
 }
 .installer button:not(:disabled):hover {
 	background-color: #0879d9;
+}
+.installer label {
+    display: inline-block;
+    text-align: right;
+    width: 79px;
+    margin: 5px 6px 0 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.installer label:after {
+    content: ':';
 }
 .bset {
     margin: .5em 0 0;

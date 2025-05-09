@@ -531,7 +531,7 @@ document.addEventListener("DOMContentLoaded",function() {
 					let data = {};
 					data.logfile = document.getElementById('lfpath').value;
 					data.realm = document.getElementById('realm').value;
-					data.logfile = document.getElementById('loglevel').value;
+					data.loglevel = document.getElementById('loglevel').value;
 					data.sender = document.getElementById('sender').value;
 					data.suser = document.getElementById('suser').value;
 					data.spwd = document.getElementById('spwd').value;
@@ -788,7 +788,7 @@ function pwaMessage(message, state) {
 	mdiv.classList.add('show');
 	setTimeout(function(){
 		mdiv.className = mdiv.classList.remove("show");
-	}, 10000);
+	}, 7000);
 	return false;
 }
 
@@ -818,6 +818,7 @@ function testDB(response) {
 			break;
 		case 250:
 			console.warn(response.message);
+			pwaMessage(response.message, 'error');
 			idb.disabled = true;
 			if(response.message.includes("Access denied")) {
 				dbpwd.classList.add('invalid');
@@ -848,6 +849,7 @@ function initDB(response) {
 			break;
 		case 250:
 			idb.classList.add('warn');
+			pwaMessage(response.message, 'error');
 			break;
 		default:
 			idb.classList.add('invalid');
@@ -858,6 +860,20 @@ function initDB(response) {
 
 function saveSettings(response) {
 	console.log(response);
+
+	switch (response.code) {
+		case 200:
+			location.reload();
+			break;
+		case 250:
+			document.getElementById('nextSettings').classList.add('warn');
+			pwaMessage(response.message, 'error');
+			break;
+		default:
+			document.getElementById('nextSettings').classList.add('warn');
+			pwaMessage(response.message, 'error');
+			break;
+	}
 }
 
 function getclients(response) {
