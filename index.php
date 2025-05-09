@@ -2808,9 +2808,8 @@ function db_query($query, $data=null) {
 }
 
 function checkInstall() {
-	if(!file_exists('install')) return false;
-	
-	$error = 0;
+	global $htmlFooter, $lang;
+	if(file_exists('config.inc.php')) return false;
 	$loaded = get_loaded_extensions();
 	$used = [
 		"date",
@@ -2824,45 +2823,74 @@ function checkInstall() {
 		"fileinfo",
 		"readline"
 	];
-
+	$error = 0;
 	echo htmlHeader();
 
+	echo "<div id='php_extensions' class='installer' style='display: block'><h3>PHP Extensions</h3>";
 	foreach ($used as $key => $extension) {
 		if(in_array($extension, $loaded)) {
-			echo "PHP Extension $extension loaded successfully</br>";
+			echo "<span class='notice'><strong>$extension</strong> ".$lang->messages->avail."</span></br>";
+			$error = ($error === 0) ? 0:1;
 		} else {
-			echo "ERROR: PHP Extension $extension not available</br>";
+			echo "<span class='error'><strong>$extension</strong> ".$lang->messages->miss."</span></br>";
 			$error = 1;
 		}
 	}
 
-	if($error === 0) {
-		echo "Which database do you want to use?</br>
-		<select name='database' id='sdatabase'>
-			<option value=''>Choose Database</option>
-			<option value='mysql'>MySQL/MariaDB</option>
-			<option value='sqlite'>SQLite 3</option>
-		</select>";
-	
-		$mform = "<div id='mform' class='dbsetup'>
-		<input type='text' name='dbhost' id='dbhost' placeholder='IP, Hostname or Socketpath' required>
-		<input type='text' name='dbname' id='dbname' placeholder='Name of the database' required>
-		<input type='text' name='dbuser' id='dbuser' placeholder='Database Username' required>
-		<input type='password' name='dbpwd' id='dbpwd' placeholder='Database Password' required>
-		</div>
-		";
-	
-		$sform = "<div id='sform' class='dbsetup'>
-		<input type='text' name='dbpath' id='dbpath' placeholder='Path to the SQLite 3 database' required>
-		</div>
-		";
-	
-		echo $mform;
-		echo $sform;
-	
-		echo "<button id='cdb'>Check DB Access</button>";
-	}
+	$enabled = ($error === 0) ? '':'disabled';
+	echo "<button id='nextDB' $enabled class='next'>".$lang->messages->dbSetup."</button></div>";
 
+	echo "<div id='db_setup' class='installer'><h3>".$lang->messages->dbSetup."</h3><span>".$lang->messages->dbQuestion."</span></br>
+	<label for='sdatabase'>".$lang->messages->dbType."</label><select name='database' id='sdatabase'>
+		<option value='' disabled selected>".$lang->messages->dbChoose."</option>
+		<option value='mysql'>MySQL/MariaDB</option>
+		<option value='sqlite'>SQLite3</option>
+	</select>";
+
+	$mform = "<div id='mform' class='dbsetup'>
+	<label for='dbhost'>".$lang->messages->dbHostL."</label><input type='text' name='dbhost' id='dbhost' placeholder='".$lang->messages->dbHost."' required>
+	<label for='dbname'>".$lang->messages->dbNameL."</label><input type='text' name='dbname' id='dbname' placeholder='".$lang->messages->dbName."' required>
+	<label for='dbuser'>".$lang->messages->dbUserL."</label><input type='text' name='dbuser' id='dbuser' placeholder='".$lang->messages->dbUser."' required>
+	<label for='dbpwd'>".$lang->messages->password."</label><input type='password' name='dbpwd' id='dbpwd' placeholder='".$lang->messages->dbPWD."' required>
+	</div>
+	";
+
+	$sform = "<div id='sform' class='dbsetup'>
+	<label for='dbpath'>".$lang->messages->dbPath."</label><input type='text' name='dbpath' id='dbpath' placeholder='".$lang->messages->dbSQlite."' required>
+	</div>
+	";
+
+	echo $mform;
+	echo $sform;
+
+	echo "<div class='bset'><button id='cdb' disabled>".$lang->messages->dbCPerms."</button><button id='idb' disabled>".$lang->messages->dbInit."</button></div>";
+	echo "<button id='nextSetup' disabled class='next'>".$lang->actions->settings."</button></div>";
+
+	$seform = "<div id='seform' class='installer'><h3>".$lang->actions->settings."</h3>
+		<label for='lfpath'>".$lang->actions->logfile."</label><input type='text' name='lfpath' id='lfpath' value='".CONFIG['logfile']."' placeholder='".$lang->messages->pathLfile."' title='".$lang->messages->pathLfile."' required>
+		<label for='loglevel'>".$lang->messages->Loglevel."</label><select name='loglevel' id='loglevel'>
+			<option value='' disabled>".$lang->messages->chLoglevel."</option>
+			<option value='1'>Error</option>
+			<option value='2' selected>Warn</option>
+			<option value='4'>Parse</option>
+			<option value='8'>Notice</option>
+			<option value='9'>Debug</option>
+		</select>
+		<label for='realm'>".$lang->messages->realmL."</label><input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='".$lang->messages->realm."' title='".$lang->messages->realm."' required>
+		<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
+		<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
+		<label for='spwd'>".$lang->messages->password."</label><input type='password' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
+		<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
+		<label for='enchash'>".$lang->messages->hash."</label><input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
+		<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
+		<button id='nextSettings' class='next'>".$lang->actions->save."</button>
+	</div>";
+
+	echo $seform;
+	echo $htmlFooter;
+
+	$_SESSION['sauth'] = CONFIG['suser'];
+	$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
@@ -2907,33 +2935,172 @@ function checkDB() {
 
 function testDB($data) {
 	e_log(8, "Check database");
-	$db = json_decode($data, true);
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
 
-	if($db['type'] === 'sqlite') {
-		try{
-			$database = new SQLite3($db['name']);
-			$code = (is_file($db['name']) && is_writeable($db['name'])) ? 200:500;
-			$message = "Database created";
-		} catch(Exception $exception) {
-			$message = $exception->getMessage();
-			e_log(1, $message);
-			$code = 500;
+	$database = json_decode($data, true);
+
+	try {
+		if($database['type'] == 'mysql') {
+			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = $database['type'].':'.$hs.'='.$database['host'].';dbname='.$database['name'];
+			$db = new PDO($constr, $database['user'], $database['pwd'], $options);
+			$stmt = $db->query("SHOW GRANTS");
+
+			while ($row = $stmt->fetch()) {
+				$privs = $row['0'];
+			}
+
+			$perms = preg_match('/SELECT, INSERT, UPDATE, DELETE|ALL PRIVILEGES/', $privs) ? true:false;
+		} elseif($database['type'] == 'sqlite') {
+			$db = new PDO($database['type'].':'.$database['name'], null, null, $options);
+			$perms = (is_file($database['name']) && is_writeable($database['name'])) ? true:false;
 		}
-	} elseif ($db['type'] === 'mysql') {
-		CONFIG['db']['type'] = $db['type'];
-		CONFIG['db']['host'] = $db['host'];
-		CONFIG['db']['dbname'] = $db['name'];
-		CONFIG['db']['user'] = $db['user'];
-		CONFIG['db']['pwd'] = $db['pwd'];
-		
-	} else {
-		$code = 500;
-		$message = 'Stopped...';
+
+		$message = "Database connected";
+		$code = 200;
+	} catch (PDOException $e) {
+		$message = 'DB connection failed: '.$e->getMessage();
+		e_log(1, $message);
+		$code = 250;
+		$perms = null;
+	}
+
+	if($code === 200) {
+		$host = isset($database['host']) ? '\''.$database['host'].'\'':"null";
+		$user = isset($database['user']) ? '\''.$database['user'].'\'':"null";
+		$pwd = isset($database['pwd']) ? '\''.$database['pwd'].'\'':"null";
+
+		$data = '<?php
+$database = [
+	"type"	 => \''.$database['type'].'\',
+	"host"	 => '.$host.',
+	"dbname" => \''.$database['name'].'\',
+	"user"	 => '.$user.',
+	"pwd"	 => '.$pwd.',
+];
+';
+
+		file_put_contents('config.tmp.php', $data);
 	}
 
 	$response = [
 		'code' => $code,
-		'message' => $message
+		'message' => $message,
+		'permissions' => $perms
+	];
+
+	return $response;
+}
+
+function initDB($data) {
+	e_log(8, "Init database");
+	include_once "config.tmp.php";
+
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+	
+	try {
+		if($database['type'] == 'mysql') {
+			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = $database['type'].':'.$hs.'='.$database['host'].';dbname='.$database['dbname'];
+			$db = new PDO($constr, $database['user'], $database['pwd'], $options);
+		} elseif($database['type'] == 'sqlite') {
+			$db = new PDO($database['type'].':'.$database['dbname'], null, null, $options);
+		}
+
+		$code = 200;
+		$message = "DB Connected";
+	} catch (PDOException $e) {
+		$message = 'DB init connection failed: '.$e->getMessage();
+		e_log(1, $message);
+		$code = 500;
+	}
+
+	if($code === 200) {
+		$query = file_get_contents("./sql/".$database['type']."_init.sql");
+
+		try {
+			$queryData = $db->exec($query);
+			$code = 200;
+			$message = "DB init finished";
+		} catch(PDOException $e) {
+			$message = "DB init failed: ".$e->getMessage();
+			e_log(1, $message);
+			$code = 250;
+		}
+	}
+	
+	$response = [
+		"code" => $code,
+		"message" => $message
+	];
+	
+	return $response;
+}
+
+function saveSettings($data) {
+	$settings = json_decode($data, true);
+
+	foreach ($settings as $key => $value) {
+		$value = (is_numeric($value)) ? $value:'\''.$value.'\'';
+		$ctext = "\$$key = $value;\n";
+		file_put_contents('config.tmp.php', $ctext, FILE_APPEND);
+	}
+	
+	file_put_contents('config.tmp.php', "?>", FILE_APPEND);
+	
+	$bmAdded = round(microtime(true) * 1000);
+	$userPWD = password_hash($settings['spwd'], PASSWORD_DEFAULT);
+	include_once "config.tmp.php";
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+	
+	try {
+		if($database['type'] == 'mysql') {
+			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = $database['type'].':'.$hs.'='.$database['host'].';dbname='.$database['dbname'];
+			$db = new PDO($constr, $database['user'], $database['pwd'], $options);
+		} elseif($database['type'] == 'sqlite') {
+			$db = new PDO($database['type'].':'.$database['dbname'], null, null, $options);
+		}
+		
+		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".$settings['suser']."',2,'$userPWD');";
+		$res = $db->exec($query);
+		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
+		$db->exec($query);
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
+		$db->exec($query);
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
+		$db->exec($query);
+		
+	} catch (PDOException $e) {
+		$message = 'DB connection failed: '.$e->getMessage();
+		e_log(1, $message);
+	}
+	
+	if (!file_exists('config.inc.php')) {
+		rename('config.tmp.php', 'config.inc.php');
+		$message = 'Config file saved as \'config.inc.php\'';
+		$code = 200;
+		logout();
+	} else {
+		$message = 'Config exists already. Saved as \'config.tmp.php\'';
+		$code = 250;
+	}
+
+	$response = [
+		"code" => $code,
+		"message" => $message
 	];
 
 	return $response;

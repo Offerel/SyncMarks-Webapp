@@ -12,6 +12,7 @@ let db, translation;
 let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded",function() {
+
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
