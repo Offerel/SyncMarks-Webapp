@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 2.0.5
+ * @version 2.1.0
  * @author Offerel
  * @copyright Copyright (c) 2025, Offerel
  * @license GNU General Public License, version 3
@@ -9,10 +9,9 @@
 const dbName = "syncmarks";
 const dbStoreName = "bookmarks";
 let db, translation;
-//let dbRequest = indexedDB.open(dbName);
+let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded",function() {
-	/*
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
@@ -70,7 +69,7 @@ document.addEventListener("DOMContentLoaded",function() {
 	navigator.serviceWorker.addEventListener("controllerchange", event => {
 		//confirm('sw changed');
 	});
-	*/
+
 	setLanguage(document.documentElement.lang);
 
 	if(window.location.href.slice(-1) === '?') window.history.replaceState({}, null, window.location.href.substring(0, window.location.href.length - 1));

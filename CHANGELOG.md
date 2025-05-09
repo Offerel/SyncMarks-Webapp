@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.1.0
+- Added install wizard
+
 ## 2.0.5
 - Fix change user
 - Fix tabSync
