@@ -9,9 +9,10 @@
 const dbName = "syncmarks";
 const dbStoreName = "bookmarks";
 let db, translation;
-let dbRequest = indexedDB.open(dbName);
+//let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded",function() {
+	/*
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
@@ -69,7 +70,7 @@ document.addEventListener("DOMContentLoaded",function() {
 	navigator.serviceWorker.addEventListener("controllerchange", event => {
 		//confirm('sw changed');
 	});
-
+	*/
 	setLanguage(document.documentElement.lang);
 
 	if(window.location.href.slice(-1) === '?') window.history.replaceState({}, null, window.location.href.substring(0, window.location.href.length - 1));
@@ -509,6 +510,99 @@ document.addEventListener("DOMContentLoaded",function() {
 			}
 		});
 	}
+
+	if(document.getElementById('sdatabase')) {
+		let database = document.getElementById('sdatabase');
+		let mform = document.getElementById('mform');
+		let sform = document.getElementById('sform');
+		let cdb = document.getElementById('cdb');
+		let idb = document.getElementById('idb');
+
+		let dbhost = document.getElementById('dbhost');
+		let dbname = document.getElementById('dbname');
+		let dbuser = document.getElementById('dbuser');
+		let dbpwd = document.getElementById('dbpwd');
+		let dbpath = document.getElementById('dbpath');
+
+		document.querySelectorAll(".next").forEach(button => {
+			button.addEventListener('click', e => {
+				
+				if(e.target.id === 'nextSettings') {
+					let data = {};
+					data.logfile = document.getElementById('lfpath').value;
+					data.realm = document.getElementById('realm').value;
+					data.loglevel = document.getElementById('loglevel').value;
+					data.sender = document.getElementById('sender').value;
+					data.suser = document.getElementById('suser').value;
+					data.spwd = document.getElementById('spwd').value;
+					data.enckey = document.getElementById('enckey').value;
+					data.enchash = document.getElementById('enchash').value;
+					data.expireDays = document.getElementById('expireDays').value;
+
+					sendRequest(saveSettings, JSON.stringify(data));
+				} else {
+					e.target.parentElement.style.display = 'none';
+					e.target.parentElement.nextElementSibling.style.display = 'block';
+				}
+			});
+		});
+
+		database.addEventListener('change', () => {
+			sform.style.display = 'none';
+			mform.style.display = 'none';
+			cdb.disabled = true;
+
+			if(database.value === 'mysql') {
+				mform.style.display = 'block';
+				sform.style.display = 'none';
+				dbhost.focus();
+			} else if(database.value === 'sqlite') {
+				mform.style.display = 'none';
+				sform.style.display = 'block';
+				dbpath.focus();
+			}
+		});
+
+		cdb.addEventListener('click', tDB);
+		idb.addEventListener('click', iDB);
+
+		dbhost.addEventListener('change', cform);
+		dbname.addEventListener('change', cform);
+		dbuser.addEventListener('change', cform);
+		dbpwd.addEventListener('change', cform);
+		dbpath.addEventListener('change', cform);
+
+		function cform() {
+			let valid = false;
+
+			if(database.value === 'mysql') {
+				valid = (dbhost.value.length > 0 && dbname.value.length > 0 && dbuser.value.length > 0 && dbpwd.value.length > 0) ? true:false;
+			} else if (database.value === 'sqlite') {
+				valid = (dbpath.value.length > 0) ? true:false;
+			}
+
+			cdb.disabled = (valid) ? false:true;
+		}
+
+		function tDB() {
+			let db = {};
+			db.type = database.value;
+			if(database.value === 'mysql') {
+				db.host = dbhost.value;
+				db.name = dbname.value,
+				db.user = dbuser.value;
+				db.pwd = dbpwd.value;
+			} else if (database.value === 'sqlite') {
+				db.name = dbpath.value;
+			}
+
+			sendRequest(testDB, JSON.stringify(db));
+		}
+
+		function iDB() {
+			sendRequest(initDB);
+		}
+	}
 }, false);
 
 window.addEventListener("keydown",function (e) {
@@ -667,7 +761,7 @@ function sendRequest(action, data = null, addendum = null) {
 
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
-			if (xhr.status === 200) {
+			if (xhr.status > 199 && xhr.status < 299) {
 				action(xhr.response, addendum);
 			} else {
 				let message = `Error ${xhr.status}: ${xhr.statusText}`;
@@ -694,8 +788,92 @@ function pwaMessage(message, state) {
 	mdiv.classList.add('show');
 	setTimeout(function(){
 		mdiv.className = mdiv.classList.remove("show");
-	}, 10000);
+	}, 7000);
 	return false;
+}
+
+function testDB(response) {
+	let dbhost = document.getElementById('dbhost');
+	let dbname = document.getElementById('dbname');
+	let dbuser = document.getElementById('dbuser');
+	let dbpwd = document.getElementById('dbpwd');
+	let dbpath = document.getElementById('dbpath');
+	let cdb = document.getElementById('cdb');
+	let idb = document.getElementById('idb');
+
+	switch (response.code) {
+		case 200:
+			dbhost.classList.add('valid');
+			dbname.classList.add('valid');
+			dbuser.classList.add('valid');
+			dbpwd.classList.add('valid');
+			dbpath.classList.add('valid');
+			cdb.classList.add('valid');
+			cdb.disabled = true;
+			idb.disabled = false;
+
+			dbpwd.classList.remove('invalid');
+			dbuser.classList.remove('invalid');
+			cdb.classList.remove('invalid');
+			break;
+		case 250:
+			console.warn(response.message);
+			pwaMessage(response.message, 'error');
+			idb.disabled = true;
+			if(response.message.includes("Access denied")) {
+				dbpwd.classList.add('invalid');
+				dbuser.classList.add('invalid');
+				cdb.classList.add('invalid');
+
+				dbname.classList.add('valid');
+				dbpath.classList.add('valid');
+			}
+			break
+		default:
+			console.error(response.message);
+			idb.disabled = true;
+			break;
+	}
+}
+
+function initDB(response) {
+	let idb = document.getElementById('idb');
+	let next = document.getElementById('nextSetup');
+
+	switch (response.code) {
+		case 200:
+			idb.classList.add('valid');
+			idb.classList.remove('warn');
+			idb.disabled = true
+			next.disabled = false;
+			break;
+		case 250:
+			idb.classList.add('warn');
+			pwaMessage(response.message, 'error');
+			break;
+		default:
+			idb.classList.add('invalid');
+			break;
+	}
+	
+}
+
+function saveSettings(response) {
+	console.log(response);
+
+	switch (response.code) {
+		case 200:
+			location.reload();
+			break;
+		case 250:
+			document.getElementById('nextSettings').classList.add('warn');
+			pwaMessage(response.message, 'error');
+			break;
+		default:
+			document.getElementById('nextSettings').classList.add('warn');
+			pwaMessage(response.message, 'error');
+			break;
+	}
 }
 
 function getclients(response) {
@@ -1531,4 +1709,15 @@ function delbm(e) {
 		document.querySelector('body').appendChild(loader);
 	}
 	hideMenu();
+}
+
+function grndm(length) {
+	const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = ' ';
+    const charactersLength = characters.length;
+    for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    return result;
 }
