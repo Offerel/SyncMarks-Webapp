@@ -3005,8 +3005,8 @@ function initDB($data) {
 
 function saveSettings($data) {
 	$settings = json_decode($data, true);
+	$conf = implode('', array_slice(file('config.tmp.php'),0,8))."\n";
 
-	$conf = file_get_contents('config.tmp.php')."\n";
 	foreach ($settings as $key => $value) {
 		$value = (is_numeric($value)) ? $value:'\''.$value.'\'';
 		$ctext = "\$$key = $value;\n";
@@ -3014,7 +3014,7 @@ function saveSettings($data) {
 	}
 	$conf.= "?>";
 	file_put_contents('config.tmp.php', $conf);
-	
+	die();
 	$bmAdded = round(microtime(true) * 1000);
 	$userPWD = password_hash($settings['spwd'], PASSWORD_DEFAULT);
 	include_once "config.tmp.php";
