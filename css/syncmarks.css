@@ -1696,19 +1696,19 @@ button.invalid {
 	color: white;
 }
 .installer {
-    position: relative;
-    top: 50%;
-    max-width: 320px;
-    margin: 0 auto;
-    padding: 0 15px;
-    font-family: sans-serif;
-    font-size: .9em;
-    background: lightsteelblue;
-    display: none;
-    transform: translateY(50%);
-    height: 350px;
-    border-radius: 7px;
-    box-shadow: rgba(0,0,0,.2) 0 2px 4px -1px,rgba(0,0,0,.14) 0 4px 5px 0,rgba(0,0,0,.12) 0 1px 10px 0;
+	position: relative;
+	top: 50%;
+	max-width: 320px;
+	margin: 0 auto;
+	padding: 0 15px;
+	font-family: sans-serif;
+	font-size: .9em;
+	background: #b0c4de;
+	display: none;
+	transform: translateY(50%);
+	height: 400px;
+	border-radius: 7px;
+	box-shadow: rgba(0,0,0,.2) 0 2px 4px -1px,rgba(0,0,0,.14) 0 4px 5px 0,rgba(0,0,0,.12) 0 1px 10px 0;
 }
 .next {
     margin-top: 1em!important;
@@ -1725,9 +1725,9 @@ button.invalid {
     user-select: all;
 }
 .installer h3 {
-    font-size: x-large;
-    margin-bottom: .5em;
-    padding-top: 10px;
+	font-size: x-large;
+	margin-bottom: .2em;
+	padding-top: 10px;
 }
 .installer button, .installer input, .installer select {
     width: 235px;

@@ -13,8 +13,6 @@ $htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></htm
 if(!isset($_POST['action'])) checkInstall();
 
 $le = "";
-if(!isset($_SESSION['sauth'])) checkDB();
-
 saveRequest();
 
 if(isset($_GET['reset'])) handleReset();
@@ -2894,45 +2892,6 @@ function checkInstall() {
 	die();
 }
 
-function checkDB() {
-	$test = db_query("SELECT `cOptions` FROM `clients` ORDER BY `lastseen` LIMIT 1,1;");
-
-	if(!is_array($test)) {
-		e_log(2,"Database not ready. Initialize database now");
-		if(CONFIG['db']['type'] == "sqlite") {
-			if(!file_exists(CONFIG['db']['dbname'])) {
-				if(!file_exists(dirname(CONFIG['db']['dbname']))) {
-					if(!mkdir(dirname(CONFIG['db']['dbname']),0777,true)) {
-						$message = "Directory for database (".dirname(CONFIG['db']['dbname']).") couldn't created, please check privileges";
-						e_log(1,$message);
-						die($message);
-					} else {
-						e_log(8,"Directory for database created (".dirname(CONFIG['db']['dbname'])."), initialize database now");
-						db_query(file_get_contents("./sql/sqlite_init.sql"));
-					}
-				}
-			} else {
-				e_log(8,"Initialise new SQLite database");
-				db_query(file_get_contents("./sql/sqlite_init.sql"));
-			}
-		} elseif (CONFIG['db']['type'] == "mysql") {
-			e_log(8,"Initialise new MySQL database");
-			db_query(file_get_contents("./sql/mysql_init.sql"));
-		}
-
-		$bmAdded = round(microtime(true) * 1000);
-		$userPWD = password_hash(CONFIG['spwd'], PASSWORD_DEFAULT);
-		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".CONFIG['suser']."',2,'$userPWD');";		
-		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
-		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
-		db_query($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
-		db_query($query);
-	}
-}
-
 function testDB($data) {
 	e_log(8, "Check database");
 	$options = [
@@ -2970,19 +2929,18 @@ function testDB($data) {
 	}
 
 	if($code === 200) {
+		$type = $database['type'];
 		$host = isset($database['host']) ? '\''.$database['host'].'\'':"null";
+		$name = $database['name'];
 		$user = isset($database['user']) ? '\''.$database['user'].'\'':"null";
 		$pwd = isset($database['pwd']) ? '\''.$database['pwd'].'\'':"null";
 
-		$data = '<?php
-$database = [
-	"type"	 => \''.$database['type'].'\',
-	"host"	 => '.$host.',
-	"dbname" => \''.$database['name'].'\',
-	"user"	 => '.$user.',
-	"pwd"	 => '.$pwd.',
-];
-';
+		$data = "<?php\n\$database = [\n";
+		$data.= "\t\"type\"\t => '$type',\n";
+		$data.= "\t\"host\"\t => $host,\n";
+		$data.= "\t\"dbname\" => '$name',\n";
+		$data.= "\t\"user\"\t => $host,\n";
+		$data.= "\t\"pwd\"\t => $host,\n];";
 
 		file_put_contents('config.tmp.php', $data);
 	}
@@ -3048,13 +3006,14 @@ function initDB($data) {
 function saveSettings($data) {
 	$settings = json_decode($data, true);
 
+	$conf = file_get_contents('config.tmp.php')."\n";
 	foreach ($settings as $key => $value) {
 		$value = (is_numeric($value)) ? $value:'\''.$value.'\'';
 		$ctext = "\$$key = $value;\n";
-		file_put_contents('config.tmp.php', $ctext, FILE_APPEND);
+		$conf.= $ctext;
 	}
-	
-	file_put_contents('config.tmp.php', "?>", FILE_APPEND);
+	$conf.= "?>";
+	file_put_contents('config.tmp.php', $conf);
 	
 	$bmAdded = round(microtime(true) * 1000);
 	$userPWD = password_hash($settings['spwd'], PASSWORD_DEFAULT);
@@ -3087,7 +3046,7 @@ function saveSettings($data) {
 		$message = 'DB connection failed: '.$e->getMessage();
 		e_log(1, $message);
 	}
-	
+
 	if (!file_exists('config.inc.php')) {
 		rename('config.tmp.php', 'config.inc.php');
 		$message = 'Config file saved as \'config.inc.php\'';
