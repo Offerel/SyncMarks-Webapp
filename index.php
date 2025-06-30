@@ -128,6 +128,9 @@ if(isset($_POST['action'])) {
 		case "bexport":
 			$response = bookmarkExport($ctype, $time, $data, $client);
 			break;
+		case "bimport":
+			$response = (bimport($data, $uid));
+			break;
 		case "addmark":
 			$bookmark = json_decode($_POST['data'], true);
 			$response = bookmarkAdd($bookmark, $time, $ctype, $client, $add);

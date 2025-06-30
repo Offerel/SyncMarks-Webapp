@@ -8,6 +8,7 @@
 - Fix mdel
 - Fix password change
 - Fix Bookmark identify
+- Fix import
 
 ## 2.0.4
 - Fix delete bookmark
