@@ -93,6 +93,9 @@ if (isset($_GET['api'])) {
 				case "tabsSend":
 					$response = tabsSend($data, $uid, $time);
 					break;
+				case "bmRemove":
+					$response = delMark($data);
+					break;
 				default:
 					$response['message'] = "Undefined action '$action'";
 					$response['code'] = 501;
@@ -1235,7 +1238,7 @@ function delMark($bmID) {
 	$uid = $_SESSION['sud']['userID'];
 	$res = [];
 	e_log(8,"Delete bookmark(s) $bms");
-
+	
 	foreach ($bmID as $key => $value) {
 		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL`, `bmSort` FROM `bookmarks` WHERE `bmID` = '$value' AND `userID` = $uid;";
 		$dData = db_query($query)[0];

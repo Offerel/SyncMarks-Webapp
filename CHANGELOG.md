@@ -1,6 +1,7 @@
 # ChangeLog
 ## 2.1.0
 - Added install wizard
+- Del bookmarks from Popup
 
 ## 2.0.5
 - Fix change user
