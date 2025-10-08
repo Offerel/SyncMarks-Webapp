@@ -1,0 +1,15 @@
+{
+    "actions": {
+        "notifications": "Bildirimler",
+        "users": "Kullanıcılar",
+        "refresh": "Yenile",
+        "autorefresh": "Otomatik yenile",
+        "clear": "Temizle",
+        "edit": "Düzenle",
+        "create": "Oluştur",
+        "move": "Taşı",
+        "delete": "Sil",
+        "nfolder": "Yeni klasör",
+        "showClients": "İstemciler"
+    }
+}
