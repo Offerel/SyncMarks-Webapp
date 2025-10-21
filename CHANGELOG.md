@@ -1,7 +1,8 @@
 # ChangeLog
 ## 2.1.0
 - Added install wizard
-- Del bookmarks from Popup
+- Remove bookmarks from Popup
+- Place "Bookmarks Menu" underneath "Other Bookmarks"
 
 ## 2.0.5
 - Fix change user

@@ -2356,11 +2356,14 @@ function parseJSON($arr) {
 
 function getBookmarks() {
 	e_log(8,"Get bookmarks");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
+	//$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `bmID` <> 'menu________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
 		$element['bmTitle'] = html_entity_decode($element['bmTitle'],ENT_QUOTES,'UTF-8');
 		$element['bmTitle'] = ($element['bmTitle'] == "") ? 'unknown title':$element['bmTitle'];
+
+		if($element['bmParentID'] === 'menu________') $element['bmParentID'] = 'unfiled_____';
 	}
 	return $userMarks;
 }
