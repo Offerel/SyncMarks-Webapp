@@ -2356,7 +2356,6 @@ function parseJSON($arr) {
 
 function getBookmarks() {
 	e_log(8,"Get bookmarks");
-	//$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
 	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `bmID` <> 'menu________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
 	$userMarks = db_query($query);
 	foreach($userMarks as &$element) {
