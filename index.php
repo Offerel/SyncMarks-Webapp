@@ -19,6 +19,7 @@ if(isset($_GET['reset'])) handleReset();
 if(!isset($_SESSION['sauth'])) checkLogin();
 
 $lang = setLang();
+backupBookmarks(0);
 
 if (isset($_GET['api'])) {
 	$jdata = json_decode(file_get_contents('php://input'), true);
@@ -436,6 +437,9 @@ if(isset($_POST['action'])) {
 		case "saveSettings":
 			$response = saveSettings($_POST['data']);
 			break;
+		case "gFile":
+			$response = gFile($_POST['data']);
+			break;
 		default:
 			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
@@ -495,6 +499,15 @@ echo htmlForms();
 echo showBookmarks();
 echo $htmlFooter;
 
+function gFile($data) {
+	$dir = 'backups/'.$_SESSION['sud']['userID'];
+	$response = [
+		'name' => 'bookmarks_'.date('d-m-Y', str_replace('.json', '', str_replace('bookmarks_backup_', '', $data))).'.json',
+		'file' => file_get_contents("$dir/$data")
+	];
+	return $response;
+}
+
 function init() {
 	session_start();
 	include_once "config.inc.php.dist";
@@ -524,7 +537,8 @@ function init() {
 		'enckey'	=> $enckey,
 		'enchash'	=> $enchash,
 		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
-		'version'	=> $version
+		'version'	=> $version,
+		'backup'	=> $backup
 	];
 
 	class language {
@@ -781,6 +795,45 @@ function tabsSend($jtabs, $user, $added) {
 	return $response;
 }
 
+function backupBookmarks($manual) {
+	e_log(8,"Start bookmark backup");
+
+	$dir = 'backups/'.$_SESSION['sud']['userID'];
+
+	if(CONFIG['backup'] !== 1) {
+		e_log(2,"backups disabled");
+		return false;
+	}
+
+	if(!is_dir($dir)) {
+		if(mkdir($dir, 0700, true) === false) {
+			e_log(1, "Could not create backup dir, check privileges");
+			return false;
+		}
+	}
+
+	$files = glob($dir . "/bookmarks_backup_*.json");
+	natsort($files);
+	$files = array_reverse($files);
+
+	$newest = str_replace('.json','',substr(basename($files[0]), 17));
+
+	if($manual === 0 && (date('Ymd') === date('Ymd', $newest))) {
+		e_log(8, "Cancel backup, already done today");
+		return false;
+	} else {
+		$barr = getBookmarks();
+		$bookmarks = json_encode($barr);
+		$filename = 'bookmarks_backup_'.time().'.json';
+		file_put_contents($dir.'/'.$filename, $bookmarks);
+
+		foreach ($files as $key => $value) {
+			if($key >= 10) unlink($value);
+		}
+		return $barr;
+	}
+}
+
 function clientGetOptions($client, $uid) {
 	e_log(8, "Request of client settings");
 	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = $uid AND `cOptions` IS NOT NULL AND `cid` != '$client';";
@@ -957,7 +1010,7 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			break;
 		case "json":
 			e_log(8,"Exporting in JSON format");
-			$bookmarks = getBookmarks();
+			$bookmarks = backupBookmarks(1);
 			saveDebugJSON("export", $bookmarks);
 			
 			if($client != "0") {
@@ -967,7 +1020,23 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			} else {
 				e_log(8,"Export bookmarks as Browser Download");
 			}
+
+			$dir = 'backups/'.$_SESSION['sud']['userID'];
+			$ftable = "<ul>";
+			$farr = glob($dir . "/bookmarks_backup_*.json");
+			natsort($farr);
+			$farr = array_reverse($farr);
+			foreach ($farr as $key => $value) {
+				$fn = basename($value);
+				$str = str_replace('bookmarks_backup_','', $fn);
+				$str = str_replace('.json','', $str);
+				$date = date('D. d.m.Y G:i:s', $str);
+				$ftable.= "<li><a href='#' class='bfile' data-file='$fn'>$date</a></li>";
+			}
+			$ftable.= "</ul>";
+
 			$response['bookmarks'] = $bookmarks;
+			$response['ftable'] = $ftable;
 			break;
 		default:
 			$msg = "Unknown export format, exit process";
@@ -1939,6 +2008,20 @@ function htmlForms() {
 		</form>
 	</div>";
 
+	$dir = 'backups/'.$_SESSION['sud']['userID'];
+	$ftable = $lang->messages->backuplist."<ul>";
+	$farr = glob($dir . "/bookmarks_backup_*.json");
+	natsort($farr);
+	$farr = array_reverse($farr);
+	foreach ($farr as $key => $value) {
+		$fn = basename($value);
+		$str = str_replace('bookmarks_backup_','', $fn);
+		$str = str_replace('.json','', $str);
+		$date = date('D. d.m.Y G:i:s', $str);
+		$ftable.= "<li><a href='#' class='bfile' data-file='$fn'>$date</a></li>";
+	}
+	$ftable.= "</ul>";
+
 	$expimpform = "
 	<div id='expimpform' class='mbmdialog'>
 		<span class='dclose'>&times;</span>
@@ -1950,6 +2033,7 @@ function htmlForms() {
 			<label class='fcontainer' for='ejson'>JSON<input type='radio' id='ejson' name='eiformat' value='json' checked /><span class='checkmark'></span></label>
 			<label class='fcontainer' for='ehtml'>HTML<input type='radio' id='ehtml' name='eiformat' value='html' /><span class='checkmark'></span></label>
 			</fieldset>
+			<div id='backuplist'>$ftable</div>
 			<div class='dbutton'>
 				<button name='bmf_ex' id='bmf_ex' value='Export'>".$lang->actions->export."</button>
 				<button name='bmf_im' id='bmf_im' value='Import'>".$lang->actions->import."</button>

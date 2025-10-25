@@ -15,4 +15,5 @@ $spwd = 'mypass'; // Used for firstime login
 $enckey = 'Cu1815ZRtooY9SYX'; // random key for encryption
 $enchash = '2EOkV9DPTndhcAU7'; // random hash for encryption
 $expireDays = 7; // Login expires x days in future, defaults to 7
+$backup = 1; // Enable / Disable user backups
 ?>

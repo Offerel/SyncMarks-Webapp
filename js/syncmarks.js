@@ -12,7 +12,6 @@ let db, translation;
 let dbRequest = indexedDB.open(dbName);
 
 document.addEventListener("DOMContentLoaded",function() {
-
 	if ("serviceWorker" in navigator) {
 		try {
 			const registration = navigator.serviceWorker.register("smsw.js");
@@ -102,6 +101,13 @@ document.addEventListener("DOMContentLoaded",function() {
 	document.querySelectorAll('.dclose').forEach(e => {
 		e.addEventListener('click', el => {
 			hideMenu();
+		});
+	});
+
+	document.querySelectorAll('.bfile').forEach(e => {
+		e.addEventListener('click', el => {
+			el.preventDefault();
+			sendRequest(gFile, el.target.dataset.file);
 		});
 	});
 
@@ -792,6 +798,16 @@ function pwaMessage(message, state) {
 	return false;
 }
 
+function gFile(response) {
+	let link = document.createElement('a');
+	
+	let blob = new Blob([response.file], { type: 'application/json' });
+	link.href = window.URL.createObjectURL(blob);
+	
+	link.download = response.name;
+	link.click();
+}
+
 function testDB(response) {
 	let dbhost = document.getElementById('dbhost');
 	let dbname = document.getElementById('dbname');
@@ -1221,6 +1237,18 @@ function bexport(response) {
 	
 	link.download = "bookmarks_" + today;
 	link.click();
+
+	let ul = document.getElementById('backuplist').children[0];
+	let html =  new DOMParser().parseFromString(response.ftable, "text/html");
+	ul.replaceWith(html.children[0].children[1].children[0]);
+
+	document.querySelectorAll('.bfile').forEach(e => {
+		e.addEventListener('click', el => {
+			el.preventDefault();
+			sendRequest(gFile, el.target.dataset.file);
+		});
+	});
+
 	console.info("Export successfully, please look in your download folder.");
 	pwaMessage(translation.messages.exportOK, 'success');
 	hideMenu();

@@ -120,6 +120,7 @@
 		"key":"Key",
 		"hash":"Hash",
 		"futDays":"Days in future",
-		"expire":"Login Days"
+		"expire":"Login Days",
+		"backuplist": "List of the most recent automatically created backups. Older Backups will be automatically deleted."
 	}
 }

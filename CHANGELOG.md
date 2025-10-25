@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.1.1
+- Create automatic backups
+
 ## 2.1.0
 - Added install wizard
 - Remove bookmarks from Popup

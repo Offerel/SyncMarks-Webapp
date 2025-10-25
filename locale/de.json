@@ -119,6 +119,7 @@
         "dbUser": "Datenbank Benutzername",
         "realm": "Für die Anmeldung benutzter Realm",
         "dbHostL": "DB Host",
-        "dbCPerms": "Berechtigungen prüfen"
+        "dbCPerms": "Berechtigungen prüfen",
+        "backuplist": "Liste der zuletzt automatisch erstellten Backups. Ältere Backups werden automatisch gelöscht."
     }
 }
