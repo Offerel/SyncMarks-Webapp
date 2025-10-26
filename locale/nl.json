@@ -119,6 +119,7 @@
         "miss": "ontbrekend",
         "dbSQlite": "Locatie van de SQLite3-databank",
         "dbInit": "Databank opzetten",
-        "avail": "beschikbaar"
+        "avail": "beschikbaar",
+        "backuplist": "Een lijst met de recentste reservekopieën. Oudere kopieën worden automatisch verwijderd."
     }
 }
