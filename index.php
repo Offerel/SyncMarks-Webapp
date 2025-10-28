@@ -795,7 +795,7 @@ function tabsSend($jtabs, $user, $added) {
 	return $response;
 }
 
-function backupBookmarks($manual) {
+function backupBookmarks($mode, $c = 0) {
 	e_log(8,"Start bookmark backup");
 
 	$dir = 'backups/'.$_SESSION['sud']['userID'];
@@ -818,7 +818,7 @@ function backupBookmarks($manual) {
 
 	$newest = str_replace('.json','',substr(basename($files[0]), 17));
 
-	if($manual === 0 && (date('Ymd') === date('Ymd', $newest))) {
+	if($mode === 0 && $c === 0 && (date('Ymd') === date('Ymd', $newest))) {
 		e_log(8, "Cancel backup, already done today");
 		return false;
 	} else {
@@ -1010,7 +1010,7 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			break;
 		case "json":
 			e_log(8,"Exporting in JSON format");
-			$bookmarks = backupBookmarks(1);
+			$bookmarks = backupBookmarks(1, $client);
 			saveDebugJSON("export", $bookmarks);
 			
 			if($client != "0") {

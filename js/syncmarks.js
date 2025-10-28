@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded",function() {
 		if (event.data.clientOffline) {
 			if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
 			console.warn(event.data.clientOffline);
-			pwaMessage(event.data.clientOffline, 'warn');
+			//pwaMessage(event.data.clientOffline, 'warn');
 			let openDBRequest = indexedDB.open(dbName);
 			openDBRequest.onsuccess = (event) => {
 				let db = event.target.result;
