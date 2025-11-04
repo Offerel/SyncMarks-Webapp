@@ -46,7 +46,7 @@ if (isset($_GET['api'])) {
 					$response = clientRename($client, $data, $uid);
 					if(!is_array($response)) die($response);
 					break;
-				case "clientInfo":					
+				case "clientInfo":
 					$response = clientInfo($client, $uid);
 					break;
 				case "clientList":
@@ -55,10 +55,10 @@ if (isset($_GET['api'])) {
 				case "clientRemove":
 					$response = clientRemove($client, $data);
 					break;
-				case "clientSendOptions":					
+				case "clientSendOptions":
 					$response = clientSaveOptions($client, $data, $uid);
 					break;
-				case "clientGetOptions":					
+				case "clientGetOptions":
 					$response = clientGetOptions($client, $uid);
 					break;
 				case "pushURL":
@@ -105,7 +105,7 @@ if (isset($_GET['api'])) {
 	} else {
 		e_log(1, "JSON error: ".$jerrmsg);
 		saveDebugJSON("incom_jerr", $jdata);
-		
+
 		$response['message'] = 'Invalid JSON. '.$jerrmsg;
 		$response['code'] = 500;
 	}
@@ -220,7 +220,7 @@ if(isset($_POST['action'])) {
 			die();
 			break;
 		case "muedt":
-			if($_SESSION['sud']['userType'] < 2) {	
+			if($_SESSION['sud']['userType'] < 2) {
 				e_log(1,"Stop user change, no sufficient privileges.");
 				die();
 			}
@@ -302,146 +302,146 @@ if(isset($_POST['action'])) {
 					e_log(1,$response);
 			}
 			break;
-		case "mlog":
-			if($_SESSION['sud']['userType'] > 1) {
-			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				$response = file_get_contents($lfile);
-			} else {
-				$response = "Not allowed to read server logfile.";
-				e_log(2,$response);
-			}
-			break;
-		case "mrefresh":
-			if($_SESSION['sud']['userType'] > 1) {	
-			    $lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-				$response = file_get_contents($lfile);
-			} else {
-				$response = "Not allowed to read server logfile.";
-				e_log(2,$response);
-			}
-			break;
-		case "mclear":
-			e_log(8,"Clear logfile");
-			if($_SESSION['sud']['userType'] > 1) {
-				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
-				file_put_contents($lfile,"");
-				$response = file_get_contents($lfile);
-			}
-			break;
-		case "mdel":
-			$bookmarks = json_decode($_POST['data'], true);
-			$erg = delMark($bookmarks);
-			
-			$bookmarks = [];
-			foreach ($erg as $key => $value) {
-				$bookmarks[] = $value['bm'];
-			}
+				case "mlog":
+					if($_SESSION['sud']['userType'] > 1) {
+						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
+						$response = file_get_contents($lfile);
+					} else {
+						$response = "Not allowed to read server logfile.";
+						e_log(2,$response);
+					}
+					break;
+				case "mrefresh":
+					if($_SESSION['sud']['userType'] > 1) {
+						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
+						$response = file_get_contents($lfile);
+					} else {
+						$response = "Not allowed to read server logfile.";
+						e_log(2,$response);
+					}
+					break;
+				case "mclear":
+					e_log(8,"Clear logfile");
+					if($_SESSION['sud']['userType'] > 1) {
+						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
+						file_put_contents($lfile,"");
+						$response = file_get_contents($lfile);
+					}
+					break;
+				case "mdel":
+					$bookmarks = json_decode($_POST['data'], true);
+					$erg = delMark($bookmarks);
 
-			$response['bookmarks'] = $bookmarks;
-			break;
-		case "logout":
-			$html = logout();
-			die($html);
-			break;
-		case "ntfyupdate":
-			e_log(8,"ntfy: Updating ntfy information.");
-			$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
-			$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
-			$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
-			$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
+					$bookmarks = [];
+					foreach ($erg as $key => $value) {
+						$bookmarks[] = $value['bm'];
+					}
 
-			if(password_verify($password,$_SESSION['sud']['userHash'])) {
-				$ntfyToken = edcrpt('en', $ntfyToken);		
-				$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-				$oOptionsA['notifications'] = $cnoti;
-				$oOptionsA['ntfy']['instance'] = $ntfyInstance;
-				$oOptionsA['ntfy']['token'] = $ntfyToken;
-		
-				$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-				$count = db_query($query);
-				($count === 1) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
-				header("location: ?");
-				die();
-			}
-			else {
-				e_log(1,"Password mismatch. ntfy info not updated.");
-				die("Password mismatch. ntfy info not updated.");
-			}
-			die();
-			break;
-		case "langupdate":
-			$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-			$oOptionsA['language'] = $nlng;
-			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-			(db_query($query) === 1) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
-			$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
-			die("1");
-			break;
-		case "uupdate":
-			e_log(8,"User change: Updating user name started");
-			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
-			$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+					$response['bookmarks'] = $bookmarks;
+					break;
+				case "logout":
+					$html = logout();
+					die($html);
+					break;
+				case "ntfyupdate":
+					e_log(8,"ntfy: Updating ntfy information.");
+					$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
+					$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
+					$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
+					$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
 
-			if($opassword != "") {
-				if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
-					e_log(8,"User change: Verify original password");
-					$query = "UPDATE `users` SET `userName`='$username' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-					db_query($query);
-					e_log(8,"User change: Username changed");
-				}
-				else {
-					e_log(2,"User change: Failed to verify original password");
-				}
-			}
-			else {
-				e_log(2,"User change: Password missing");
-			}
+					if(password_verify($password,$_SESSION['sud']['userHash'])) {
+						$ntfyToken = edcrpt('en', $ntfyToken);
+						$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+						$oOptionsA['notifications'] = $cnoti;
+						$oOptionsA['ntfy']['instance'] = $ntfyInstance;
+						$oOptionsA['ntfy']['token'] = $ntfyToken;
 
-			die(logout());
-			break;
-		case "pupdate":
-			$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
-			die($response);
-			break;
-		case "getUsers":
-			header("Content-Type: application/json");
-			if($_SESSION['sud']['userType'] == 2) {
-				$query = "SELECT `userID`, `userName`, `userType` FROM `users` ORDER BY `userName`;";
-				$uData = db_query($query);
-				die(json_encode($uData));
-			} else {
-				die(json_encode('Editing users not allowed'));
-			}
-			break;
-		case "checkdups":
-			e_log(8,"Checking for duplicated bookmarks by url");
-			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = ".$_SESSION['sud']['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
-			$dubData = db_query($query);
-			foreach($dubData as $key => $dub) {
-				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '".$dub['bmURL']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmParentID`, `bmIndex`;";
-				$subData = db_query($query);
-				foreach($subData as $index => $entry) {
-					$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
-				}
-				$dubData[$key]['subs'] = $subData;
-			}
-			$response = $dubData;
-			break;
-		case "testDB":
-			$response = testDB($_POST['data']);
-			break;
-		case "initDB":
-			$response = initDB($_POST['data']);
-			break;
-		case "saveSettings":
-			$response = saveSettings($_POST['data']);
-			break;
-		case "gFile":
-			$response = gFile($_POST['data']);
-			break;
-		default:
-			die(e_log(1, "Unknown Action ".$_POST['action']));
+						$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+						$count = db_query($query);
+						($count === 1) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
+						header("location: ?");
+						die();
+					}
+					else {
+						e_log(1,"Password mismatch. ntfy info not updated.");
+						die("Password mismatch. ntfy info not updated.");
+					}
+					die();
+					break;
+				case "langupdate":
+					$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+					$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+					$oOptionsA['language'] = $nlng;
+					$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+					(db_query($query) === 1) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
+					$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
+					die("1");
+					break;
+				case "uupdate":
+					e_log(8,"User change: Updating user name started");
+					$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
+					$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+
+					if($opassword != "") {
+						if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
+							e_log(8,"User change: Verify original password");
+							$query = "UPDATE `users` SET `userName`='$username' WHERE `userID`=".$_SESSION['sud']['userID'].";";
+							db_query($query);
+							e_log(8,"User change: Username changed");
+						}
+						else {
+							e_log(2,"User change: Failed to verify original password");
+						}
+					}
+					else {
+						e_log(2,"User change: Password missing");
+					}
+
+					die(logout());
+					break;
+				case "pupdate":
+					$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
+					die($response);
+					break;
+				case "getUsers":
+					header("Content-Type: application/json");
+					if($_SESSION['sud']['userType'] == 2) {
+						$query = "SELECT `userID`, `userName`, `userType` FROM `users` ORDER BY `userName`;";
+						$uData = db_query($query);
+						die(json_encode($uData));
+					} else {
+						die(json_encode('Editing users not allowed'));
+					}
+					break;
+				case "checkdups":
+					e_log(8,"Checking for duplicated bookmarks by url");
+					$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = ".$_SESSION['sud']['userID']." GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1;";
+					$dubData = db_query($query);
+					foreach($dubData as $key => $dub) {
+						$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = '".$dub['bmURL']."' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmParentID`, `bmIndex`;";
+						$subData = db_query($query);
+						foreach($subData as $index => $entry) {
+							$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
+						}
+						$dubData[$key]['subs'] = $subData;
+					}
+					$response = $dubData;
+					break;
+				case "testDB":
+					$response = testDB($_POST['data']);
+					break;
+				case "initDB":
+					$response = initDB($_POST['data']);
+					break;
+				case "saveSettings":
+					$response = saveSettings($_POST['data']);
+					break;
+				case "gFile":
+					$response = gFile($_POST['data']);
+					break;
+				default:
+					die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
 
 	sendJSONResponse($response, $action);
@@ -450,7 +450,7 @@ if(isset($_POST['action'])) {
 if(isset($_GET['link'])) {
 	$url = validate_url(trim($_GET["link"]));
 	e_log(9,"URL add request: " . $url);
-	
+
 	$bookmark['url'] = $url;
 	$bookmark['folder'] = 'unfiled_____';
 	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
@@ -474,7 +474,7 @@ if(isset($_GET['link'])) {
 	}
 
 	saveDebugJSON("addmark", $bookmark);
-	
+
 	$res = addBookmark($bookmark);
 	if($res == "Bookmark added") {
 		$message = ($so) ? "URL added.":"<script>window.onload = function() { window.close();}</script>";
@@ -525,7 +525,7 @@ function init() {
 		header("X-SyncMarks: $version");
 		die(http_response_code(204));
 	}
-	
+
 	$config = [
 		'db'		=> $database,
 		'logfile'	=> $logfile,
@@ -547,13 +547,13 @@ function init() {
 			$defaultFile = "./locale/en.json";
 			$requestFile = "./locale/".$language.".json";
 			$languagFile = file_exists($requestFile) ? $requestFile:$defaultFile;
-	
+
 			$rdata = file_get_contents($languagFile);
 			$ddata = file_get_contents($defaultFile);
-	
+
 			$r_object = json_decode($rdata);
 			$d_object = json_decode($ddata);
-			
+
 			foreach ($d_object as $key => $area) {
 				foreach ($area as $index => $value) {
 					if(isset($r_object->$key->$index)) {
@@ -567,7 +567,7 @@ function init() {
 			$d_object->lng = $language;
 			$this->data = $d_object;
 		}
-	
+
 		function translate() {
 			return $this->data;
 		}
@@ -613,11 +613,11 @@ function logout() {
 	if(!isset($_POST['client'])) {
 		$html =  htmlHeader();
 		$html.= "<div id='loginbody'>
-			<div id='loginform'>
-				<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
-				<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
-				<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-			</div>
+		<div id='loginform'>
+		<div id='loginformh'>".$lang->messages->logoutSuccess."</div>
+		<div id='loginformt'>".$lang->messages->logoutSuccessHint."</div>
+		<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+		</div>
 		</div>";
 		$html.= $htmlFooter;
 	}
@@ -656,7 +656,7 @@ function handleReset() {
 					e_log(1,"Error sending password reset request to user");
 				}
 			}
-			
+
 			die(json_encode("1"));
 			break;
 		case "cancel":
@@ -674,11 +674,11 @@ function handleReset() {
 			}
 			echo htmlHeader();
 			echo "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>".$lang->messages->welcome."</div>
-					<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
-					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-				</div>
+			<div id='loginform'>
+			<div id='loginformh'>".$lang->messages->welcome."</div>
+			<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
+			<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+			</div>
 			</div>";
 			echo $htmlFooter;
 			die();
@@ -708,21 +708,21 @@ function handleReset() {
 				}
 				echo htmlHeader();
 				echo "<div id='loginbody'>
-					<div id='loginform'>
-						<div id='loginformh'>".$lang->messages->welcome."</div>
-						<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-					</div>
+				<div id='loginform'>
+				<div id='loginformh'>".$lang->messages->welcome."</div>
+				<div id='loginformt'>".$lang->messages->resetSuccessHint."</div>
+				<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+				</div>
 				</div>";
 				echo $htmlFooter;
 			} else {
 				echo htmlHeader();
 				echo "<div id='loginbody'>
-					<div id='loginform'>
-						<div id='loginformh'>".$lang->messages->welcome."</div>
-						<div id='loginformt'>".$lang->messages->tokenExpired."</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-					</div>
+				<div id='loginform'>
+				<div id='loginformh'>".$lang->messages->welcome."</div>
+				<div id='loginformt'>".$lang->messages->tokenExpired."</div>
+				<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+				</div>
 				</div>";
 				echo $htmlFooter;
 				e_log(1,"Token expired, Password reset failed");
@@ -765,7 +765,8 @@ function getLink($type = '', $token = '') {
 }
 
 function setLang() {
-	$lng = isset($_SESSION['sud']['uOptions']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+	$hlang = (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) ? substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2):'en';
+	$lng = isset($_SESSION['sud']['uOptions']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:$hlang;
 	$lng = isset($lng) ? $lng:'en';
 	$language = new language($lng);
 	$lang = $language->translate();
@@ -775,16 +776,16 @@ function setLang() {
 function tabsSend($jtabs, $user, $added) {
 	$query = "DELETE FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = $user;";
 	$res = db_query($query);
-	
+
 	foreach ($jtabs as $key => $tab) {
 		$data[] = array(
 			unique_code(12),
-			1,
-			trim($tab['title']),
-			'tab',
-			$tab['url'],
-			$added,
-			$user
+						1,
+				  trim($tab['title']),
+						'tab',
+				  $tab['url'],
+				  $added,
+				  $user
 		);
 	}
 
@@ -895,7 +896,7 @@ function pushGet($client, $uid) {
 	$notificationData = db_query($query);
 	if (!empty($notificationData)) {
 		e_log(8,"Found ".count($notificationData)." links. Will send them to the client.");
-		
+
 		foreach($notificationData as $key => $notification) {
 			$myObj[$key]['title'] = html_entity_decode($notification['ptitle'], ENT_QUOTES | ENT_XML1, 'UTF-8');
 			$myObj[$key]['url'] = $notification['purl'];
@@ -910,7 +911,7 @@ function pushGet($client, $uid) {
 		$response['code'] = 200;
 	}
 
-	if(isset($_COOKIE['syncmarks'])) 
+	if(isset($_COOKIE['syncmarks']))
 		e_log(8,'Cookie is available');
 	else
 		e_log(8,'Cookie is not set');
@@ -944,11 +945,11 @@ function clientList($client, $uid) {
 	$clientList = db_query($query);
 
 	e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
-	
+
 	uasort($clientList, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
 	});
-	
+
 	if (!empty($clientList)) {
 		foreach($clientList as $key => $clients) {
 			$myObj[$key]['id'] =	$clients['cid'];
@@ -968,7 +969,7 @@ function clientList($client, $uid) {
 		$response['code'] = 500;
 	}
 
-	saveDebugJSON("clist", $myObj);	
+	saveDebugJSON("clist", $myObj);
 	$response['clients'] = $myObj;
 
 	return $response;
@@ -1012,7 +1013,7 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			e_log(8,"Exporting in JSON format");
 			$bookmarks = backupBookmarks(1, $client);
 			saveDebugJSON("export", $bookmarks);
-			
+
 			if($client != "0") {
 				$bcount = count($bookmarks);
 				e_log(8,"Send $bcount bookmarks to '$client'");
@@ -1071,10 +1072,10 @@ function bookmarkImport($jmarks, $client, $ctype, $ctime, $user) {
 	} else {
 		$response['message'] = "Import data is not an array";
 		$response['code'] = 500;
-	 }
+	}
 
 	updateClient($client, $ctype, $ctime);
-	
+
 	return $response;
 }
 
@@ -1082,7 +1083,7 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 	$bookmark = (is_array($bookmark)) ? $bookmark:json_decode($bookmark, true);
 	$bookmark['added'] = $stime;
 	$bookmark['title'] = ($bookmark['title'] === '') ? getSiteTitle(trim($bookmark['url'])):htmlspecialchars(mb_convert_encoding(htmlspecialchars_decode($bookmark['title'], ENT_QUOTES),"UTF-8"),ENT_QUOTES,'UTF-8', false);
-	
+
 	e_log(8,"Try to add new bookmark '".$bookmark['title']."'");
 	saveDebugJSON('bookmarkAdd', $bookmark);
 	if(array_key_exists('url',$bookmark)) $bookmark['url'] = validate_url($bookmark['url']);
@@ -1204,7 +1205,7 @@ function clientInfo($client, $uid) {
 function clientRename($client, $data, $uid, $add = null) {
 	e_log(8,"Rename client $client to '$data'");
 	$query = "UPDATE `clients` SET `cname` = '$data' WHERE `userID` = $uid AND `cid` = '$client';";
-	$count = db_query($query);	
+	$count = db_query($query);
 	$data = (isset($add)) ? bClientlist($uid, 'html'):bClientlist($uid, 'json');
 	return $data;
 }
@@ -1230,7 +1231,7 @@ function clientCheck($client, $ctime, $type, $userID) {
 	$cOptions = db_query($query);
 	$tResponse['cOptions'] = $cOptions;
 	$tResponse['token'] = $token;
-	
+
 	e_log(8, "Send new token to $client");
 
 	$tResponse['code'] = 200;
@@ -1260,7 +1261,7 @@ function ntfyNotification($data, $uid) {
 
 	$query = "INSERT INTO `pages` (`ptitle`,`purl`,`ntime`,`nloop`,`publish_date`,`userID`, `cid`) VALUES ('$title', '$url', $ctime, 1, $ctime, $uid, NULLIF('$target',''));";
 	$res = db_query($query);
-	
+
 	if($res > 0) {
 		$options = json_decode($_SESSION['sud']['uOptions'],true);
 		if(isset($options['ntfy']['instance']) && $options['notifications'] == "1") {
@@ -1276,7 +1277,7 @@ function ntfyNotification($data, $uid) {
 
 	$message = (!isset($res['error'])) ? "URL successful pushed":"Failed to push URL";
 	e_log(8, $message);
-	
+
 	return $res;
 }
 
@@ -1296,7 +1297,7 @@ function fWay($parent, $user, $str) {
 		$str = ' &#187; '.$fData['bmTitle'].$str;
 		$parent = $fData['bmParentID'];
 	} while (strpos($fData['bmParentID'],'root________') === false);
-	
+
 	$str = substr($str,8);
 	return $str;
 }
@@ -1307,7 +1308,7 @@ function delMark($bmID) {
 	$uid = $_SESSION['sud']['userID'];
 	$res = [];
 	e_log(8,"Delete bookmark(s) $bms");
-	
+
 	foreach ($bmID as $key => $value) {
 		$query = "SELECT `bmParentID`, `bmIndex`, `bmURL`, `bmSort` FROM `bookmarks` WHERE `bmID` = '$value' AND `userID` = $uid;";
 		$dData = db_query($query)[0];
@@ -1395,26 +1396,26 @@ function validate_url($url) {
 	$urla = parse_url(trim($url));
 
 	$pass      = $urla['pass'] ?? null;
-    $user      = $urla['user'] ?? null;
-    $userinfo  = $pass !== null ? "$user:$pass" : $user;
-    $port      = $urla['port'] ?? 0;
-    $scheme    = $urla['scheme'] ?? "";
-    $query     = $urla['query'] ?? "";
-    $fragment  = $urla['fragment'] ?? "";
-	
-    $authority = (
-        ($userinfo !== null ? "$userinfo@" : "") .
-        (urlencode($urla['host']) ?? "") .
-        ($port ? ":$port" : "")
+	$user      = $urla['user'] ?? null;
+	$userinfo  = $pass !== null ? "$user:$pass" : $user;
+	$port      = $urla['port'] ?? 0;
+	$scheme    = $urla['scheme'] ?? "";
+	$query     = $urla['query'] ?? "";
+	$fragment  = $urla['fragment'] ?? "";
+
+	$authority = (
+		($userinfo !== null ? "$userinfo@" : "") .
+		(urlencode($urla['host']) ?? "") .
+		($port ? ":$port" : "")
 	);
 
 	$url =
-        (\strlen($scheme) > 0 ? "$scheme:" : "") .
-        (\strlen($authority) > 0 ? "//$authority" : "") .
-        (join('/', array_map('rawurlencode', explode('/', $urla['path']))) ?? "") .		
-        (\strlen($query) > 0 ? "?$query" : "") .
-        (\strlen($fragment) > 0 ? "#$fragment" : "")
-    ;
+	(\strlen($scheme) > 0 ? "$scheme:" : "") .
+	(\strlen($authority) > 0 ? "//$authority" : "") .
+	(join('/', array_map('rawurlencode', explode('/', $urla['path']))) ?? "") .
+	(\strlen($query) > 0 ? "?$query" : "") .
+	(\strlen($fragment) > 0 ? "#$fragment" : "")
+	;
 
 	$url = filter_var(filter_var($url, FILTER_SANITIZE_STRING), FILTER_UNSAFE_RAW);
 	if (filter_var($url, FILTER_VALIDATE_URL)) {
@@ -1439,11 +1440,11 @@ function pushntfy($title,$url) {
 	$content = @file_get_contents($instance, false, stream_context_create([
 		'http' => [
 			'method' => 'POST',
-			'header' => 
-				"Content-Type: text/plain\r\n".
-				$authHeader.
-				"title: $encTitle\r\n".
-				"click: $url\r\n",
+			'header' =>
+			"Content-Type: text/plain\r\n".
+			$authHeader.
+			"title: $encTitle\r\n".
+			"click: $url\r\n",
 			'content' => $url
 		]
 	]));
@@ -1453,7 +1454,7 @@ function pushntfy($title,$url) {
 		$response['code'] = 500;
 	} else
 		$response = json_decode($content, true);
-	
+
 	return $response;
 }
 
@@ -1495,8 +1496,8 @@ function html_export() {
 
 	$content = '<!DOCTYPE NETSCAPE-Bookmark-file-1>
 	<!-- This is an automatically generated file.
-		It will be read and overwritten.
-		DO NOT EDIT! -->
+	It will be read and overwritten.
+	DO NOT EDIT! -->
 	<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
 	<TITLE>Bookmarks</TITLE>';
 
@@ -1579,7 +1580,7 @@ function moveBookmark($bm) {
 	$uid = $_SESSION['sud']['userID'];
 	$query = "SELECT `bmID`, `bmParentID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bm['nfolder']."' AND `userID` = $uid;";
 	$folderData = db_query($query)[0];
-	
+
 	if(is_null($folderData['bmID'])) {
 		$response = [
 			"message" => "Folder not found, bookmark not moved",
@@ -1618,7 +1619,7 @@ function moveBookmark($bm) {
 			$bmSortN = getSort($nfolder, $bindex, $uid);
 			e_log(8, "Shift bigger sort entries");
 			db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSortN ORDER BY `bmSort`");
-			
+
 			e_log(8, "Move bookmark");
 			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded, `bmSort` = $bmSortN  WHERE `bmID` = '$bid' AND `userID` = $uid;";
 			db_query($query);
@@ -1662,7 +1663,7 @@ function addFolder($bm) {
 		e_log(2,"Folder not added, it exists already for this user, exit request");
 		return false;
 	}
-	
+
 	e_log(8,"Get folder data for adding folder");
 	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex`, `bmParentId` FROM `bookmarks` WHERE `bmParentId` = '".$bm['folder']."' AND `userID` = $uid;";
 	$folderData = db_query($query);
@@ -1671,7 +1672,7 @@ function addFolder($bm) {
 
 	e_log(8, "Shift bigger sort entries");
 	db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
-	
+
 	if (!empty($folderData)) {
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '".$bm['folder']."', ".$folderData[0]['nindex'].", '".$bm['title']."', '".$bm['type']."', ".$bm['added'].", $uid, $bmSort)";
 		db_query($query);
@@ -1699,7 +1700,7 @@ function addBookmark($bm) {
 	e_log(8,"Get new index for bookmark");
 	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = $uid AND `bmParentID` = '$folderID';";
 	$nindex = db_query($query)[0]['nindex'];
-	
+
 	e_log(8,"Add bookmark '".$bm['title']."'");
 
 	$bmSort = getSort($folderID, $nindex, $uid);
@@ -1709,7 +1710,7 @@ function addBookmark($bm) {
 
 	e_log(8, "Add bookmark to db");
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".trim($bm['title'])."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", $uid, $bmSort);";
-	
+
 	if(db_query($query) === false ) {
 		$message = "Adding bookmark failed";
 		e_log(1, $message);
@@ -1750,14 +1751,14 @@ function updateClient($cl, $ct, $time) {
 	}
 
 	e_log(8, $message);
-	
+
 	return $message;
 }
 
 function bmTree() {
 	e_log(8,"Build HTML tree from bookmarks");
 	$bmTree = makeHTMLTree(getBookmarks());
-	
+
 	do {
 		$start = strpos($bmTree,"%ID");
 		$end = strpos($bmTree,"\n",$start);
@@ -1778,23 +1779,23 @@ function getIndex($folder) {
 
 function getSiteTitle($url) {
 	e_log(8,"Get titel for site '$url'");
-	
-    $options = array( 
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HEADER         => false,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT      => "SyncMarks",
-        CURLOPT_AUTOREFERER    => true,
-        CURLOPT_CONNECTTIMEOUT => 120,
-        CURLOPT_TIMEOUT        => 120,
-        CURLOPT_MAXREDIRS      => 10,
-    ); 
-    $ch = curl_init($url); 
-    curl_setopt_array($ch, $options); 
-    $src = curl_exec($ch);
-    $err = curl_errno($ch); 
-    $errmsg = curl_error($ch);
-    curl_close($ch);
+
+	$options = array(
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_HEADER         => false,
+		CURLOPT_FOLLOWLOCATION => true,
+		CURLOPT_USERAGENT      => "SyncMarks",
+		CURLOPT_AUTOREFERER    => true,
+		CURLOPT_CONNECTTIMEOUT => 120,
+		CURLOPT_TIMEOUT        => 120,
+		CURLOPT_MAXREDIRS      => 10,
+	);
+	$ch = curl_init($url);
+	curl_setopt_array($ch, $options);
+	$src = curl_exec($ch);
+	$err = curl_errno($ch);
+	$errmsg = curl_error($ch);
+	curl_close($ch);
 
 	if(strlen($src) > 0) {
 		$title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $src, $matches) ? $matches[1]:null;
@@ -1877,7 +1878,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 	$user = '';
 	if(isset($_SESSION['sauth'])) $user = "- ".$_SESSION['sauth']." ";
 	$line = "[".date("d-M-Y H:i:s")."] $mode $user- $message\n";
-	
+
 	if($level <= CONFIG['loglevel']) {
 		$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
 		file_put_contents($lfile, $line, FILE_APPEND);
@@ -1887,7 +1888,7 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
 	$query = "DELETE FROM `bookmarks` WHERE `userID` = $uid AND `bmID` <> 'root________'";
-	db_query($query); 
+	db_query($query);
 }
 
 function htmlHeader() {
@@ -1897,28 +1898,28 @@ function htmlHeader() {
 	$css = (file_exists("css/syncmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/syncmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/syncmarks.css'>";
 
 	$htmlHeader = "<!DOCTYPE html>
-		<html lang='$lng'>
-			<head>
-				<meta name='viewport' content='width=device-width, initial-scale=1'>
-				$js
-				$css
-				<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
-				<link rel='manifest' href='manifest.json'>
-				<meta name='theme-color' content='#0879D9'>
-				<title>".$lang->messages->syncmarks."</title>
-			</head>
-			<body>";
+	<html lang='$lng'>
+	<head>
+	<meta name='viewport' content='width=device-width, initial-scale=1'>
+	$js
+	$css
+	<link rel='shortcut icon' type='image/x-icon' href='images/bookmarks.ico'>
+	<link rel='manifest' href='manifest.json'>
+	<meta name='theme-color' content='#0879D9'>
+	<title>".$lang->messages->syncmarks."</title>
+	</head>
+	<body>";
 
-	$htmlHeader.= "
-	<div id='menu'>
-		<div id='hmenu'>
+			$htmlHeader.= "
+			<div id='menu'>
+			<div id='hmenu'>
 			<div class='hline'></div>
 			<div class='hline'></div>
 			<div class='hline'></div>
-		</div>
-		<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value='' placeholder='".$lang->messages->searchHint."'>
-		<div id='tbar'>".$lang->messages->syncmarks."</div>
-	</div>";
+			</div>
+			<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value='' placeholder='".$lang->messages->searchHint."'>
+			<div id='tbar'>".$lang->messages->syncmarks."</div>
+			</div>";
 
 	return $htmlHeader;
 }
@@ -1938,10 +1939,10 @@ function htmlForms() {
 
 	$ntfyInstance = (isset($uOptions['ntfy']['instance'])) ? $uOptions['ntfy']['instance']:'';
 	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
-	
+
 	$lfiles = glob("./locale/*.json");
 	$clang = isset($uOptions['language']) ? $uOptions['language']:'en';
-	
+
 	$lselect = "<select name='language' id='language'><option value=''>".$lang->messages->selectLanguage."</option>";
 	foreach ($lfiles as $key => $language) {
 		if(filesize($language) > 5) {
@@ -1955,57 +1956,57 @@ function htmlForms() {
 
 	$mngsettingsform = "
 	<div id='mngsform' class='mmenu'><h6>".$lang->messages->syncMarksSettings."</h6>
-		<span class='dclose'>&times;</span>
-		<table>
-			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>".$lang->messages->username.":</span>$userName</td><td class='bright'><button id='muser'>&#9998;</button></td></tr>
-			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>".$lang->messages->password.":</span>**********</td><td class='bright'><button id='mpassword'>&#9998;</button></td></tr>
-			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td><span class='rdesc'>".$lang->messages->mail.":</span><span id='userMail'>$userMail</span></td><td class='bright'><button id='mmail'>&#9998;</button></td></tr>
-			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td style='height: 5px;'><span class='rdesc'>".$lang->messages->language.":</span>$lselect</td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='clientedt'>".$lang->actions->showClients."</button></td><td></td></tr>
-			<tr><td colspan='2' style='height: 2px;'></td></tr>
-			<tr><td colspan=2 class='bcenter'><button id='ntfy'>".$lang->actions->ntfy."</button></td></tr>
-			<tr><td colspan='2' style='height: 5px;'></td></tr>
-			<tr><td>".$lang->actions->notifications."</td><td class='bright'>$oswitch</td></tr>
-		</table>
+	<span class='dclose'>&times;</span>
+	<table>
+	<tr><td colspan='2' style='height: 5px;'></td></tr>
+	<tr><td><span class='rdesc'>".$lang->messages->username.":</span>$userName</td><td class='bright'><button id='muser'>&#9998;</button></td></tr>
+	<tr><td colspan='2' style='height: 5px;'></td></tr>
+	<tr><td><span class='rdesc'>".$lang->messages->password.":</span>**********</td><td class='bright'><button id='mpassword'>&#9998;</button></td></tr>
+	<tr><td colspan='2' style='height: 5px;'></td></tr>
+	<tr><td><span class='rdesc'>".$lang->messages->mail.":</span><span id='userMail'>$userMail</span></td><td class='bright'><button id='mmail'>&#9998;</button></td></tr>
+	<tr><td colspan='2' style='height: 5px;'></td></tr>
+	<tr><td style='height: 5px;'><span class='rdesc'>".$lang->messages->language.":</span>$lselect</td></tr>
+	<tr><td colspan=2 class='bcenter'><button id='clientedt'>".$lang->actions->showClients."</button></td><td></td></tr>
+	<tr><td colspan='2' style='height: 2px;'></td></tr>
+	<tr><td colspan=2 class='bcenter'><button id='ntfy'>".$lang->actions->ntfy."</button></td></tr>
+	<tr><td colspan='2' style='height: 5px;'></td></tr>
+	<tr><td>".$lang->actions->notifications."</td><td class='bright'>$oswitch</td></tr>
+	</table>
 	</div>";
 
-	$mngclientform = "<div id='mngcform' class='mmenu'></div>";
+			$mngclientform = "<div id='mngcform' class='mmenu'></div>";
 
-	$nmessagesform = "
-	<div id='nmessagesform' class='mmenu'>
-		<span class='dclose'>&times;</span>
-		<div class='tab'>
-		<button class='tablinks active' data-val='aNoti'>".$lang->actions->active."</button>
-		<button class='tablinks' data-val='oNoti'>".$lang->actions->archived."</button>
-		</div>
-		<div id='aNoti' class='tabcontent'style='display: block'>
-		<div class='NotiTable'>
+			$nmessagesform = "
+			<div id='nmessagesform' class='mmenu'>
+			<span class='dclose'>&times;</span>
+			<div class='tab'>
+			<button class='tablinks active' data-val='aNoti'>".$lang->actions->active."</button>
+			<button class='tablinks' data-val='oNoti'>".$lang->actions->archived."</button>
+			</div>
+			<div id='aNoti' class='tabcontent'style='display: block'>
+			<div class='NotiTable'>
 			<div class='NotiTableBody'></div>
-		</div>
-		</div>
-		<div id='oNoti' class='tabcontent' style='display: none'>
-		<div class='NotiTable'>
+			</div>
+			</div>
+			<div id='oNoti' class='tabcontent' style='display: none'>
+			<div class='NotiTable'>
 			<div class='NotiTableBody'></div>
-		</div>
-		</div>
-	</div>";
+			</div>
+			</div>
+			</div>";
 
 	$pushform = "
 	<div id='pushform' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->actions->ntfy."</h6>
-		<div class='dialogdescr'>".$lang->messages->ntfy."</div>
-		<form action='' method='POST'>$oswitch
-			<input hidden type='text' name='username' autocomplete='username'>
-			<input required placeholder='".$lang->messages->url."' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
-			<input placeholder='".$lang->messages->token."' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
-			<input placeholder='".$lang->messages->password."' type='password' id='password' name='password' value='' autocomplete='current-password' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='ntfyupdate'>".$lang->actions->save."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->actions->ntfy."</h6>
+	<div class='dialogdescr'>".$lang->messages->ntfy."</div>
+	<form action='' method='POST'>$oswitch
+	<input hidden type='text' name='username' autocomplete='username'>
+	<input required placeholder='".$lang->messages->url."' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
+	<input placeholder='".$lang->messages->token."' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
+	<input placeholder='".$lang->messages->password."' type='password' id='password' name='password' value='' autocomplete='current-password' />
+	<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='ntfyupdate'>".$lang->actions->save."</button></div>
+	</form>
 	</div>";
 
 	$dir = 'backups/'.$_SESSION['sud']['userID'];
@@ -2024,96 +2025,96 @@ function htmlForms() {
 
 	$expimpform = "
 	<div id='expimpform' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->expImp."</h6>
-		<div class='dialogdescr'>".$lang->messages->expimpHint."</div>
-		<form action='' method='POST'>
-			<input type='file' id='ibfile' name='ibfile' accept='application/json' />
-			<fieldset><legend>Export Format:</legend>
-			<label class='fcontainer' for='ejson'>JSON<input type='radio' id='ejson' name='eiformat' value='json' checked /><span class='checkmark'></span></label>
-			<label class='fcontainer' for='ehtml'>HTML<input type='radio' id='ehtml' name='eiformat' value='html' /><span class='checkmark'></span></label>
-			</fieldset>
-			<div id='backuplist'>$ftable</div>
-			<div class='dbutton'>
-				<button name='bmf_ex' id='bmf_ex' value='Export'>".$lang->actions->export."</button>
-				<button name='bmf_im' id='bmf_im' value='Import'>".$lang->actions->import."</button>
-			</div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->messages->expImp."</h6>
+	<div class='dialogdescr'>".$lang->messages->expimpHint."</div>
+	<form action='' method='POST'>
+	<input type='file' id='ibfile' name='ibfile' accept='application/json' />
+	<fieldset><legend>Export Format:</legend>
+	<label class='fcontainer' for='ejson'>JSON<input type='radio' id='ejson' name='eiformat' value='json' checked /><span class='checkmark'></span></label>
+	<label class='fcontainer' for='ehtml'>HTML<input type='radio' id='ehtml' name='eiformat' value='html' /><span class='checkmark'></span></label>
+	</fieldset>
+	<div id='backuplist'>$ftable</div>
+	<div class='dbutton'>
+	<button name='bmf_ex' id='bmf_ex' value='Export'>".$lang->actions->export."</button>
+	<button name='bmf_im' id='bmf_im' value='Import'>".$lang->actions->import."</button>
+	</div>
+	</form>
 	</div>";
 
 	$passwordform = "
 	<div id='passwordform' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->changePassword."</h6>
-		<div class='dialogdescr'>".$lang->messages->changePasswordHint."</div>
-		<form action='' method='POST'>
-			<input hidden type='text' name='username' autocomplete='username'>
-			<input required placeholder='".$lang->messages->currentPassword."' type='password' id='opassword' name='opassword' autocomplete='current-password' value='' />
-			<input required placeholder='".$lang->messages->newPassword."' type='password' id='npassword' name='npassword' autocomplete='new-password' value='' />
-			<input required placeholder='".$lang->messages->confirmPassword."' type='password' id='cpassword' name='cpassword' autocomplete='new-password' value='' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='pupdate'>".$lang->actions->save."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->messages->changePassword."</h6>
+	<div class='dialogdescr'>".$lang->messages->changePasswordHint."</div>
+	<form action='' method='POST'>
+	<input hidden type='text' name='username' autocomplete='username'>
+	<input required placeholder='".$lang->messages->currentPassword."' type='password' id='opassword' name='opassword' autocomplete='current-password' value='' />
+	<input required placeholder='".$lang->messages->newPassword."' type='password' id='npassword' name='npassword' autocomplete='new-password' value='' />
+	<input required placeholder='".$lang->messages->confirmPassword."' type='password' id='cpassword' name='cpassword' autocomplete='new-password' value='' />
+	<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='pupdate'>".$lang->actions->save."</button></div>
+	</form>
 	</div>";
 
 	$userform = "
 	<div id='userform' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->changeUsername."</h6>
-		<div class='dialogdescr'>".$lang->messages->changeUsernameHint."</div>
-		<form action='' method='POST'>
-			<input placeholder='".$lang->messages->username."' required type='text' name='username' id='username' autocomplete='username' value='$userName'>
-			<input placeholder='".$lang->messages->password."' required type='password' id='oopassword' name='opassword' autocomplete='current-password' value='' />
-			<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='uupdate'>".$lang->actions->save."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->messages->changeUsername."</h6>
+	<div class='dialogdescr'>".$lang->messages->changeUsernameHint."</div>
+	<form action='' method='POST'>
+	<input placeholder='".$lang->messages->username."' required type='text' name='username' id='username' autocomplete='username' value='$userName'>
+	<input placeholder='".$lang->messages->password."' required type='password' id='oopassword' name='opassword' autocomplete='current-password' value='' />
+	<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='uupdate'>".$lang->actions->save."</button></div>
+	</form>
 	</div>";
 
 	$mainmenu = "
 	<div id='mainmenu' class='mmenu'>
-		<ul>
-			<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." ".CONFIG['version']."</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
-			<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
-			<li class='menuitem' id='bexport'>".$lang->messages->expImp."</li>
-			<li class='menuitem' id='duplicates'>".$lang->actions->duplicates."</li>
-			<li class='menuitem' id='psettings'>".$lang->actions->settings."</li>
-			$admenu
-			<hr>
-			<li class='menuitem' id='logout'><form method='POST'><button name='action' id='loutaction' value='logout'>".$lang->actions->logout."</button></form></li>
-		</ul>
+	<ul>
+	<li id='meheader'><span class='appv'><a href='https://codeberg.org/Offerel/SyncMarks-Webapp'>".$lang->messages->syncmarks." ".CONFIG['version']."</a></span><span class='logo'>&nbsp;</span><span class='text'>$userName<br>".$lang->messages->lastLogin.": $userOldLogin</span></li>
+	<li class='menuitem' id='nmessages'>".$lang->actions->notifications."</li>
+	<li class='menuitem' id='bexport'>".$lang->messages->expImp."</li>
+	<li class='menuitem' id='duplicates'>".$lang->actions->duplicates."</li>
+	<li class='menuitem' id='psettings'>".$lang->actions->settings."</li>
+	$admenu
+	<hr>
+	<li class='menuitem' id='logout'><form method='POST'><button name='action' id='loutaction' value='logout'>".$lang->actions->logout."</button></form></li>
+	</ul>
 	</div>";
 
 	$bmMenu = "
 	<menu class='menu' id='cmenu'><input type='hidden' id='bmid' title='bmtitle' value=''>
-		<ul>
-			<li id='btnEdit' class='menu-item'>".$lang->actions->edit."</li>
-			<li id='btnMove' class='menu-item'>".$lang->actions->move."</li>
-			<li id='btnDelete' class='menu-item'>".$lang->actions->delete."</li>
-			<li id='btnFolder' class='menu-item'>".$lang->actions->nfolder."</li>
-		</ul>
+	<ul>
+	<li id='btnEdit' class='menu-item'>".$lang->actions->edit."</li>
+	<li id='btnMove' class='menu-item'>".$lang->actions->move."</li>
+	<li id='btnDelete' class='menu-item'>".$lang->actions->delete."</li>
+	<li id='btnFolder' class='menu-item'>".$lang->actions->nfolder."</li>
+	</ul>
 	</menu>";
 
 	$bmDialog = "
 	<div id='reqdialog' class='mbmdialog'>
-		<h6>".$lang->actions->nfolder."</h6>
-		<span class='dtext'></span>
-		<div class='btna'>
-			<button id='ydialog'>".$lang->actions->yes."</button>
-			<button id='ndialog'>".$lang->actions->no."</button>
-		</div>
-		<span class='dclose'>&times;</span>
+	<h6>".$lang->actions->nfolder."</h6>
+	<span class='dtext'></span>
+	<div class='btna'>
+	<button id='ydialog'>".$lang->actions->yes."</button>
+	<button id='ndialog'>".$lang->actions->no."</button>
+	</div>
+	<span class='dclose'>&times;</span>
 	</div>";
 
 	$editForm = "
 	<div id='bmarkedt' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->editBookmark."</h6>
-		<form id='-' method='POST'>
-			<input placeholder='".$lang->messages->title."' type='text' id='edtitle' name='edtitle' value=''>
-			<input placeholder='".$lang->messages->url."' type='text' id='edurl' name='edurl' value=''>
-			<input type='hidden' id='edid' name='edid' value=''>
-			<div class='dbutton'>
-				<button type='submit' id='edsave' name='edsave' value='Save' disabled>".$lang->actions->save."</button>
-			</div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->messages->editBookmark."</h6>
+	<form id='-' method='POST'>
+	<input placeholder='".$lang->messages->title."' type='text' id='edtitle' name='edtitle' value=''>
+	<input placeholder='".$lang->messages->url."' type='text' id='edurl' name='edurl' value=''>
+	<input type='hidden' id='edid' name='edid' value=''>
+	<div class='dbutton'>
+	<button type='submit' id='edsave' name='edsave' value='Save' disabled>".$lang->actions->save."</button>
+	</div>
+	</form>
 	</div>";
 
 	$sFolderOptions = "<option value='' hidden>".$lang->messages->selectFolder."</option>";
@@ -2126,47 +2127,47 @@ function htmlForms() {
 	}
 	$moveForm = "
 	<div id='bmamove' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->messages->moveBookmark."</h6>
-		<form id='bmmv' method='POST'>
-			<span id='mvtitle'></span>
-			<div class='select'>
-				<select id='mvfolder' name='mvfolder'>$sFolderOptions</select>
-				<!-- <div class='select__arrow'></div> -->
-			</div>
-			<input type='hidden' id='mvid' name='mvid' value=''>
-			<div class='dbutton'><button type='submit' id='mvsave' name='mvsave' value='Save' disabled>".$lang->actions->save."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->messages->moveBookmark."</h6>
+	<form id='bmmv' method='POST'>
+	<span id='mvtitle'></span>
+	<div class='select'>
+	<select id='mvfolder' name='mvfolder'>$sFolderOptions</select>
+	<!-- <div class='select__arrow'></div> -->
+	</div>
+	<input type='hidden' id='mvid' name='mvid' value=''>
+	<div class='dbutton'><button type='submit' id='mvsave' name='mvsave' value='Save' disabled>".$lang->actions->save."</button></div>
+	</form>
 	</div>";
 
 	$folderForm = "
 	<div id='folderf' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->actions->nfolder."</h6>
-		<form id='fadd' method='POST'>
-			<input placeholder='Foldername' type='text' id='fname' name='fname' value=''>
-			<input type='hidden' id='fbid' name='fbid' value=''>
-			<div class='dbutton'><button type='submit' id='fsave' name='fsave' value='Create' disabled>".$lang->actions->create."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->actions->nfolder."</h6>
+	<form id='fadd' method='POST'>
+	<input placeholder='Foldername' type='text' id='fname' name='fname' value=''>
+	<input type='hidden' id='fbid' name='fbid' value=''>
+	<div class='dbutton'><button type='submit' id='fsave' name='fsave' value='Create' disabled>".$lang->actions->create."</button></div>
+	</form>
 	</div>";
 
 	$footerButton = "
 	<div id='bmarkadd' class='mbmdialog'>
-		<span class='dclose'>&times;</span>
-		<h6>".$lang->actions->addBookmark."</h6>
-		<form id='bmadd' action='?' method='POST'>
-			<input placeholder='".$lang->messages->url."' type='text' id='url' name='url' value=''>
-			<div class='select'>
-				<select id='folder' name='folder'>
-					$sFolderOptions
-				</select>
-			</div>
-			<div class='dbutton'><button type='submit' id='save' name='' value='Save'>".$lang->actions->save."</button></div>
-		</form>
+	<span class='dclose'>&times;</span>
+	<h6>".$lang->actions->addBookmark."</h6>
+	<form id='bmadd' action='?' method='POST'>
+	<input placeholder='".$lang->messages->url."' type='text' id='url' name='url' value=''>
+	<div class='select'>
+	<select id='folder' name='folder'>
+	$sFolderOptions
+	</select>
+	</div>
+	<div class='dbutton'><button type='submit' id='save' name='' value='Save'>".$lang->actions->save."</button></div>
+	</form>
 	</div>
 	<div id='footer'></div>";
 
-	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$expimpform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;	
+	$htmlData = $folderForm.$moveForm.$editForm.$bmMenu.$bmDialog.$logform.$mainmenu.$userform.$passwordform.$pushform.$expimpform.$mngsettingsform.$mngclientform.$nmessagesform.$footerButton;
 	return $htmlData;
 }
 
@@ -2179,7 +2180,7 @@ function showBookmarks() {
 function bClientlist($uid, $mode = 'html') {
 	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid;";
 	$clientData = db_query($query);
-	
+
 	uasort($clientData, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
 	});
@@ -2197,7 +2198,7 @@ function bClientlist($uid, $mode = 'html') {
 	} else {
 		$clientList['clients'] = $clientData;
 	}
-	
+
 	return $clientList;
 }
 
@@ -2210,13 +2211,13 @@ function notiList($uid, $loop) {
 		$title = html_entity_decode($aNoti['ptitle'],ENT_QUOTES,'UTF-8');
 
 		$notiList.= "<div class='NotiTableRow'>
-					<div class='NotiTableCell'>
-						<span><a class='link' target='_blank' title='$title' href='".$aNoti['purl']."'>$title</a></span>
-						<span class='nlink'>".$aNoti['purl']."</span>
-						<span class='ndate'>".date("d.m.Y H:i",$aNoti['publish_date'])." | $cl</span>
-					</div>
-					<div class='NotiTableCell'><a class='fa fa-trash' data-message='".$aNoti['pid']."' href='#'></a></div>
-				</div>";
+		<div class='NotiTableCell'>
+		<span><a class='link' target='_blank' title='$title' href='".$aNoti['purl']."'>$title</a></span>
+		<span class='nlink'>".$aNoti['purl']."</span>
+		<span class='ndate'>".date("d.m.Y H:i",$aNoti['publish_date'])." | $cl</span>
+		</div>
+		<div class='NotiTableCell'><a class='fa fa-trash' data-message='".$aNoti['pid']."' href='#'></a></div>
+		</div>";
 	}
 	return $notiList;
 }
@@ -2230,13 +2231,13 @@ function getUserFolders($uid) {
 
 function makeHTMLExport($arr) {
 	$bookmarks = "";
-	
+
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
 			$bookmark = "\r\n\t<DT><A HREF=\"".$bm['bmURL']."\" bid=\"".$bm['bmID']."\" ADD_DATE=\"".round($bm['bmAdded']/1000)."\">".$bm['bmTitle']."</A>%ID".$bm['bmParentID'];
 			$bookmarks = str_replace("%ID".$bm['bmParentID'], $bookmark, $bookmarks);
 		}
-		
+
 		if($bm['bmType'] == "folder") {
 			switch($bm['bmID']) {
 				case 'toolbar_____':
@@ -2273,7 +2274,7 @@ function makeHTMLExport($arr) {
 
 function makeHTMLTree($arr) {
 	$bookmarks = "";
-	
+
 	foreach($arr as $bm) {
 		if($bm['bmType'] == "bookmark") {
 			$title = ($bm['bmTitle'] != "") ? $bm['bmTitle']:'unknown title';
@@ -2317,14 +2318,14 @@ function importMarks($bookmarks, $uid) {
 
 		$data[] = array(
 			cid($bookmark['bmID']),
-			cid($bookmark['bmParentID']),
-			$bookmark['bmIndex'],
-			$title,
-			$bookmark['bmType'],
-			$url,
-			$bookmark['bmAdded'],
-			$dateGroupModified,
-			$uid
+						cid($bookmark['bmParentID']),
+						$bookmark['bmIndex'],
+				  $title,
+				  $bookmark['bmType'],
+				  $url,
+				  $bookmark['bmAdded'],
+				  $dateGroupModified,
+				  $uid
 		);
 	}
 
@@ -2353,7 +2354,7 @@ function importMarks($bookmarks, $uid) {
 	}
 
 	saveDebugJSON("cexport", $data2);
-	
+
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query($query, $data2);
 
@@ -2370,7 +2371,7 @@ function importMarks($bookmarks, $uid) {
 		];
 		e_log(1, $response['message']);
 	}
-		
+
 	return $response;
 }
 
@@ -2379,7 +2380,7 @@ function bimport($data, $uid) {
 	$json = file_get_contents($_FILES['file']['tmp_name']);
 	$import_array = json_decode($json, true);
 	$data = array();
-	
+
 	foreach ($import_array as $key => $bookmark) {
 		$data[] = array(
 			$bookmark['bmID'],
@@ -2415,7 +2416,7 @@ function bimport($data, $uid) {
 		];
 		e_log(1, $response['message']);
 	}
-		
+
 	return $response;
 }
 
@@ -2429,7 +2430,7 @@ function parseJSON($arr) {
 		$dateGroupModified = (isset($arr['dateGroupModified'])) ? $arr['dateGroupModified'] : '';
 		if(array_key_exists("parentId", $arr)) $bookmarks[] = array("bmID"=>$arr['id'],"bmTitle"=>$arr['title'],"bmIndex"=>$arr['index'],"bmAdded"=>$arr['dateAdded'],"dateGroupModified"=>$dateGroupModified,"bmType"=>"folder","bmURL"=>NULL,"bmParentID"=>$arr['parentId']);
 	}
-	
+
 	if(is_array($arr)) {
 		foreach($arr as $k => $v) {
 			parseJSON($v);
@@ -2492,7 +2493,7 @@ function clearAuthCookie() {
 
 		$query = "DELETE FROM `auth_token` WHERE `userName` = '".$cookieArr['user']."' AND `pHash` = '".$cookieArr['token']."'";
 		db_query($query);
-		
+
 		$cOptions = array (
 			'expires' => 0,
 			'path' => null,
@@ -2501,7 +2502,7 @@ function clearAuthCookie() {
 			'httponly' => false,
 			'samesite' => 'Strict'
 		);
-		
+
 		setcookie("syncmarks", "", $cOptions);
 		e_log(8,"Cookie cleared");
 	}
@@ -2511,7 +2512,7 @@ function checkLogin() {
 	global $htmlFooter, $lang;
 	e_log(8,"Check login...");
 
-	if(isset($_COOKIE['syncmarks'])) 
+	if(isset($_COOKIE['syncmarks']))
 		e_log(8,'Cookie is available');
 	else
 		e_log(8,'Cookie is not set');
@@ -2521,7 +2522,7 @@ function checkLogin() {
 		$headers = trim($_SERVER["Authorization"]);
 	} else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
 		$headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
-    }
+	}
 
 	$ctarr = explode(' ', $headers);
 	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
@@ -2547,17 +2548,17 @@ function checkLogin() {
 				break;
 			}
 		}
-		
+
 		if($tVerified) {
 			e_log(8,"Cookie Login successful. Renew cookie");
 			$seid = session_id();
 			$oTime = $tkdata[0]['userLastLogin'];
 			$_SESSION['sauth'] = $tkdata[0]['userName'];
 			getUserdata($_SESSION['sauth']);
-			
+
 			$expireTime = time()+60*60*24*CONFIG['expireDays'];
 			$rtkn = unique_code(32);
-			
+
 			$cOptions = array (
 				'expires' => $expireTime,
 				'path' => null,
@@ -2566,26 +2567,26 @@ function checkLogin() {
 				'httponly' => false,
 				'samesite' => 'Strict'
 			);
-			
+
 			$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
 
 			setcookie('syncmarks', $cookieData, $cOptions);
 			e_log(8,"New cookie refreshed");
 			$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
-			
+
 			$query = "UPDATE `auth_token` SET `tHash` = '$rtknh', `exDate` = '$expireTime' WHERE `tID` = $tVerified;";
 			$erg = db_query($query);
-			
+
 			$query = "UPDATE `users` SET `userLastLogin` = '$aTime', `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userName` = '".$cookieArr['user']."';";
 			$erg = db_query($query);
 			header("location: ?");
 			die();
-	    } else {
-	        e_log(8,"Cookie not valid, using standard login now");
+		} else {
+			e_log(8,"Cookie not valid, using standard login now");
 			clearAuthCookie();
-	    }
+		}
 	}
-	
+
 	if(count($_GET) != 0 || count($_POST) != 0) {
 		$u = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER']:false;
 		$p = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW']:false;
@@ -2597,10 +2598,11 @@ function checkLogin() {
 			e_log(8,"Try token login $client");
 			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '$client';";
 			$dbdata = db_query($query);
-			
+
 			if(count($dbdata) === 1) {
-				$pverify = (password_verify($cdata['token'], $dbdata[0]['tHash'])) ? "true":"false";
-				if(password_verify($cdata['token'], $dbdata[0]['tHash'])) {
+				$otoken = (isset($cdata['token'])) ? $cdata['token']:0;
+				$pverify = (password_verify($otoken, $dbdata[0]['tHash'])) ? "true":"false";
+				if(password_verify($otoken, $dbdata[0]['tHash'])) {
 					e_log(8,"$client token is valid. checking time.");
 					if($dbdata[0]['exDate'] > time()) {
 						e_log(8,"$client login successful");
@@ -2669,11 +2671,11 @@ function checkLogin() {
 
 			echo htmlHeader();
 			echo "<div id='loginbody'>
-				<div id='loginform'>
-					<div id='loginformh'>".$lang->messages->accessDenied."</div>
-					<div id='loginformt'>".$lang->messages->accessDeniedHint."</div>
-					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-				</div>
+			<div id='loginform'>
+			<div id='loginformh'>".$lang->messages->accessDenied."</div>
+			<div id='loginformt'>".$lang->messages->accessDeniedHint."</div>
+			<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+			</div>
 			</div>";
 			echo $htmlFooter;
 			exit;
@@ -2690,32 +2692,32 @@ function checkLogin() {
 					$_SESSION['sauth'] = $udata[0]['userName'];
 					getUserdata($_SESSION['sauth']);
 					e_log(8,"Login successful");
-					
+
 					if(isset($_POST['remember']) && $_POST['remember'] == true) {
 						e_log(8,'Set login Cookie');
 						$expireTime = time()+60*60*24*CONFIG['expireDays'];
 						$rtkn = unique_code(32);
-						
+
 						$cOptions = array (
 							'expires' => $expireTime,
-							'path' => null,
-							'domain' => null,
-							'secure' => true,
-							'httponly' => false,
-							'samesite' => 'Strict'
+						 'path' => null,
+						 'domain' => null,
+						 'secure' => true,
+						 'httponly' => false,
+						 'samesite' => 'Strict'
 						);
-						
+
 						$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
 						$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $udata[0]['userName'], 'token' => $dtoken)), 1);
 
 						setcookie('syncmarks', $cookieData, $cOptions);
 						e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
 						$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
-						
+
 						$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES ('".$udata[0]['userName']."', '$dtoken', '$rtknh', '$expireTime');";
 						$erg = db_query($query);
 					}
-					
+
 					if($seid != $udata[0]['sessionID']) {
 						e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
 						$query = "UPDATE `users` SET `userLastLogin` = $aTime, `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userID` = $uid;";
@@ -2724,7 +2726,7 @@ function checkLogin() {
 				} else {
 					unset($_SESSION['sauth']);
 					session_destroy();
-					
+
 					if(!isset($_POST['login']) || !isset($_POST['client']) ) {
 						header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
 						http_response_code(401);
@@ -2732,12 +2734,12 @@ function checkLogin() {
 					e_log(2,"Login failed. Password missmatch");
 					echo htmlHeader();
 					$lform = "<div id='loginbody'>
-						<div id='loginform'>
-							<div id='loginformh'>".$lang->messages->loginFailed."</div>
-							<div id='loginformt'>".$lang->messages->loginFailedHint;
+					<div id='loginform'>
+					<div id='loginformh'>".$lang->messages->loginFailed."</div>
+					<div id='loginformt'>".$lang->messages->loginFailedHint;
 					$lform.= (filter_var($udata[0]['userMail'], FILTER_VALIDATE_EMAIL)) ? "<br /><br /><a data-reset='$user' id='preset' href=''>".$lang->messages->forgetPassword."</a>":"<br /><br />".$lang->messages->forgetPasswordAdmin;
 					$lform.= "</div>
-						<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
 					</div></div>";
 					echo $lform;
 					echo $htmlFooter;
@@ -2746,19 +2748,19 @@ function checkLogin() {
 			} else {
 				unset($_SESSION['sauth']);
 				session_destroy();
-				
+
 				if(!isset($_POST['login']) || !isset($_POST['client'])) {
 					header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
 					if(!isset($_POST['client'])) http_response_code(401);
 				} else {
 					echo htmlHeader();
 					echo "<div id='loginbody'>
-							<div id='loginform'>
-								<div id='loginformh'>".$lang->messages->loginFailed."</div>
-								<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a></div>
-								<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-							</div>
-						</div>";
+					<div id='loginform'>
+					<div id='loginformh'>".$lang->messages->loginFailed."</div>
+					<div id='loginformt'><a href='?'>".$lang->messages->loginFailedHint."</a></div>
+					<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+					</div>
+					</div>";
 					echo $htmlFooter;
 				}
 				e_log(2,"Login failed. Credential missmatch");
@@ -2768,19 +2770,19 @@ function checkLogin() {
 	} else {
 		echo htmlHeader();
 		echo "<div id='loginbody'>
-			<form method='POST' id='lform'>
-			<div id='loginform'>
-				<div id='loginformh'>".$lang->messages->welcome."</div>
-				<div id='loginformt'>".$lang->messages->welcomeHint."</div>
-				<div id='loginformb'>
-					<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
-					<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
-					<input name='client' type='hidden' value='0'>
-					<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
-					<button name='login' value='login'>".$lang->actions->login."</button>
-				</div>
-			</div>
-			</form>
+		<form method='POST' id='lform'>
+		<div id='loginform'>
+		<div id='loginformh'>".$lang->messages->welcome."</div>
+		<div id='loginformt'>".$lang->messages->welcomeHint."</div>
+		<div id='loginformb'>
+		<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
+		<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
+		<input name='client' type='hidden' value='0'>
+		<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
+		<button name='login' value='login'>".$lang->actions->login."</button>
+		</div>
+		</div>
+		</form>
 		</div>";
 		echo $htmlFooter;
 		exit;
@@ -2790,15 +2792,15 @@ function checkLogin() {
 function ip_info() {
 	$ipArr = [];
 	if(!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-    } else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])){
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } else {
-        $ip = $_SERVER['REMOTE_ADDR'];
-    }
-    
-    $ipArr['ip'] = $ip;
-    $wArr = preg_split('/\r\n|\r|\n/', shell_exec("whois '".addslashes($ipArr['ip'])."'"));
+		$ip = $_SERVER['HTTP_CLIENT_IP'];
+	} else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])){
+		$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+	} else {
+		$ip = $_SERVER['REMOTE_ADDR'];
+	}
+
+	$ipArr['ip'] = $ip;
+	$wArr = preg_split('/\r\n|\r|\n/', shell_exec("whois '".addslashes($ipArr['ip'])."'"));
 
 	foreach($wArr as $ipi ) {
 		$iarr = explode(": ", $ipi);
@@ -2807,16 +2809,14 @@ function ip_info() {
 			break;
 		}
 	}
-	
-	$ip_info = @json_decode(file_get_contents("http://www.geoplugin.net/json.gp?ip=".$ipArr['ip']));
-	if($ip_info && $ip_info->geoplugin_countryName != null){
-		$ipArr['co'] = $ip_info->geoplugin_continentName;
-		$ipArr['ct'] = $ip_info->geoplugin_countryName;
-		$ipArr['re'] = $ip_info->geoplugin_region;
-		$ipArr['ua'] = $_SERVER['HTTP_USER_AGENT'];
-		$ipArr['tm'] = time();
-	}
-	
+
+	$arr = json_decode(file_get_contents("http://ipinfo.io/88.65.107.167/geo"), true);
+	$ipArr['co'] = $arr['city'];
+	$ipArr['ct'] = $arr['country'];
+	$ipArr['re'] = $arr['region'];
+	$ipArr['ua'] = $_SERVER['HTTP_USER_AGENT'];
+	$ipArr['tm'] = time();
+
 	return $ipArr;
 }
 
@@ -2932,9 +2932,9 @@ function checkInstall() {
 
 	echo "<div id='db_setup' class='installer'><h3>".$lang->messages->dbSetup."</h3><span>".$lang->messages->dbQuestion."</span></br>
 	<label for='sdatabase'>".$lang->messages->dbType."</label><select name='database' id='sdatabase'>
-		<option value='' disabled selected>".$lang->messages->dbChoose."</option>
-		<option value='mysql'>MySQL/MariaDB</option>
-		<option value='sqlite'>SQLite3</option>
+	<option value='' disabled selected>".$lang->messages->dbChoose."</option>
+	<option value='mysql'>MySQL/MariaDB</option>
+	<option value='sqlite'>SQLite3</option>
 	</select>";
 
 	$mform = "<div id='mform' class='dbsetup'>
@@ -2957,23 +2957,23 @@ function checkInstall() {
 	echo "<button id='nextSetup' disabled class='next'>".$lang->actions->settings."</button></div>";
 
 	$seform = "<div id='seform' class='installer'><h3>".$lang->actions->settings."</h3>
-		<label for='lfpath'>".$lang->actions->logfile."</label><input type='text' name='lfpath' id='lfpath' value='".CONFIG['logfile']."' placeholder='".$lang->messages->pathLfile."' title='".$lang->messages->pathLfile."' required>
-		<label for='loglevel'>".$lang->messages->Loglevel."</label><select name='loglevel' id='loglevel'>
-			<option value='' disabled>".$lang->messages->chLoglevel."</option>
-			<option value='1'>Error</option>
-			<option value='2' selected>Warn</option>
-			<option value='4'>Parse</option>
-			<option value='8'>Notice</option>
-			<option value='9'>Debug</option>
-		</select>
-		<label for='realm'>".$lang->messages->realmL."</label><input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='".$lang->messages->realm."' title='".$lang->messages->realm."' required>
-		<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
-		<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
-		<label for='spwd'>".$lang->messages->password."</label><input type='password' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
-		<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
-		<label for='enchash'>".$lang->messages->hash."</label><input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
-		<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
-		<button id='nextSettings' class='next'>".$lang->actions->save."</button>
+	<label for='lfpath'>".$lang->actions->logfile."</label><input type='text' name='lfpath' id='lfpath' value='".CONFIG['logfile']."' placeholder='".$lang->messages->pathLfile."' title='".$lang->messages->pathLfile."' required>
+	<label for='loglevel'>".$lang->messages->Loglevel."</label><select name='loglevel' id='loglevel'>
+	<option value='' disabled>".$lang->messages->chLoglevel."</option>
+	<option value='1'>Error</option>
+	<option value='2' selected>Warn</option>
+	<option value='4'>Parse</option>
+	<option value='8'>Notice</option>
+	<option value='9'>Debug</option>
+	</select>
+	<label for='realm'>".$lang->messages->realmL."</label><input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='".$lang->messages->realm."' title='".$lang->messages->realm."' required>
+	<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
+	<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
+	<label for='spwd'>".$lang->messages->password."</label><input type='password' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
+	<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
+	<label for='enchash'>".$lang->messages->hash."</label><input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
+	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
+	<button id='nextSettings' class='next'>".$lang->actions->save."</button>
 	</div>";
 
 	echo $seform;
@@ -3055,7 +3055,7 @@ function initDB($data) {
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
 	];
-	
+
 	try {
 		if($database['type'] == 'mysql') {
 			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
@@ -3086,12 +3086,12 @@ function initDB($data) {
 			$code = 250;
 		}
 	}
-	
+
 	$response = [
 		"code" => $code,
 		"message" => $message
 	];
-	
+
 	return $response;
 }
 
@@ -3115,7 +3115,7 @@ function saveSettings($data) {
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
 		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
 	];
-	
+
 	try {
 		if($database['type'] == 'mysql') {
 			$hs = (substr($database['host'],0,1) === '/') ? 'unix_socket':'host';
@@ -3124,7 +3124,7 @@ function saveSettings($data) {
 		} elseif($database['type'] == 'sqlite') {
 			$db = new PDO($database['type'].':'.$database['dbname'], null, null, $options);
 		}
-		
+
 		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".$settings['suser']."',2,'$userPWD');";
 		$res = $db->exec($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
@@ -3133,7 +3133,7 @@ function saveSettings($data) {
 		$db->exec($query);
 		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
 		$db->exec($query);
-		
+
 	} catch (PDOException $e) {
 		$message = 'DB connection failed: '.$e->getMessage();
 		e_log(1, $message);
