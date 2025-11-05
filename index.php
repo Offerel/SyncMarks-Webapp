@@ -797,12 +797,9 @@ function tabsSend($jtabs, $user, $added) {
 }
 
 function backupBookmarks($mode, $c = 0) {
-	e_log(8,"Start bookmark backup");
-
 	$dir = 'backups/'.$_SESSION['sud']['userID'];
 
 	if(CONFIG['backup'] !== 1) {
-		e_log(2,"backups disabled");
 		return false;
 	}
 
@@ -820,13 +817,14 @@ function backupBookmarks($mode, $c = 0) {
 	$newest = str_replace('.json','',substr(basename($files[0]), 17));
 
 	if($mode === 0 && $c === 0 && (date('Ymd') === date('Ymd', $newest))) {
-		e_log(8, "Cancel backup, already done today");
 		return false;
 	} else {
+		$filename = 'bookmarks_backup_'.time().'.json';
+		$backup_path = $dir.'/'.$filename;
+		e_log(8, "Create backup $backup_path");
 		$barr = getBookmarks();
 		$bookmarks = json_encode($barr);
-		$filename = 'bookmarks_backup_'.time().'.json';
-		file_put_contents($dir.'/'.$filename, $bookmarks);
+		file_put_contents($backup_path, $bookmarks);
 
 		foreach ($files as $key => $value) {
 			if($key >= 10) unlink($value);
@@ -2608,15 +2606,17 @@ function checkLogin() {
 						e_log(8,"$client login successful");
 						$_SESSION['sauth'] = $dbdata[0]['userName'];
 						getUserdata($_SESSION['sauth']);
-						$expireTime = time()+60*60*24*CONFIG['expireDays'];
-						$token = bin2hex(openssl_random_pseudo_bytes(32));
-						$thash = password_hash($token, PASSWORD_DEFAULT);
-						$userID = $dbdata[0]['userID'];
-						$ipjson = json_encode(ip_info());
-						$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
-						db_query($query);
-						header("X-Request-Info: $token");
-						e_log(8,"New token send to $client and saved in DB, set new expireTime");
+						if(!isset($_GET['t'])) {
+							$expireTime = time()+60*60*24*CONFIG['expireDays'];
+							$token = bin2hex(openssl_random_pseudo_bytes(32));
+							$thash = password_hash($token, PASSWORD_DEFAULT);
+							//$userID = $dbdata[0]['userID'];
+							$ipjson = json_encode(ip_info());
+							$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
+							db_query($query);
+							header("X-Request-Info: $token");
+							e_log(8,"New token send to $client and saved in DB, set new expireTime");
+						}
 					} else {
 						e_log(2,"$client login failed, expireTime reached");
 						$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
