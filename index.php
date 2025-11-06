@@ -1842,7 +1842,7 @@ function saveRequest() {
 	$logpath = is_dir($logfile) ? $logfile:dirname($logfile);
 	$tstamp = time();
 
-	$filename = $logpath."/request_".$tstamp.".txt";
+	$filename = $logpath."/noapi_request_".$tstamp.".txt";
 	e_log(9,"Request saved: $filename");
 	file_put_contents($filename, $_SERVER['REQUEST_METHOD'].PHP_EOL, FILE_APPEND);
 	file_put_contents($filename, var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
@@ -2601,7 +2601,7 @@ function checkLogin() {
 				$otoken = (isset($cdata['token'])) ? $cdata['token']:0;
 				$pverify = (password_verify($otoken, $dbdata[0]['tHash'])) ? "true":"false";
 				if(password_verify($otoken, $dbdata[0]['tHash'])) {
-					e_log(8,"$client token is valid. checking time.");
+					e_log(8,"$client token is valid. Checking time.");
 					if($dbdata[0]['exDate'] > time()) {
 						e_log(8,"$client login successful");
 						$_SESSION['sauth'] = $dbdata[0]['userName'];
@@ -2610,7 +2610,6 @@ function checkLogin() {
 							$expireTime = time()+60*60*24*CONFIG['expireDays'];
 							$token = bin2hex(openssl_random_pseudo_bytes(32));
 							$thash = password_hash($token, PASSWORD_DEFAULT);
-							//$userID = $dbdata[0]['userID'];
 							$ipjson = json_encode(ip_info());
 							$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
 							db_query($query);
