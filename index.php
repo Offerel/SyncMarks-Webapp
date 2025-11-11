@@ -9,7 +9,6 @@
  */
 define("CONFIG", init());
 $lang = setLang();
-$htmlFooter = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
 if(!isset($_POST['action'])) checkInstall();
 
 $le = "";
@@ -494,10 +493,7 @@ if(isset($_GET['push'])) {
 	if(ntfyNotification($data, $_SESSION['sud']['userID']) !== 0) die('Pushed');
 }
 
-echo htmlHeader();
-echo htmlForms();
-echo showBookmarks();
-echo $htmlFooter;
+showApp();
 
 function gFile($data) {
 	$dir = 'backups/'.$_SESSION['sud']['userID'];
@@ -3154,5 +3150,17 @@ function saveSettings($data) {
 	];
 
 	return $response;
+}
+
+function htmlFooter() {
+	$footer = "<div id = \"mnubg\"></div><div id='pwamessage'></div></body></html>";
+	return $footer;
+}
+
+function showApp() {
+	echo htmlHeader();
+	echo htmlForms();
+	echo showBookmarks();
+	echo htmlFooter();
 }
 ?>
