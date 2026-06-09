@@ -1113,7 +1113,7 @@ function bookmarkAdd($bookmark, $stime, $ctype, $client, $add = null) {
 function bookmarkDel($bookmark, $user) {
 	e_log(8,"Try to identify bookmark to delete");
 
-	if(strlen($bookmark['folder'] === 1)) {
+	if(strlen($bookmark['folder']) === 1) {
 		switch($bookmark['folder']) {
 			case "0": $bookmark['folder'] = "root________"; break;
 			case "1": $bookmark['folder'] = "toolbar_____"; break;
