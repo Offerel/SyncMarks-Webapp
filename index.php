@@ -1817,7 +1817,7 @@ function unique_code($limit) {
 	return substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, $limit);
 }
 
-function saveDebugJSON($prefix, $jarr) {
+function saveDebugJSON($prefix, $jarr) { 
 	if(CONFIG['loglevel'] < 9) return false;
 
 	$logfile = CONFIG['logfile'];
