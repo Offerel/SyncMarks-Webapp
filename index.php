@@ -935,8 +935,9 @@ function clientSaveOptions($client, $cOptions) {
 
 function clientList($client, $uid) {
 	e_log(8,"Try to get list of clients");
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid AND NOT `cid` = '$client';";
-	$clientList = db_query($query);
+	$query = "SELECT cid, IFNULL(cname, cid) cname, ctype, lastseen FROM clients WHERE userID = ? AND NOT cid = ?";
+	$data[] = array($uid, $client);
+	$clientList = db_query_prep($query, $data);
 
 	e_log(8,"Found ".count($clientList)." clients. Send list to '$client'.");
 
@@ -1827,7 +1828,6 @@ function saveDebugJSON($prefix, $jarr) {
 		$filename = $logpath."/".$prefix."_".$tstamp.".json";
 		e_log(9,"JSON saved: $filename");
 		$jarr['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
-		$jarr['browser'] = get_browser(null, true);
 		file_put_contents($filename, json_encode($jarr, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 	}
 }
@@ -2825,6 +2825,38 @@ function cryptCookie($data, $crypt) {
 	$key = hash('sha256', CONFIG['enckey']);
 	$str = ($crypt == 1) ? base64_encode(openssl_encrypt($data, $method, $key, $opts, $iv)):openssl_decrypt(base64_decode($data), $method, $key, $opts, $iv);
 	return $str;
+}
+
+function db_query_prep($query, $data=null) {
+	e_log(9,$query);
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+
+	try {
+		if(CONFIG['db']['type'] == 'mysql') {
+			$hs = (substr(CONFIG['db']['host'],0,1) === '/') ? 'unix_socket':'host';
+			$constr = CONFIG['db']['type'].':'.$hs.'='.CONFIG['db']['host'].';dbname='.CONFIG['db']['dbname'];
+			$db = new PDO($constr, CONFIG['db']['user'], CONFIG['db']['pwd'], $options);
+		} elseif(CONFIG['db']['type'] == 'sqlite') {
+			$db = new PDO(CONFIG['db']['type'].':'.CONFIG['db']['dbname'], null, null, $options);
+			$db->exec( 'PRAGMA foreign_keys = ON;' );
+		}
+	} catch (PDOException $e) {
+		e_log(1,'DB connection failed: '.$e->getMessage());
+		return false;
+	}
+
+	$statement = $db->prepare($query);
+	foreach ($data as $value) {
+		$statement->execute($value);
+	}
+	$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+	$db = NULL;
+	return $queryData;
 }
 
 function db_query($query, $data=null) {
