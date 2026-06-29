@@ -1826,6 +1826,8 @@ function saveDebugJSON($prefix, $jarr) {
 	if(is_array($jarr)) {
 		$filename = $logpath."/".$prefix."_".$tstamp.".json";
 		e_log(9,"JSON saved: $filename");
+		$jarr['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+		$jarr['browser'] = get_browser(null, true);
 		file_put_contents($filename, json_encode($jarr, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 	}
 }
@@ -1840,6 +1842,7 @@ function saveRequest() {
 
 	$filename = $logpath."/noapi_request_".$tstamp.".txt";
 	e_log(9,"Request saved: $filename");
+	file_put_contents($filename, $_SERVER['HTTP_USER_AGENT'].PHP_EOL, FILE_APPEND);
 	file_put_contents($filename, $_SERVER['REQUEST_METHOD'].PHP_EOL, FILE_APPEND);
 	file_put_contents($filename, var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
 }
