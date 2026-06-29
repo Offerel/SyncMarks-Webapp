@@ -4,7 +4,7 @@
  *
  * @version 2.1.0
  * @author Offerel
- * @copyright Copyright (c) 2025, Offerel
+ * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
  */
 define("CONFIG", init());
@@ -141,8 +141,9 @@ if(isset($_POST['action'])) {
 		case "pushHide":
 			e_log(8,"Hide notification");
 			$page = filter_var($_POST['data'], FILTER_VALIDATE_INT);
-			$query = "UPDATE `pages` SET `nloop`= 0, `ntime`= '".time()."' WHERE `pid` = $page AND `userID` = $uid";
-			$response = db_query($query);
+			$query = "UPDATE pages SET nloop=0, ntime=? WHERE pid=? AND userID=?";
+			$response = db_query_prep($query, array(array(time(), $page, $uid)));
+			e_log(8,"result: ".print_r($response, true));
 			break;
 		case "arename":
 			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
@@ -156,9 +157,10 @@ if(isset($_POST['action'])) {
 			$loop = filter_var($_POST['add'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1:0;
 			if($message > 0) {
 				e_log(8,"Try to delete page $message");
-				$query = "DELETE FROM `pages` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `pid` = $message;";
-				$count = db_query($query);
-				($count === 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
+				$query = "DELETE FROM `pages` WHERE `userID` = ? AND `pid` = ?";
+				$data = array(array($_SESSION['sud']['userID'], $message));
+				$count = db_query_prep($query, $data);
+				($count == 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
 			$response = notiList($uid, $loop);
 			break;
@@ -167,9 +169,10 @@ if(isset($_POST['action'])) {
 			e_log(8,"Option received: ".$data.":".$value);
 			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
 			$oOptionsA[$data] = $value;
-			$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=$uid;";
+			$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+			$data = array(array(json_encode($oOptionsA), $uid));
 			header("Content-Type: application/json");
-			if(db_query($query) !== false) {
+			if(db_query_prep($query, $data) !== false) {
 				e_log(8,"Option saved");
 				$response = json_encode(true);
 			} else {
@@ -181,37 +184,44 @@ if(isset($_POST['action'])) {
 			$bookmark = json_decode($_POST['data'], true);
 			$title = filter_var($bookmark['title'], FILTER_SANITIZE_STRING);
 			$id = filter_var($bookmark['id'], FILTER_SANITIZE_STRING);
-			$url = (isset($bookmark['url']) && strlen($bookmark['url']) > 4) ? '\''.validate_url($bookmark['url']).'\'' : 'NULL';
+			$url = (isset($bookmark['url']) && strlen($bookmark['url']) > 4) ? validate_url($bookmark['url']):'NULL';
 			e_log(8, "Edit entry '$title'");
-			$query = "UPDATE `bookmarks` SET `bmTitle` = '$title', `bmURL` = $url, `bmAdded` = '$time' WHERE `bmID` = '$id' AND `userID` = $uid;";
-			$count = db_query($query);
-			$response = ($count > 0) ? true:false;
+			$query = "UPDATE `bookmarks` SET `bmTitle` = ?, `bmURL` = ?, `bmAdded` = ? WHERE `bmID` = ? AND `userID` = ?";
+			$data = array(array($title, $url, $time, $id, $uid));
+			$response = db_query_prep($query, $data);
 			break;
 		case "bmmv":
 			e_log(8,"Move bookmark $add");
 			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$data';";
 			$folderData = db_query($query);
-			$query = "SELECT `bmParentID` FROM `bookmarks` WHERE `bmID` = '$add' AND `userID` = $uid;";
-			$oFolder = db_query($query)[0]['bmParentID'];
-			$query = "UPDATE `bookmarks` SET `bmIndex` = ".$folderData[0]['index'].", `bmParentID` = '$data', `bmAdded` = '$time' WHERE `bmID` = '$add' AND `userID` = $uid;";
-			$count = db_query($query);
+			$query_prep = "SELECT `bmParentID` FROM `bookmarks` WHERE `bmID` = ? AND `userID` = ?";
+			$datap = array(array($add, $uid));
+			$oFolder = db_query_prep($query_prep, $datap)[0]['bmParentID'];
+			$query = "UPDATE `bookmarks` SET `bmIndex` = ?, `bmParentID` = ?, `bmAdded` = ? WHERE `bmID` = ? AND `userID` = ?";
+			$datap = array(array($folderData[0]['index'], $data, $time, $add, $uid));
+			$result = db_query_prep($query, $datap);
 			reIndex($oFolder, $folderData[0]['index']);
-			$response = ($count > 0) ? array("id" => $add, "folder" => $data):false;
+			$response = ($result == true) ? array("id" => $add, "folder" => $data):false;
 			break;
 		case "adel":
 			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 			e_log(8,"Delete client $client");
-			$query = "DELETE FROM `clients` WHERE `userID` = ".$_SESSION['sud']['userID']." AND `cid` = '$client';";
-			$count = db_query($query);
-			$response = ($count > 0) ? bClientlist($_SESSION['sud']['userID']):false;
+			$query = "DELETE FROM `clients` WHERE `userID` = ? AND `cid` = ?";
+			$psdata = array([$_SESSION['sud']['userID'], $client]);
+			$result = db_query_prep($query, $psdata);
+			$response = ($result == true) ? bClientlist($_SESSION['sud']['userID']):false;
 			break;
 		case "cmail":
 			e_log(8,"Change e-mail for ".$_SESSION['sud']['userName']);
-			$nmail = filter_var($_POST['mail'],FILTER_SANITIZE_EMAIL);
+			$nmail = filter_var($_POST['data'],FILTER_SANITIZE_EMAIL);
 			header("Content-Type: application/json");
 			if(filter_var($nmail, FILTER_VALIDATE_EMAIL)) {
-				$query = "UPDATE `users` SET `userMail` = '$nmail' WHERE `userID` = ".$_SESSION['sud']['userID'].";";
-				die(json_encode(db_query($query)));
+				$query = "UPDATE `users` SET `userMail` = ? WHERE `userID` = ?";
+				$psdata = [[
+					$nmail,
+					$_SESSION['sud']['userID']
+				]];
+				die(json_encode(db_query_prep($query, $psdata)));
 			} else {
 				e_log(1,"No valid E-Mail. Stop changing E-Mail");
 				die(json_encode("No valid mail address. Mail not changed."));
@@ -237,8 +247,15 @@ if(isset($_POST['action'])) {
 				case 1:
 					$pwd = password_hash($password,PASSWORD_DEFAULT);
 					e_log(8,"Try to add new user $user");
-					$query = "INSERT INTO `users` (`userName`,`userMail`,`userType`,`userHash`) VALUES ('$user', NULLIF('$mail',''), '$userLevel', '$pwd')";
-					$nuid = db_query($query);
+					$query = "INSERT INTO `users` (`userName`,`userMail`,`userType`,`userHash`) VALUES (?, NULLIF(?,''), ?, ?)";
+					$psdata = [[
+						$user,
+						$mail,
+						$userLevel,
+						$pwd
+					]];
+					
+					$nuid = db_query_prep($query, $psdata);
 					if($nuid > 0) {
 						if(filter_var($mail, FILTER_VALIDATE_EMAIL)) {
 							$response = $nuid;
@@ -282,9 +299,9 @@ if(isset($_POST['action'])) {
 					break;
 				case 3:
 					e_log(8,"Delete user $user");
-					$uID = filter_var($data['userSelect'], FILTER_VALIDATE_INT);
-					$query = "DELETE FROM `users` WHERE `userID` = $uID;";
-					if(db_query($query) == 1) {
+					$query = "DELETE FROM `users` WHERE `userID` = ?";
+					$psdata = [[filter_var($data['userSelect'], FILTER_VALIDATE_INT)]];
+					if(db_quer_prep($query, $psdata) == true) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User deleted, Try to send E-Mail to user";
 							$message = "Hello,\r\nyour account '$user' and all it's data is removed from ".getlink();
@@ -356,9 +373,13 @@ if(isset($_POST['action'])) {
 						$oOptionsA['ntfy']['instance'] = $ntfyInstance;
 						$oOptionsA['ntfy']['token'] = $ntfyToken;
 
-						$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-						$count = db_query($query);
-						($count === 1) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
+						$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+						$psdata = [[
+							json_encode($oOptionsA),
+							$_SESSION['sud']['userID']
+						]];
+						$result = db_query_prep($query, $psdata);
+						($result === true) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
 						header("location: ?");
 						die();
 					}
@@ -372,8 +393,12 @@ if(isset($_POST['action'])) {
 					$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
 					$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
 					$oOptionsA['language'] = $nlng;
-					$query = "UPDATE `users` SET `uOptions`='".json_encode($oOptionsA)."' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-					(db_query($query) === 1) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
+					$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+					$psdata = [[
+						json_encode($oOptionsA),
+						$_SESSION['sud']['userID']
+					]];
+					(db_query_prep($query, $psdata) === true) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
 					$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
 					die("1");
 					break;
@@ -385,8 +410,12 @@ if(isset($_POST['action'])) {
 					if($opassword != "") {
 						if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
 							e_log(8,"User change: Verify original password");
-							$query = "UPDATE `users` SET `userName`='$username' WHERE `userID`=".$_SESSION['sud']['userID'].";";
-							db_query($query);
+							$query = "UPDATE `users` SET `userName`= ? WHERE `userID`= ?";
+							$psdata = [[
+								$username,
+								$_SESSION['sud']['userID']
+							]];
+							db_query_prep($query, $psdata);
 							e_log(8,"User change: Username changed");
 						}
 						else {
@@ -2828,7 +2857,7 @@ function cryptCookie($data, $crypt) {
 }
 
 function db_query_prep($query, $data=null) {
-	e_log(9,$query);
+	//e_log(9,$query);
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
@@ -2851,10 +2880,15 @@ function db_query_prep($query, $data=null) {
 
 	$statement = $db->prepare($query);
 	foreach ($data as $value) {
-		$statement->execute($value);
+		$result = $statement->execute($value);
 	}
-	$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
 
+	if(strpos($query, 'SELECT') === 0 || strpos($query, 'PRAGMA') === 0) {
+		$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
+	} else {
+		$queryData = $result;
+	}
+	
 	$db = NULL;
 	return $queryData;
 }
