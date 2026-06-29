@@ -3,7 +3,7 @@
  *
  * @version 2.1.0
  * @author Offerel
- * @copyright Copyright (c) 2025, Offerel
+ * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
  */
 const dbName = "syncmarks";
