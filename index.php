@@ -1721,7 +1721,7 @@ function editFolder($bm, $time, $uid) {
 	$psdata = [[
 		$bm['index'],
 		$bm['parentId'],
-		$uid;
+		$uid
 	]];
 	$fData = db_query_prep($query, $psdata);
 
@@ -1991,7 +1991,7 @@ function addBookmark($bm) {
 	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = ? AND `userID` = ?";
 	$psdata = [[
 		$bm["folder"],
-		$uid;
+		$uid
 	]];
 	$folderID = db_query_prep($query, $psdata)[0]['bmID'];
 
