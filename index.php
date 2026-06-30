@@ -555,8 +555,12 @@ function gFile($data) {
 }
 
 function init() {
+	session_set_cookie_params([
+		'httponly' => true,
+		'secure' => true,
+		'samesite' => 'Strict'
+	]);
 	session_start();
-	include_once "config.inc.php.dist";
 	include_once "config.inc.php";
 
 	$version = '';
@@ -2165,7 +2169,7 @@ function getUserdata($user) {
 }
 
 function unique_code($limit) {
-	return substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, $limit);
+	return bin2hex(random_bytes($limit / 2));
 }
 
 function saveDebugJSON($prefix, $jarr) { 
@@ -3426,7 +3430,7 @@ function checkInstall() {
 	<label for='realm'>".$lang->messages->realmL."</label><input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='".$lang->messages->realm."' title='".$lang->messages->realm."' required>
 	<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
 	<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
-	<label for='spwd'>".$lang->messages->password."</label><input type='password' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
+	<label for='spwd'>".$lang->messages->password."</label><input type='text' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
 	<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
 	<label for='enchash'>".$lang->messages->hash."</label><input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
 	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
