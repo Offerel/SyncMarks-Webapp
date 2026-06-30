@@ -192,8 +192,11 @@ if(isset($_POST['action'])) {
 			break;
 		case "bmmv":
 			e_log(8,"Move bookmark $add");
-			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = '$data';";
-			$folderData = db_query($query);
+			$query = "SELECT IFNULL(MAX(bmIndex), 0) + 1 AS 'index' FROM `bookmarks` WHERE `bmParentID` = ?";
+			$psdata = [[
+				$data
+			]];
+			$folderData = db_query_prep($query, $psdata);
 			$query_prep = "SELECT `bmParentID` FROM `bookmarks` WHERE `bmID` = ? AND `userID` = ?";
 			$datap = array(array($add, $uid));
 			$oFolder = db_query_prep($query_prep, $datap)[0]['bmParentID'];
@@ -267,13 +270,18 @@ if(isset($_POST['action'])) {
 						} else {
 							$response = $nuid;
 						}
-						$bmAdded = round(microtime(true) * 1000);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', $bmAdded, $nuid);";
-						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, $bmAdded, $nuid)";
-						db_query($query);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', $bmAdded, $nuid)";
-						db_query($query);
+
+						$psdata = [[
+							round(microtime(true) * 1000),
+							$nuid
+						]];
+
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', ?, ?";
+						db_query_prep($query, $psdata);
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ?, ?)";
+						db_query_prep($query, $psdata);
+						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', ?, ?)";
+						db_query_prep($query, $psdata);
 					} else {
 						$response = "User creation failed";
 					}
@@ -284,8 +292,13 @@ if(isset($_POST['action'])) {
 					$pwd = password_hash($password,PASSWORD_DEFAULT);
 					$p = ($data['p'] != '') ? ", `userHash` = '$pwd'":"";
 
-					$query = "UPDATE `users` SET `userName`= '$user', `userType`= '$userLevel'$p WHERE `userID` = $uID;";
-					if(db_query($query) == 1) {
+					$query = "UPDATE `users` SET `userName`= ?, `userType`= ? WHERE `userID` = ?";
+					$psdata = [[
+						$user,
+						$userLevel,
+						$uID
+					]];
+					if(db_query_prep($query, $psdata) == true) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User changed successful, Try to send E-Mail to user";
 							$message = "Hello,\r\nyour account is changed for SyncMarks. You can login at ".getLink();
@@ -1522,22 +1535,40 @@ function reIndex($parentid, $bmIndex = null) {
 function cfolder($ctime, $fname, $fbid) {
 	e_log(8,"Request to create folder $fname");
 	$uid = $_SESSION['sud']['userID'];
-	$query = "SELECT `bmParentID`  FROM `bookmarks` WHERE `bmID` = '$fbid' AND `userID` = $uid;";
-	$pdata = db_query($query);
+	$query = "SELECT `bmParentID`  FROM `bookmarks` WHERE `bmID` = ? AND `userID` = ?";
+	$psdata = [[
+		$fbid,
+		$uid
+	]];
+	$pdata = db_query_prep($query, $psdata);
 	$res = '';
 	$parentid = $pdata[0]['bmParentID'];
 
 	if(count($pdata) == 1) {
 		e_log(8,"Try to get index folder");
-		$query = "SELECT MAX(`bmIndex`)+1 as nIndex FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = $uid";
-		$idata = db_query($query);
+		$query = "SELECT MAX(`bmIndex`)+1 as nIndex FROM `bookmarks` WHERE `bmParentID` = ? AND `userID` = ?";
+		$psdata = [[
+			$parentid,
+			$uid
+		]];
+		$idata = db_query_prep($query, $psdata);
 
 		if(count($idata) == 1) {
 			e_log(8,"Add new folder to database");
 			$bmIndex = $idata[0]['nIndex'];
 
-			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', '$parentid', $bmIndex, '$fname', 'folder', $ctime, $uid)";
-			if(db_query($query) === false)
+			$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+			$psdata = [[
+				unique_code(12),
+				$parentid,
+				$bmIndex,
+				$fname,
+				'folder',
+				$ctime,
+				$uid
+			]];
+
+			if(db_query_prep($query, $psdata) === false)
 				$res = "Adding folder failed.";
 			else {
 				$res = "1";
@@ -1686,12 +1717,23 @@ function html_export() {
 
 function editFolder($bm, $time, $uid) {
 	e_log(8,"Edit folder request, try to find the folder...");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmIndex` >= ".$bm['index']." AND `bmType` = 'folder' AND `bmParentID` = '".$bm['parentId']."' AND `userID` = $uid;";
-	$fData = db_query($query);
+	$query = "SELECT * FROM `bookmarks` WHERE `bmIndex` >= ? AND `bmType` = 'folder' AND `bmParentID` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['index'],
+		$bm['parentId'],
+		$uid;
+	]];
+	$fData = db_query_prep($query, $psdata);
 
 	if(count($fData) == 1) {
-		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmMAdded` = $time WHERE WHERE `bmID` = '".$fData[0]['bmID']."' AND userID = $uid;";
-		$count = db_query($query);
+		$query = "UPDATE `bookmarks` SET `bmTitle` = ?, `bmMAdded` = ? WHERE `bmID` = ? AND userID = ?";
+		$psdata = [[
+			$bm['title'],
+			$time,
+			$fData[0]['bmID'],
+			$uid
+		]];
+		$count = db_query_prep($query, $psdata);
 		$response = [
 			"message" => "Unique folder found, edit the folder",
 			"code" => 200,
@@ -1709,12 +1751,22 @@ function editFolder($bm, $time, $uid) {
 
 function editBookmark($bm, $time, $uid) {
 	e_log(8,"Edit bookmark request, try to find the bookmark first by url...");
-	$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmURL` = '".$bm['url']."' AND `userID` = $uid";
-	$bmData = db_query($query);
+	$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmURL` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['url'],
+		$uid
+	]];
+	$bmData = db_query_prep($query, $psdata);
 
 	if(count($bmData) == 1) {
-		$query = "UPDATE `bookmarks` SET `bmTitle` = '".$bm['title']."', `bmAdded` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
-		$count = db_query($query);
+		$query = "UPDATE `bookmarks` SET `bmTitle` = ?, `bmAdded` = ? WHERE `bmID` = ? AND userID = ?";
+		$psdata = [[
+			$bm['title'],
+			$time,
+			$bmData[0]['bmID'],
+			$uid
+		]];
+		$count = db_query_prep($query, $psdata);
 		$response = [
 			"message" => "Unique entry found, edit the title of the bookmark",
 			"code" => 200,
@@ -1722,12 +1774,22 @@ function editBookmark($bm, $time, $uid) {
 		e_log(8,$response['message']);
 	} else {
 		e_log(2,"No unique bookmark found, try to find now by title...");
-		$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `userID` = $uid";
-		$bmData = db_query($query);
+		$query = "SELECT `bmID`  FROM `bookmarks` WHERE `bmTitle` = ? AND `userID` = ?";
+		$psdata = [[
+			$bm['title'],
+			$uid
+		]];
+		$bmData = db_query_prep($query, $psdata);
 
 		if(count($bmData) == 1) {
-			$query = "UPDATE `bookmarks` SET `bmURL` = '".$bm['url']."', `bmAdded` = $time WHERE `bmID` = '".$bmData[0]['bmID']."' AND userID = $uid;";
-			$count = db_query($query);
+			$query = "UPDATE `bookmarks` SET `bmURL` = ?, `bmAdded` = ? WHERE `bmID` = ? AND userID = ?";
+			$psdata = [[
+				$bm['url'],
+				$time,
+				$bmData[0]['bmID'],
+				$uid
+			]];
+			$count = db_query_prep($query, $psdata);
 			$response = [
 				"message" => "Unique entry found, edit the url of the bookmark",
 				"code" => 200,
@@ -1748,8 +1810,12 @@ function editBookmark($bm, $time, $uid) {
 function moveBookmark($bm) {
 	e_log(8,"Bookmark seems to be moved, checking folder data");
 	$uid = $_SESSION['sud']['userID'];
-	$query = "SELECT `bmID`, `bmParentID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = '".$bm['nfolder']."' AND `userID` = $uid;";
-	$folderData = db_query($query)[0];
+	$query = "SELECT `bmID`, `bmParentID` FROM `bookmarks` WHERE `bmType` = 'folder' AND `bmTitle` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['nfolder'],
+		$uid
+	]];
+	$folderData = db_query_prep($query, $psdata)[0];
 
 	if(is_null($folderData['bmID'])) {
 		$response = [
@@ -1765,18 +1831,32 @@ function moveBookmark($bm) {
 
 	if(array_key_exists("url", $bm)) {
 		e_log(8,"Search bookmark by url before moving it");
-		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= $uid AND `bmURL` = '".$bm["url"]."';";
+		$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID`= ? AND `bmURL` = ?";
+		$psdata = [[
+			$uid,
+			$bm["url"]
+		]];
 	} else {
 		e_log(8,"Bookmark is folder, search by name before moving it");
 		$sysfolder = array("root________", "toolbar_____", "unfiled_____", "mobile______");
 		if (in_array($bm['folder'], $sysfolder)) {
-			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmTitle` = '".$bm["title"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= ? AND `bmTitle` = ? AND `bmParentID` = ?";
+			$psdata = [[
+				$uid,
+				$bm["title"],
+				$folderData['bmID']
+			]];
 		} else {
-			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= $uid AND `bmID` = '".$bm["folder"]."' AND `bmParentID` = '".$folderData['bmID']."';";
+			$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'folder' AND `userID`= ? AND `bmID` = ? AND `bmParentID` = ?";
+			$psdata = [[
+				$uid,
+				$bm["folder"],
+				$folderData['bmID']
+			]];
 		}
 	}
 
-	$oldData = db_query($query)[0];
+	$oldData = db_query_prep($query, $psdata)[0];
 
 	if (!empty($folderData) && !empty($oldData)) {
 		if(($folderData['bmParentID'] != $oldData['bmParentID']) || ($oldData['bmIndex'] != $bm['index'])) {
@@ -1788,15 +1868,30 @@ function moveBookmark($bm) {
 
 			$bmSortN = getSort($nfolder, $bindex, $uid);
 			e_log(8, "Shift bigger sort entries");
-			db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSortN ORDER BY `bmSort`");
+			$psdata = [[
+				$uid,
+				$bmSortN
+			]];
+			db_query_prep("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = ? AND `bmSort` >= ? ORDER BY `bmSort`", $psdata);
 
 			e_log(8, "Move bookmark");
-			$query = "UPDATE `bookmarks` SET `bmParentID` = '$nfolder', `bmIndex` = $bindex, `bmAdded` = $bAdded, `bmSort` = $bmSortN  WHERE `bmID` = '$bid' AND `userID` = $uid;";
-			db_query($query);
+			$query = "UPDATE `bookmarks` SET `bmParentID` = ?, `bmIndex` = ?, `bmAdded` = ?, `bmSort` = ?  WHERE `bmID` = ? AND `userID` = ?";
+			$psdata = [[
+				$nfolder,
+				$bindex,
+				$bAdded,
+				$bmSortN,
+				$bid,
+				$uid
+			]];
+			db_query_prep($query, $psdata);
 
-			$bmSortO = $oldData["bmSort"];
 			e_log(8, "Shift old sort entries");
-			db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`-1 WHERE `userID` = $uid AND `bmSort` > $bmSortO ORDER BY `bmSort`");
+			$psdata = [[
+				$uid,
+				$oldData["bmSort"]
+			]];
+			db_query_prep("UPDATE `bookmarks` SET `bmSort` = `bmSort`-1 WHERE `userID` = ? AND `bmSort` > ? ORDER BY `bmSort`", $psdata);
 
 			$response = [
 				"message" => "Bookmark moved",
@@ -1826,8 +1921,13 @@ function addFolder($bm) {
 	$count = 0;
 	e_log(8,"Try to find if this folder exists already");
 	$uid = $_SESSION['sud']["userID"];
-	$query = "SELECT COUNT(*) AS bmCount, bmID  FROM `bookmarks` WHERE `bmTitle` = '".$bm['title']."' AND `bmParentID` = '".$bm['folder']."' AND `userID` = $uid;";
-	$res = db_query($query)[0];
+	$query = "SELECT COUNT(*) AS bmCount, bmID  FROM `bookmarks` WHERE `bmTitle` = ? AND `bmParentID` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['title'],
+		$bm['folder'],
+		$uid
+	]];
+	$res = db_query_prep($query, $psdata)[0];
 
 	if($res["bmCount"] > 0 && $count != 1) {
 		e_log(2,"Folder not added, it exists already for this user, exit request");
@@ -1835,17 +1935,36 @@ function addFolder($bm) {
 	}
 
 	e_log(8,"Get folder data for adding folder");
-	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex`, `bmParentId` FROM `bookmarks` WHERE `bmParentId` = '".$bm['folder']."' AND `userID` = $uid;";
-	$folderData = db_query($query);
+	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex`, `bmParentId` FROM `bookmarks` WHERE `bmParentId` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['folder'],
+		$uid
+	]];
+	$folderData = db_query_prep($query, $psdata);
 
 	$bmSort = getSort($bm['folder'], $folderData[0]['nindex'], $uid);
 
 	e_log(8, "Shift bigger sort entries");
-	db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
+	$psdata = [[
+		$uid,
+		$bmSort
+	]];
+
+	db_query_prep("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = ? AND `bmSort` >= ? ORDER BY `bmSort`", $psdata);
 
 	if (!empty($folderData)) {
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '".$bm['folder']."', ".$folderData[0]['nindex'].", '".$bm['title']."', '".$bm['type']."', ".$bm['added'].", $uid, $bmSort)";
-		db_query($query);
+		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmAdded`,`userID`,`bmSort`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		$psdata = [[
+			$bm['id'],
+			$bm['folder'],
+			$folderData[0]['nindex'],
+			$bm['title'],
+			$bm['type'],
+			$bm['added'],
+			$uid,
+			$bmSort
+		]];
+		db_query_prep($query, $psdata);
 		return true;
 	} else {
 		e_log(1,"Couldn't add folder");
@@ -1856,32 +1975,60 @@ function addFolder($bm) {
 function addBookmark($bm) {
 	e_log(8,"Check if bookmark already exists for user.");
 	$uid = $_SESSION['sud']["userID"];
-	$query = "SELECT `bmID`, COUNT(*) AS `bmcount` FROM `bookmarks` WHERE `bmUrl` = '".$bm['url']."' AND `bmParentID` = '".$bm["folder"]."' AND `userID` = $uid;";
-	$bmExistData = db_query($query);
+	$query = "SELECT `bmID`, COUNT(*) AS `bmcount` FROM `bookmarks` WHERE `bmUrl` = ? AND `bmParentID` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm['url'],
+		$bm["folder"],
+		$uid
+	]];
+	$bmExistData = db_query_prep($query, $psdata);
 	if($bmExistData[0]["bmcount"] > 0) {
 		$message = "Bookmark not added at server, it already exists";
 		e_log(2, $message);
 		return $message;
 	}
 	e_log(8,"Identify folder for new bookmark");
-	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = '".$bm["folder"]."' AND `userID` = $uid;";
-	$folderID = db_query($query)[0]['bmID'];
+	$query = "SELECT COALESCE(MAX(`bmID`), 'unfiled_____') `bmID` FROM `bookmarks` WHERE `bmID` = ? AND `userID` = ?";
+	$psdata = [[
+		$bm["folder"],
+		$uid;
+	]];
+	$folderID = db_query_prep($query, $psdata)[0]['bmID'];
 
 	e_log(8,"Get new index for bookmark");
-	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = $uid AND `bmParentID` = '$folderID';";
-	$nindex = db_query($query)[0]['nindex'];
+	$query = "SELECT IFNULL(MAX(`bmIndex`),-1) + 1 AS `nindex` FROM `bookmarks` WHERE `userID` = ? AND `bmParentID` = ?";
+	$psdata = [[
+		$uid,
+		$folderID
+	]];
+	$nindex = db_query_prep($query, $psdata)[0]['nindex'];
 
 	e_log(8,"Add bookmark '".$bm['title']."'");
 
 	$bmSort = getSort($folderID, $nindex, $uid);
 
 	e_log(8, "Shift bigger sort entries");
-	db_query("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = $uid AND `bmSort` >= $bmSort ORDER BY `bmSort`");
+	$psdata = [[
+		$uid,
+		$bmSort
+	]];
+	db_query_prep("UPDATE `bookmarks` SET `bmSort` = `bmSort`+1 WHERE `userID` = ? AND `bmSort` >= ? ORDER BY `bmSort`", $psdata);
 
 	e_log(8, "Add bookmark to db");
-	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmSort`) VALUES ('".$bm['id']."', '$folderID', $nindex, '".trim($bm['title'])."', '".$bm['type']."', '".$bm['url']."', ".$bm['added'].", $uid, $bmSort);";
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`,`bmSort`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	$psdata = [[
+		$bm['id'],
+		$folderID,
+		$nindex,
+		trim($bm['title']),
+		$bm['type'],
+		$bm['url'],
+		$bm['added'],
+		$uid,
+		$bmSort
+	]];
 
-	if(db_query($query) === false ) {
+	if(db_query_prep($query, $psdata) === false ) {
 		$message = "Adding bookmark failed";
 		e_log(1, $message);
 		return $message;
@@ -1892,9 +2039,18 @@ function addBookmark($bm) {
 
 function getSort($parentid, $bmIndex, $uid) {
 	e_log(8, "Try to find sort index");
-	$maxIndex = db_query("SELECT MAX(`bmIndex`) AS `maxIndex` FROM `bookmarks` WHERE `userID` = $uid AND `bmParentID` = '$parentid'")[0]['maxIndex'];
+	$psdata = [[
+		$uid,
+		$parentid
+	]];
+	$maxIndex = db_query_prep("SELECT MAX(`bmIndex`) AS `maxIndex` FROM `bookmarks` WHERE `userID` = ? AND `bmParentID` = ?", $psdata)[0]['maxIndex'];
 	$searchIndex = ($bmIndex <= $maxIndex) ? $bmIndex:$maxIndex;
-	$sort = db_query("SELECT `bmSort` FROM `bookmarks` WHERE `bmParentID` = '$parentid' AND `userID` = $uid AND `bmIndex` = $searchIndex")[0]['bmSort'];
+	$psdata = [[
+		$parentid,
+		$uid,
+		$searchIndex
+	]];
+	$sort = db_query_prep("SELECT `bmSort` FROM `bookmarks` WHERE `bmParentID` = ? AND `userID` = ? AND `bmIndex` = ?", $psdata)[0]['bmSort'];
 	$bmSort = ($bmIndex <= $maxIndex) ? $sort:$sort+1;
 	e_log(8, "Found sort index: $bmSort");
 	return $bmSort;
@@ -1905,18 +2061,32 @@ function updateClient($cl, $ct, $time) {
 	if(in_array($cl, $fclients) || $cl == "0") return 0;
 
 	$uid = $_SESSION['sud']["userID"];
-	$query = "SELECT * FROM `clients` WHERE `cid` = '".$cl."' AND `userID` = ".$uid.";";
-	$clientData = db_query($query);
+	$query = "SELECT * FROM `clients` WHERE `cid` = ? AND `userID` = ?";
+	$psdata = [[
+		$cl,
+		$uid
+	]];
+	$clientData = db_query_prep($query, $psdata);
 
 	if (!empty($clientData)) {
 		e_log(8,"Updating lastlogin for '$cl'");
-		$query = "UPDATE `clients` SET `lastseen`= '".$time."' WHERE `cid` = '".$cl."';";
-		$res = db_query($query);
+		$query = "UPDATE `clients` SET `lastseen`= ? WHERE `cid` = ?";
+		$psdata = [[
+			$time,
+			$cl
+		]];
+		$res = db_query_prep($query, $psdata);
 		$message = ($res === 1 || $res === 0) ? "Client updated.":"Failed update client";
 	} else {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
-		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES ('".$cl."','".$cl."', '".$ct."', ".$uid.", '0')";
-		$res = db_query($query);
+		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES (?,?,?,?,'0')";
+		$psdata = [[
+			$cl,
+			$cl,
+			$ct,
+			$uid
+		]];
+		$res = db_query_prep($query, $psdata);
 		$message = ($res == 0) ? "Client registered":"Failed to register client";
 	}
 
@@ -1941,8 +2111,11 @@ function bmTree() {
 
 function getIndex($folder) {
 	e_log(8,"Get new bookmark ID");
-	$query = "SELECT IFNULL(MAX(`bmIndex`), 0) AS OIndex  FROM `bookmarks` WHERE `bmParentID` = '".$folder."'";
-	$IndexArr = db_query($query);
+	$query = "SELECT IFNULL(MAX(`bmIndex`), 0) AS OIndex  FROM `bookmarks` WHERE `bmParentID` = ?";
+	$psdata = [[
+		$folder
+	]];
+	$IndexArr = db_query_prep($query, $psdata);
 	$maxIndex = $IndexArr[0]['OIndex'] + 1;
 	return $maxIndex;
 }
@@ -1977,8 +2150,11 @@ function getSiteTitle($url) {
 }
 
 function getUserdata($user) {
-	$query = "SELECT * FROM `users` WHERE `userName`='$user'";
-	$userData = db_query($query);
+	$query = "SELECT * FROM `users` WHERE `userName`= ?";
+	$psdata = [[
+		$user
+	]];
+	$userData = db_query_prep($query, $psdata);
 	if (!empty($userData)) {
 		$_SESSION['sud'] = $userData[0];
 		return $userData[0];
@@ -2059,8 +2235,11 @@ function e_log($level, $message, $errfile="", $errline="", $output=0) {
 
 function delUsermarks($uid) {
 	e_log(8, "Delete all bookmarks for logged in user");
-	$query = "DELETE FROM `bookmarks` WHERE `userID` = $uid AND `bmID` <> 'root________'";
-	db_query($query);
+	$query = "DELETE FROM `bookmarks` WHERE `userID` = ? AND `bmID` <> 'root________'";
+	$psdata = [[
+		$uid
+	]];
+	db_query_prep($query, $psdata);
 }
 
 function htmlHeader() {
@@ -2350,8 +2529,11 @@ function showBookmarks() {
 }
 
 function bClientlist($uid, $mode = 'html') {
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = $uid;";
-	$clientData = db_query($query);
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) `cname`, `ctype`, `lastseen` FROM `clients` WHERE `userID` = ?";
+	$psdata = [[
+		$uid
+	]];
+	$clientData = db_query_prep($query, $psdata);
 
 	uasort($clientData, function($a, $b) {
 		return strnatcasecmp($a['cname'], $b['cname']);
@@ -2375,8 +2557,12 @@ function bClientlist($uid, $mode = 'html') {
 }
 
 function notiList($uid, $loop) {
-	$query = "SELECT n.pid, n.ptitle, n.purl, n.publish_date, IFNULL(c.cname, n.cid) AS client FROM pages n LEFT JOIN clients c ON c.cid = n.cid WHERE n.userID = $uid AND n.nloop = $loop ORDER BY n.publish_date;";
-	$aNotitData = db_query($query);
+	$query = "SELECT n.pid, n.ptitle, n.purl, n.publish_date, IFNULL(c.cname, n.cid) AS client FROM pages n LEFT JOIN clients c ON c.cid = n.cid WHERE n.userID = ? AND n.nloop = ? ORDER BY n.publish_date;";
+	$psdata = [[
+		$uid,
+		$loop
+	]];
+	$aNotitData = db_query_prep($query, $psdata);
 	$notiList = "";
 	foreach($aNotitData as $key => $aNoti) {
 		$cl = ($aNoti['client'] == NULL) ? "All":$aNoti['client'];
@@ -2396,8 +2582,11 @@ function notiList($uid, $loop) {
 
 function getUserFolders($uid) {
 	e_log(8,"Get bookmark folders for user");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmID` <> 'root________' AND `bmType` = 'folder' and `userID` = ".$uid.";";
-	$folders = db_query($query);
+	$query = "SELECT * FROM `bookmarks` WHERE `bmID` <> 'root________' AND `bmType` = 'folder' and `userID` = ?";
+	$psdata = [[
+		$uid
+	]];
+	$folders = db_query_prep($query, $psdata);
 	return $folders;
 }
 
@@ -2528,7 +2717,7 @@ function importMarks($bookmarks, $uid) {
 	saveDebugJSON("cexport", $data2);
 
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
-	$response = db_query($query, $data2);
+	$response = db_query_prep($query, $data2);
 
 	if($response) {
 		$response = [
@@ -2573,7 +2762,7 @@ function bimport($data, $uid) {
 	delUsermarks($uid);
 
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
-	$response = db_query($query, $data);
+	$response = db_query_prep($query, $data);
 
 	if($response) {
 		$response = [
@@ -2613,8 +2802,11 @@ function parseJSON($arr) {
 
 function getBookmarks() {
 	e_log(8,"Get bookmarks");
-	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `bmID` <> 'menu________' AND `userID` = ".$_SESSION['sud']['userID']." ORDER BY `bmSort` ASC, `bmType` DESC;";
-	$userMarks = db_query($query);
+	$query = "SELECT * FROM `bookmarks` WHERE `bmType` IN ('bookmark', 'folder') AND `bmID` <> 'root________' AND `bmID` <> 'menu________' AND `userID` = ? ORDER BY `bmSort` ASC, `bmType` DESC";
+	$psdata = [[
+		$_SESSION['sud']['userID']
+	]];
+	$userMarks = db_query_prep($query, $psdata);
 	foreach($userMarks as &$element) {
 		$element['bmTitle'] = html_entity_decode($element['bmTitle'],ENT_QUOTES,'UTF-8');
 		$element['bmTitle'] = ($element['bmTitle'] == "") ? 'unknown title':$element['bmTitle'];
@@ -2663,8 +2855,12 @@ function clearAuthCookie() {
 
 		$cookieArr = json_decode($cookieStr, true);
 
-		$query = "DELETE FROM `auth_token` WHERE `userName` = '".$cookieArr['user']."' AND `pHash` = '".$cookieArr['token']."'";
-		db_query($query);
+		$query = "DELETE FROM `auth_token` WHERE `userName` = ? AND `pHash` = ?";
+		$psdata = [[
+			$cookieArr['user'],
+			$cookieArr['token']
+		]];
+		db_query_prep($query, $psdata);
 
 		$cOptions = array (
 			'expires' => 0,
@@ -2711,8 +2907,12 @@ function checkLogin() {
 
 	if(isset($cookieArr) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
 		e_log(8,"Cookie found. Try to login via authToken...");
-		$query = "SELECT t.*, u.userLastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = '".$cookieArr['user']."' ORDER BY t.exDate DESC;";
-		$tkdata = db_query($query);
+		$query = "SELECT t.*, u.userLastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = ? ORDER BY t.exDate DESC";
+		$psdata = [[
+			$cookieArr['user']
+
+		]];
+		$tkdata = db_query_prep($query, $psdata);
 
 		foreach($tkdata as $key => $token) {
 			if(password_verify($cookieArr['rtkn'], $token['tHash'])) {
@@ -2746,11 +2946,22 @@ function checkLogin() {
 			e_log(8,"New cookie refreshed");
 			$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
 
-			$query = "UPDATE `auth_token` SET `tHash` = '$rtknh', `exDate` = '$expireTime' WHERE `tID` = $tVerified;";
-			$erg = db_query($query);
+			$query = "UPDATE `auth_token` SET `tHash` = ?, `exDate` = ? WHERE `tID` = ?";
+			$psdata = [[
+				$rtknh,
+				$expireTime,
+				$tVerified
+			]];
+			$erg = db_query_prep($query, $psdata);
 
-			$query = "UPDATE `users` SET `userLastLogin` = '$aTime', `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userName` = '".$cookieArr['user']."';";
-			$erg = db_query($query);
+			$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userName` = ?";
+			$psdata = [[
+				$aTime,
+				$seid,
+				$oTime,
+				$cookieArr['user']
+			]];
+			$erg = db_query_prep($query, $psdata);
 			header("location: ?");
 			die();
 		} else {
@@ -2768,8 +2979,11 @@ function checkLogin() {
 		if($ctoken && isset($cdata)) {
 			$client = $cdata['client'];
 			e_log(8,"Try token login $client");
-			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = '$client';";
-			$dbdata = db_query($query);
+			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = ?";
+			$psdata = [[
+				$client
+			]];
+			$dbdata = db_query_prep($query, $psdata);
 
 			if(count($dbdata) === 1) {
 				$otoken = (isset($cdata['token'])) ? $cdata['token']:0;
@@ -2785,17 +2999,26 @@ function checkLogin() {
 							$token = bin2hex(openssl_random_pseudo_bytes(32));
 							$thash = password_hash($token, PASSWORD_DEFAULT);
 							$ipjson = json_encode(ip_info());
-							$query = "UPDATE `c_token` SET `tHash` = '$thash', `exDate` = '$expireTime', `cInfo` = '$ipjson' WHERE `cid` = '$client';";
-							db_query($query);
+							$query = "UPDATE `c_token` SET `tHash` = ?, `exDate` = ?, `cInfo` = ? WHERE `cid` = ?";
+							$psdata = [[
+								$thash,
+								$expireTime,
+								$ipjson,
+								$client
+							]];
+							db_query_prep($query, $psdata);
 							header("X-Request-Info: $token");
 							e_log(8,"New token send to $client and saved in DB, set new expireTime");
 						}
 					} else {
 						e_log(2,"$client login failed, expireTime reached");
-						$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
-						$cInfo = db_query($query)[0];
-						$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
-						db_query($query);
+						$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = ?";
+						$psdata = [[
+							$client
+						]];
+						$cInfo = db_query_prep($query, $psdata)[0];
+						$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = ?";
+						db_query_prep($query, $psdata);
 						e_log(2,"Removed token for client $client");
 						unset($_SESSION['sauth']);
 						session_destroy();
@@ -2807,11 +3030,14 @@ function checkLogin() {
 					}
 				} else {
 					e_log(2,"$client login failed, token invalid");
-					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = '$client';";
-					$cInfo = db_query($query)[0];
+					$psdata = [[
+						$client
+					]];
+					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = ?";
+					$cInfo = db_query_prep($query, $psdata)[0];
 					$cInfo['task'] = 'cInfo';
-					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = '$client';";
-					db_query($query);
+					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = ?";
+					db_query_prep($query, $psdata);
 					e_log(2,"Removed token for client $client");
 					unset($_SESSION['sauth']);
 					session_destroy();
@@ -2855,8 +3081,11 @@ function checkLogin() {
 		} else {
 			$client = isset($cdata['client']) ? $cdata['client']:'';
 			e_log(8,"Try basic login $client");
-			$query = "SELECT * FROM `users` WHERE `userName`= '$user';";
-			$udata = db_query($query);
+			$query = "SELECT * FROM `users` WHERE `userName`= ?";
+			$psdata = [[
+				$user
+			]];
+			$udata = db_query_prep($query, $psdata);
 			if(count($udata) == 1) {
 				if(password_verify($pw, $udata[0]['userHash'])) {
 					$seid = session_id();
@@ -2887,14 +3116,27 @@ function checkLogin() {
 						e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
 						$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
 
-						$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES ('".$udata[0]['userName']."', '$dtoken', '$rtknh', '$expireTime');";
-						$erg = db_query($query);
+						$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES (?, ?, ?, ?)";
+						$psdata = [[
+							$udata[0]['userName'],
+							$dtoken,
+							$rtknh,
+							$expireTime
+						]];
+						$erg = db_query_prep($query, $psdata);
 					}
 
 					if($seid != $udata[0]['sessionID']) {
 						e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
 						$query = "UPDATE `users` SET `userLastLogin` = $aTime, `sessionID` = '$seid', `userOldLogin` = '$oTime' WHERE `userID` = $uid;";
-						db_query($query);
+						$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userID` = ?";
+						$psdata = [[
+							$aTime,
+							$seid,
+							$oTime,
+							$uid
+						]];
+						db_query_prep($query, $psdata);
 					}
 				} else {
 					unset($_SESSION['sauth']);
