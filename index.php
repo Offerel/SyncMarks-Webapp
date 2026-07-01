@@ -380,7 +380,7 @@ if(isset($_POST['action'])) {
 					$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
 
 					if(password_verify($password,$_SESSION['sud']['userHash'])) {
-						$ntfyToken = edcrpt('en', $ntfyToken);
+						$ntfyToken = edcrpt($ntfyToken, 1);
 						$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
 						$oOptionsA['notifications'] = $cnoti;
 						$oOptionsA['ntfy']['instance'] = $ntfyInstance;
@@ -1636,7 +1636,7 @@ function pushntfy($title,$url) {
 	e_log(8,"Publish ntfy notification");
 	$options = json_decode($_SESSION['sud']['uOptions'],true);
 	$instance = $options['ntfy']['instance'];
-	$token = isset($options['ntfy']['token']) ? edcrpt('de',$options['ntfy']['token']):null;
+	$token = isset($options['ntfy']['token']) ? edcrpt($options['ntfy']['token'], 2):null;
 
 	$encTitle = html_entity_decode($title, ENT_QUOTES | ENT_XML1, 'UTF-8');
 	$authHeader = base64_encode(":$token");
@@ -1663,19 +1663,55 @@ function pushntfy($title,$url) {
 	return $response;
 }
 
-function edcrpt($action, $text) {
-	$encrypt_method = "AES-256-CBC";
+function edcrpt($data, $crypt) {
+	$method = 'AES-256-GCM';
+	$key = hash('sha256', CONFIG['enckey']);
+
+	if ( $crypt == 1 ) {
+		$tag = '';
+		$iv = random_bytes(12);
+		$output = openssl_encrypt($data, $method, $key, OPENSSL_RAW_DATA, $iv, $tag);
+		return base64_encode($iv.$tag.$output);
+	} else {
+		$text = base64_decode($data);
+		$iv = substr($text, 0, 12);
+		$tag = substr($text, 12, 16);
+		$enc = substr($text, 28);
+		return openssl_decrypt($enc, $method, $key, OPENSSL_RAW_DATA, $iv, $tag) ?: null;
+	}
+}
+
+/*
+function edcrpt($data, $crypt) {
+	$encrypt_method = 'AES-256-CBC';
 	$key = hash('sha256', CONFIG['enckey']);
 	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
 
-	if ( $action == 'en' ) {
-		$output = openssl_encrypt($text, $encrypt_method, $key, 0, $iv);
-		$output = base64_encode($output);
-	} else if( $action == 'de' ) {
-		$output = openssl_decrypt(base64_decode($text), $encrypt_method, $key, 0, $iv);
+	if ( $crypt == 1 ) {
+		$output = openssl_encrypt($data, $method, $key, 0, $iv, $tag);
+	} else {
+		$output = openssl_decrypt($data, $method, $key, 0, $iv, $tag);
 	}
+
 	return $output;
 }
+
+function cryptCookie($data, $crypt) {
+	$encrypt_method = 'AES-256-CBC';
+	$key = hash('sha256', CONFIG['enckey']);
+	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
+
+	$opts   = defined('OPENSSL_RAW_DATA') ? OPENSSL_RAW_DATA:true;
+
+	if($crypt == 1) {
+		$str = base64_encode(openssl_encrypt($data, $encrypt_method, $key, $opts, $iv));
+	} else {
+		$str = openssl_decrypt(base64_decode($data), $encrypt_method, $key, $opts, $iv);
+	}
+
+	return $str;
+}
+*/
 
 function cfolderMatching($bookmark) {
 	switch($bookmark['folder']) {
@@ -2293,7 +2329,7 @@ function htmlForms() {
 	$oswitch =  "<label class='switch' title='".$lang->actions->refresh."'><input id='cnoti' type='checkbox'$oswitch><span class='slider round'></span></label>";
 
 	$ntfyInstance = (isset($uOptions['ntfy']['instance'])) ? $uOptions['ntfy']['instance']:'';
-	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt('de', $uOptions['ntfy']['token']):'';
+	$ntfyToken = (isset($uOptions['ntfy']['token'])) ? edcrpt($uOptions['ntfy']['token'], 2):'';
 
 	$lfiles = glob("./locale/*.json");
 	$clang = isset($uOptions['language']) ? $uOptions['language']:'en';
@@ -2855,8 +2891,7 @@ function prepare_url($url) {
 function clearAuthCookie() {
 	e_log(8,'Reset Cookie');
 	if(isset($_COOKIE['syncmarks'])) {
-		$cookieStr = cryptCookie($_COOKIE['syncmarks'], 2);
-
+		$cookieStr = edcrpt($_COOKIE['syncmarks'], 2);
 		$cookieArr = json_decode($cookieStr, true);
 
 		$query = "DELETE FROM `auth_token` WHERE `userName` = ? AND `pHash` = ?";
@@ -2903,7 +2938,7 @@ function checkLogin() {
 
 	$realm = CONFIG['realm'];
 	$tVerified = false;
-	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':cryptCookie($_COOKIE['syncmarks'], 2);
+	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':edcrpt($_COOKIE['syncmarks'], 2);
 
 	$cookieArr = json_decode($cookieStr, true);
 
@@ -2944,7 +2979,7 @@ function checkLogin() {
 				'samesite' => 'Strict'
 			);
 
-			$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
+			$cookieData = edcrpt(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
 
 			setcookie('syncmarks', $cookieData, $cOptions);
 			e_log(8,"New cookie refreshed");
@@ -3114,7 +3149,7 @@ function checkLogin() {
 						);
 
 						$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
-						$cookieData = cryptCookie(json_encode(array('rtkn' => $rtkn, 'user' => $udata[0]['userName'], 'token' => $dtoken)), 1);
+						$cookieData = edcrpt(json_encode(array('rtkn' => $rtkn, 'user' => $udata[0]['userName'], 'token' => $dtoken)), 1);
 
 						setcookie('syncmarks', $cookieData, $cOptions);
 						e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
@@ -3218,34 +3253,35 @@ function ip_info() {
 		$ip = $_SERVER['REMOTE_ADDR'];
 	}
 
-	$ipArr['ip'] = $ip;
-	$wArr = preg_split('/\r\n|\r|\n/', shell_exec("whois '".addslashes($ipArr['ip'])."'"));
+	$ip = urlencode($ip);
 
-	foreach($wArr as $ipi ) {
-		$iarr = explode(": ", $ipi);
-		if($iarr[0] == "descr") {
-			$ipArr['de'] = trim($iarr[1]);
-			break;
-		}
+	if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+		return null;
+	}
+	
+	$ipArr['ip'] = $ip;
+
+	$context = stream_context_create([
+		'http' => [
+			'timeout' => 3
+		]
+	]);
+
+	$response = file_get_contents("http://ipinfo.io/$ip/json",false, $context);
+	if ($response === false) {
+		return null;
 	}
 
-	$arr = json_decode(file_get_contents("http://ipinfo.io/88.65.107.167/geo"), true);
+	$arr = json_decode($response, true);
 	$ipArr['co'] = $arr['city'];
 	$ipArr['ct'] = $arr['country'];
 	$ipArr['re'] = $arr['region'];
+	$ipArr['or'] = $arr['org'];
+	$ipArr['ho'] = $arr['hostname'];
 	$ipArr['ua'] = $_SERVER['HTTP_USER_AGENT'];
 	$ipArr['tm'] = time();
 
 	return $ipArr;
-}
-
-function cryptCookie($data, $crypt) {
-	$method = 'aes-256-cbc';
-	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
-	$opts   = defined('OPENSSL_RAW_DATA') ? OPENSSL_RAW_DATA : true;
-	$key = hash('sha256', CONFIG['enckey']);
-	$str = ($crypt == 1) ? base64_encode(openssl_encrypt($data, $method, $key, $opts, $iv)):openssl_decrypt(base64_decode($data), $method, $key, $opts, $iv);
-	return $str;
 }
 
 function db_query_prep($query, $data=null) {
