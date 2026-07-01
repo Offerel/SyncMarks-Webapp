@@ -331,166 +331,181 @@ if(isset($_POST['action'])) {
 					e_log(1,$response);
 			}
 			break;
-				case "mlog":
-					if($_SESSION['sud']['userType'] > 1) {
-						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-						$response = file_get_contents($lfile);
-					} else {
-						$response = "Not allowed to read server logfile.";
-						e_log(2,$response);
-					}
-					break;
-				case "mrefresh":
-					if($_SESSION['sud']['userType'] > 1) {
-						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
-						$response = file_get_contents($lfile);
-					} else {
-						$response = "Not allowed to read server logfile.";
-						e_log(2,$response);
-					}
-					break;
-				case "mclear":
-					e_log(8,"Clear logfile");
-					if($_SESSION['sud']['userType'] > 1) {
-						$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
-						file_put_contents($lfile,"");
-						$response = file_get_contents($lfile);
-					}
-					break;
-				case "mdel":
-					$bookmarks = json_decode($_POST['data'], true);
-					$erg = delMark($bookmarks);
+		case "mlog":
+			if($_SESSION['sud']['userType'] > 1) {
+				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
 
-					$bookmarks = [];
-					foreach ($erg as $key => $value) {
-						$bookmarks[] = $value['bm'];
-					}
+				$file = fopen($lfile, "r");
+				$lines = [];
+				$lineCount = 0;
 
-					$response['bookmarks'] = $bookmarks;
-					break;
-				case "logout":
-					$html = logout();
-					die($html);
-					break;
-				case "ntfyupdate":
-					e_log(8,"ntfy: Updating ntfy information.");
-					$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
-					$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
-					$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
-					$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
-
-					if(password_verify($password,$_SESSION['sud']['userHash'])) {
-						$ntfyToken = edcrpt($ntfyToken, 1);
-						$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-						$oOptionsA['notifications'] = $cnoti;
-						$oOptionsA['ntfy']['instance'] = $ntfyInstance;
-						$oOptionsA['ntfy']['token'] = $ntfyToken;
-
-						$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
-						$psdata = [[
-							json_encode($oOptionsA),
-							$_SESSION['sud']['userID']
-						]];
-						$result = db_query_prep($query, $psdata);
-						($result === true) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
-						header("location: ?");
-						die();
+				while (($line = fgets($file)) !== false) {
+					$lines[] = $line;
+					$lineCount++;
+					
+					if ($lineCount > 500) {
+						array_shift($lines);
 					}
-					else {
-						e_log(1,"Password mismatch. ntfy info not updated.");
-						die("Password mismatch. ntfy info not updated.");
-					}
-					die();
-					break;
-				case "langupdate":
-					$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
-					$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-					$oOptionsA['language'] = $nlng;
-					$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+				}
+
+				fclose($file);
+				$response = implode('',$lines);
+			} else {
+				$response = "Not allowed to read server logfile.";
+				e_log(2,$response);
+			}
+			break;
+		case "mrefresh":
+			if($_SESSION['sud']['userType'] > 1) {
+				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIG['logfile'];
+				$response = file_get_contents($lfile);
+			} else {
+				$response = "Not allowed to read server logfile.";
+				e_log(2,$response);
+			}
+			break;
+		case "mclear":
+			e_log(8,"Clear logfile");
+			if($_SESSION['sud']['userType'] > 1) {
+				$lfile = is_dir(CONFIG['logfile']) ? CONFIG['logfile'].'/syncmarks.log':CONFIGg['logfile'];
+				file_put_contents($lfile,"");
+				$response = file_get_contents($lfile);
+			}
+			break;
+		case "mdel":
+			$bookmarks = json_decode($_POST['data'], true);
+			$erg = delMark($bookmarks);
+
+			$bookmarks = [];
+			foreach ($erg as $key => $value) {
+				$bookmarks[] = $value['bm'];
+			}
+
+			$response['bookmarks'] = $bookmarks;
+			break;
+		case "logout":
+			$html = logout();
+			die($html);
+			break;
+		case "ntfyupdate":
+			e_log(8,"ntfy: Updating ntfy information.");
+			$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
+			$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
+			$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
+			$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
+
+			if(password_verify($password,$_SESSION['sud']['userHash'])) {
+				$ntfyToken = edcrpt($ntfyToken, 1);
+				$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+				$oOptionsA['notifications'] = $cnoti;
+				$oOptionsA['ntfy']['instance'] = $ntfyInstance;
+				$oOptionsA['ntfy']['token'] = $ntfyToken;
+
+				$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+				$psdata = [[
+					json_encode($oOptionsA),
+					$_SESSION['sud']['userID']
+				]];
+				$result = db_query_prep($query, $psdata);
+				($result === true) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
+				header("location: ?");
+				die();
+			}
+			else {
+				e_log(1,"Password mismatch. ntfy info not updated.");
+				die("Password mismatch. ntfy info not updated.");
+			}
+			die();
+			break;
+		case "langupdate":
+			$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+			$oOptionsA['language'] = $nlng;
+			$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+			$psdata = [[
+				json_encode($oOptionsA),
+				$_SESSION['sud']['userID']
+			]];
+			(db_query_prep($query, $psdata) === true) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
+			$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
+			die("1");
+			break;
+		case "uupdate":
+			e_log(8,"User change: Updating user name started");
+			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
+			$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+
+			if($opassword != "") {
+				if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
+					e_log(8,"User change: Verify original password");
+					$query = "UPDATE `users` SET `userName`= ? WHERE `userID`= ?";
 					$psdata = [[
-						json_encode($oOptionsA),
+						$username,
 						$_SESSION['sud']['userID']
 					]];
-					(db_query_prep($query, $psdata) === true) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
-					$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
-					die("1");
-					break;
-				case "uupdate":
-					e_log(8,"User change: Updating user name started");
-					$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
-					$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+					db_query_prep($query, $psdata);
+					e_log(8,"User change: Username changed");
+				}
+				else {
+					e_log(2,"User change: Failed to verify original password");
+				}
+			}
+			else {
+				e_log(2,"User change: Password missing");
+			}
 
-					if($opassword != "") {
-						if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
-							e_log(8,"User change: Verify original password");
-							$query = "UPDATE `users` SET `userName`= ? WHERE `userID`= ?";
-							$psdata = [[
-								$username,
-								$_SESSION['sud']['userID']
-							]];
-							db_query_prep($query, $psdata);
-							e_log(8,"User change: Username changed");
-						}
-						else {
-							e_log(2,"User change: Failed to verify original password");
-						}
-					}
-					else {
-						e_log(2,"User change: Password missing");
-					}
+			die(logout());
+			break;
+		case "pupdate":
+			$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
+			die($response);
+			break;
+		case "getUsers":
+			header("Content-Type: application/json");
+			if($_SESSION['sud']['userType'] == 2) {
+				$query = "SELECT `userID`, `userName`, `userType` FROM `users` ORDER BY `userName`";
+				$uData = db_query_prep($query);
+				die(json_encode($uData));
+			} else {
+				die(json_encode('Editing users not allowed'));
+			}
+			break;
+		case "checkdups":
+			e_log(8,"Checking for duplicated bookmarks by url");
+			$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = ? GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1";
+			$psdata = [[
+				$_SESSION['sud']['userID']
+			]];
+			$dubData = db_query_prep($query, $psdata);
 
-					die(logout());
-					break;
-				case "pupdate":
-					$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
-					die($response);
-					break;
-				case "getUsers":
-					header("Content-Type: application/json");
-					if($_SESSION['sud']['userType'] == 2) {
-						$query = "SELECT `userID`, `userName`, `userType` FROM `users` ORDER BY `userName`";
-						$uData = db_query_prep($query);
-						die(json_encode($uData));
-					} else {
-						die(json_encode('Editing users not allowed'));
-					}
-					break;
-				case "checkdups":
-					e_log(8,"Checking for duplicated bookmarks by url");
-					$query = "SELECT `bmID`, `bmTitle`, `bmURL` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `userID` = ? GROUP BY `bmURL` HAVING COUNT(`bmURL`) > 1";
-					$psdata = [[
-						$_SESSION['sud']['userID']
-					]];
-					$dubData = db_query_prep($query, $psdata);
-
-					foreach($dubData as $key => $dub) {
-						$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = ? AND `userID` = ? ORDER BY `bmParentID`, `bmIndex`";
-						$psdata = [[
-							$dub['bmURL'],
-							$_SESSION['sud']['userID']
-						]];
-						$subData = db_query_prep($query, $psdata);
-						foreach($subData as $index => $entry) {
-							$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
-						}
-						$dubData[$key]['subs'] = $subData;
-					}
-					$response = $dubData;
-					break;
-				case "testDB":
-					$response = testDB($_POST['data']);
-					break;
-				case "initDB":
-					$response = initDB($_POST['data']);
-					break;
-				case "saveSettings":
-					$response = saveSettings($_POST['data']);
-					break;
-				case "gFile":
-					$response = gFile($_POST['data']);
-					break;
-				default:
-					die(e_log(1, "Unknown Action ".$_POST['action']));
+			foreach($dubData as $key => $dub) {
+				$query = "SELECT `bmID`, `bmParentID`, `bmTitle`, `bmAdded` FROM `bookmarks` WHERE `bmType` = 'bookmark' AND `bmURL` = ? AND `userID` = ? ORDER BY `bmParentID`, `bmIndex`";
+				$psdata = [[
+					$dub['bmURL'],
+					$_SESSION['sud']['userID']
+				]];
+				$subData = db_query_prep($query, $psdata);
+				foreach($subData as $index => $entry) {
+					$subData[$index]['fway'] = fWay($entry['bmParentID'], $_SESSION['sud']['userID'],'');
+				}
+				$dubData[$key]['subs'] = $subData;
+			}
+			$response = $dubData;
+			break;
+			case "testDB":
+				$response = testDB($_POST['data']);
+				break;
+			case "initDB":
+				$response = initDB($_POST['data']);
+				break;
+			case "saveSettings":
+				$response = saveSettings($_POST['data']);
+				break;
+			case "gFile":
+				$response = gFile($_POST['data']);
+				break;
+			default:
+				die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
 
 	sendJSONResponse($response, $action);
@@ -585,7 +600,6 @@ function init() {
 		'suser'		=> $suser,
 		'spwd'		=> $spwd,
 		'enckey'	=> $enckey,
-		'enchash'	=> $enchash,
 		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
 		'version'	=> $version,
 		'backup'	=> $backup
@@ -1680,38 +1694,6 @@ function edcrpt($data, $crypt) {
 		return openssl_decrypt($enc, $method, $key, OPENSSL_RAW_DATA, $iv, $tag) ?: null;
 	}
 }
-
-/*
-function edcrpt($data, $crypt) {
-	$encrypt_method = 'AES-256-CBC';
-	$key = hash('sha256', CONFIG['enckey']);
-	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
-
-	if ( $crypt == 1 ) {
-		$output = openssl_encrypt($data, $method, $key, 0, $iv, $tag);
-	} else {
-		$output = openssl_decrypt($data, $method, $key, 0, $iv, $tag);
-	}
-
-	return $output;
-}
-
-function cryptCookie($data, $crypt) {
-	$encrypt_method = 'AES-256-CBC';
-	$key = hash('sha256', CONFIG['enckey']);
-	$iv = substr(hash('sha256', CONFIG['enchash']), 0, 16);
-
-	$opts   = defined('OPENSSL_RAW_DATA') ? OPENSSL_RAW_DATA:true;
-
-	if($crypt == 1) {
-		$str = base64_encode(openssl_encrypt($data, $encrypt_method, $key, $opts, $iv));
-	} else {
-		$str = openssl_decrypt(base64_decode($data), $encrypt_method, $key, $opts, $iv);
-	}
-
-	return $str;
-}
-*/
 
 function cfolderMatching($bookmark) {
 	switch($bookmark['folder']) {
@@ -3468,7 +3450,6 @@ function checkInstall() {
 	<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
 	<label for='spwd'>".$lang->messages->password."</label><input type='text' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
 	<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
-	<label for='enchash'>".$lang->messages->hash."</label><input type='text' name='enchash' id='enchash' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
 	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
 	<button id='nextSettings' class='next'>".$lang->actions->save."</button>
 	</div>";

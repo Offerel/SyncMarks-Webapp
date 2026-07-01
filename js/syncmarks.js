@@ -542,7 +542,6 @@ document.addEventListener("DOMContentLoaded",function() {
 					data.suser = document.getElementById('suser').value;
 					data.spwd = document.getElementById('spwd').value;
 					data.enckey = document.getElementById('enckey').value;
-					data.enchash = document.getElementById('enchash').value;
 					data.expireDays = document.getElementById('expireDays').value;
 
 					sendRequest(saveSettings, JSON.stringify(data));
