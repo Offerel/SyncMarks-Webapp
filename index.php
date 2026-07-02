@@ -389,33 +389,38 @@ if(isset($_POST['action'])) {
 			break;
 		case "ntfyupdate":
 			e_log(8,"ntfy: Updating ntfy information.");
-			$password = filter_var($_POST['password'], FILTER_SANITIZE_STRING);
-			$cnoti = filter_var($_POST['cnoti'], FILTER_VALIDATE_INT);
-			$ntfyInstance = filter_var($_POST['ntfyInstance'], FILTER_SANITIZE_STRING);
-			$ntfyToken = filter_var($_POST['ntfyToken'], FILTER_SANITIZE_STRING);
+			$data = json_decode($_POST['data'], true);
 
-			if(password_verify($password,$_SESSION['sud']['userHash'])) {
-				$ntfyToken = edcrpt($ntfyToken, 1);
-				$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
-				$oOptionsA['notifications'] = $cnoti;
-				$oOptionsA['ntfy']['instance'] = $ntfyInstance;
-				$oOptionsA['ntfy']['token'] = $ntfyToken;
+			$ntfyToken = edcrpt(filter_var($data['token'], FILTER_SANITIZE_STRING), 1);
+			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
+			$oOptionsA['notifications'] = filter_var($data['active'], FILTER_VALIDATE_BOOL);
+			$oOptionsA['ntfy']['instance'] = filter_var($data['instance'], FILTER_SANITIZE_STRING);
+			$oOptionsA['ntfy']['token'] = filter_var($data['token'], FILTER_SANITIZE_STRING);
 
-				$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
-				$psdata = [[
-					json_encode($oOptionsA),
-					$_SESSION['sud']['userID']
-				]];
-				$result = db_query_prep($query, $psdata);
-				($result !== false) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
-				header("location: ?");
-				die();
+			$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
+			$psdata = [[
+				json_encode($oOptionsA),
+				$_SESSION['sud']['userID']
+			]];
+
+			$result = db_query_prep($query, $psdata);
+			if ($result !== false) {
+				$response['message'] = "Option saved";
+				$response['level'] = 8;
+				$ntfyr = pushntfy("Testnotification","This is only a test, to check if notifications works");
+				if(isset($ntfyr['id'])) {
+					$response['message'] = "Option saved, Testnotification successful";
+				} else {
+					$response['message'] = "Option saved, Testnotification failed";
+					$response['level'] = 9;
+				}
+			} else {
+				$response['message'] = "Error, could not save options";
+				$response['level'] = 9;
 			}
-			else {
-				e_log(1,"Password mismatch. ntfy info not updated.");
-				die("Password mismatch. ntfy info not updated.");
-			}
-			die();
+
+			e_log($response['level'],$response['message']);
+
 			break;
 		case "langupdate":
 			$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
@@ -1656,6 +1661,8 @@ function pushntfy($title,$url) {
 	$authHeader = base64_encode(":$token");
 	$authHeader = (strlen($authHeader) > 4) ? "Authorization: Basic $authHeader\r\n":'';
 
+	$click = (str_starts_with($url,'http')) ? "click: $url\r\n":"click: \r\n";
+
 	$content = @file_get_contents($instance, false, stream_context_create([
 		'http' => [
 			'method' => 'POST',
@@ -1663,7 +1670,8 @@ function pushntfy($title,$url) {
 			"Content-Type: text/plain\r\n".
 			$authHeader.
 			"title: $encTitle\r\n".
-			"click: $url\r\n",
+			$click,
+
 			'content' => $url
 		]
 	]));
@@ -2377,8 +2385,7 @@ function htmlForms() {
 	<input hidden type='text' name='username' autocomplete='username'>
 	<input required placeholder='".$lang->messages->url."' type='text' id='ntfyInstance' name='ntfyInstance' value='$ntfyInstance' autocomplete='Service-URL'/>
 	<input placeholder='".$lang->messages->token."' type='password' id='ntfyToken' name='ntfyToken' value='$ntfyToken' autocomplete='ntfy-token' />
-	<input placeholder='".$lang->messages->password."' type='password' id='password' name='password' value='' autocomplete='current-password' />
-	<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' name='action' value='ntfyupdate'>".$lang->actions->save."</button></div>
+	<div class='dbutton'><button class='mdcancel' type='reset' value='Reset'>".$lang->actions->cancel."</button><button type='submit' id='ntfyupdate' name='action' value='ntfyupdate'>".$lang->actions->save."</button></div>
 	</form>
 	</div>";
 
