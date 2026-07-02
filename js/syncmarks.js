@@ -199,6 +199,21 @@ document.addEventListener("DOMContentLoaded",function() {
 			}, false);
 		}
 
+		if(document.getElementById("ntfyupdate")) {
+			document.getElementById("ntfyupdate").addEventListener('click', function(e){
+				e.preventDefault();
+				
+				let json = JSON.stringify({ 
+					"instance": document.getElementById('ntfyInstance').value,
+					"active": document.getElementById('cnoti').checked,
+					"token": document.getElementById('ntfyToken').value
+				});
+
+				sendRequest(ntfyupdate, json);
+				return false;
+			});
+		}
+
 		document.querySelectorAll('.tablinks').forEach(tab => tab.addEventListener('click',openMessages, false));
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
 		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
@@ -636,6 +651,18 @@ const isValidUrl = urlString=> {
 		return false; 
 	}
 	return url.protocol === "http:" || url.protocol === "https:";
+}
+
+function ntfyupdate(response) {
+	if(response.level == 9) {
+		console.error(response.message);
+		document.getElementById('pushform').children[2].innerText = response.message;
+		document.getElementById('pushform').children[2].style.color = "red";
+	} else {
+		console.log(response.message);
+		hideMenu();
+	}
+	return false;
 }
 
 function addBookmarkEvents() {
