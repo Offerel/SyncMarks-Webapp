@@ -160,7 +160,7 @@ if(isset($_POST['action'])) {
 				$query = "DELETE FROM `pages` WHERE `userID` = ? AND `pid` = ?";
 				$data = array(array($_SESSION['sud']['userID'], $message));
 				$count = db_query_prep($query, $data);
-				($count == 1) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
+				($count !== false) ? e_log(8,"Notification successfully removed") : e_log(9,"Error, removing notification");
 			}
 			$response = notiList($uid, $loop);
 			break;
@@ -204,7 +204,7 @@ if(isset($_POST['action'])) {
 			$datap = array(array($folderData[0]['index'], $data, $time, $add, $uid));
 			$result = db_query_prep($query, $datap);
 			reIndex($oFolder, $folderData[0]['index']);
-			$response = ($result == true) ? array("id" => $add, "folder" => $data):false;
+			$response = ($result !== false) ? array("id" => $add, "folder" => $data):false;
 			break;
 		case "adel":
 			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
@@ -212,7 +212,7 @@ if(isset($_POST['action'])) {
 			$query = "DELETE FROM `clients` WHERE `userID` = ? AND `cid` = ?";
 			$psdata = array([$_SESSION['sud']['userID'], $client]);
 			$result = db_query_prep($query, $psdata);
-			$response = ($result == true) ? bClientlist($_SESSION['sud']['userID']):false;
+			$response = ($result !== false) ? bClientlist($_SESSION['sud']['userID']):false;
 			break;
 		case "cmail":
 			e_log(8,"Change e-mail for ".$_SESSION['sud']['userName']);
@@ -298,7 +298,7 @@ if(isset($_POST['action'])) {
 						$userLevel,
 						$uID
 					]];
-					if(db_query_prep($query, $psdata) == true) {
+					if(db_query_prep($query, $psdata) !== false) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User changed successful, Try to send E-Mail to user";
 							$message = "Hello,\r\nyour account is changed for SyncMarks. You can login at ".getLink();
@@ -407,7 +407,7 @@ if(isset($_POST['action'])) {
 					$_SESSION['sud']['userID']
 				]];
 				$result = db_query_prep($query, $psdata);
-				($result === true) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
+				($result !== false) ? e_log(8,"Option saved") : e_log(9,"Error, saving option");
 				header("location: ?");
 				die();
 			}
@@ -426,7 +426,7 @@ if(isset($_POST['action'])) {
 				json_encode($oOptionsA),
 				$_SESSION['sud']['userID']
 			]];
-			(db_query_prep($query, $psdata) === true) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
+			(db_query_prep($query, $psdata) !== false) ? e_log(8,"Language option saved") : e_log(9,"Error, saving language option");
 			$_SESSION['sud']['uOptions'] = json_encode($oOptionsA);
 			die("1");
 			break;
@@ -959,7 +959,7 @@ function clientRemove($client, $data) {
 	]];
 	$res = db_query_prep($query, $psdata);
 
-	if($res == 1) {
+	if($res !== false) {
 		$response['message'] = "Old client removed";
 		$response['code'] = 200;
 		$res = 8;
@@ -995,7 +995,7 @@ function durl($pid, $uid) {
 		$uid
 	]];
 
-	if(db_query_prep($query, $psdata) == true) {
+	if(db_query_prep($query, $psdata) != false) {
 		$response['message'] = "Notification is now hidden";
 		$response['code'] = 200;
 	} else {
@@ -2098,7 +2098,7 @@ function updateClient($cl, $ct, $time) {
 			$cl
 		]];
 		$res = db_query_prep($query, $psdata);
-		$message = ($res === 1 || $res === 0) ? "Client updated.":"Failed update client";
+		$message = ($res !== false) ? "Client updated.":"Failed update client";
 	} else {
 		e_log(8,"New client detected. Try to register client $cl for user ".$_SESSION['sud']["userName"]);
 		$query = "INSERT INTO `clients` (`cid`,`cname`,`ctype`,`userID`,`lastseen`) VALUES (?,?,?,?,'0')";
@@ -2109,7 +2109,7 @@ function updateClient($cl, $ct, $time) {
 			$uid
 		]];
 		$res = db_query_prep($query, $psdata);
-		$message = ($res == 0) ? "Client registered":"Failed to register client";
+		$message = ($res != false) ? "Client registered":"Failed to register client";
 	}
 
 	e_log(8, $message);
@@ -2741,7 +2741,7 @@ function importMarks($bookmarks, $uid) {
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query_prep($query, $data2);
 
-	if($response) {
+	if($response != false) {
 		$response = [
 			"message" => "Bookmark import successful",
 			"code" => 200,
@@ -2786,7 +2786,7 @@ function bimport($data, $uid) {
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query_prep($query, $data);
 
-	if($response) {
+	if($response != false) {
 		$response = [
 			"message" => "Bookmark import successful",
 			"code" => 200,
