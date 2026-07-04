@@ -522,7 +522,7 @@ if(isset($_GET['link'])) {
 
 	$bookmark['url'] = $url;
 	$bookmark['folder'] = 'unfiled_____';
-	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
+	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '' && $_GET["title"] != '%rs_subject') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
 	$bookmark['id'] = unique_code(12);
 	$bookmark['type'] = 'bookmark';
 	$bookmark['added'] = round(microtime(true) * 1000);
