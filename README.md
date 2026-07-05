@@ -1,4 +1,10 @@
 # SyncMarks WebApp
+**Synchronize Firefox, Edge and Chrome bookmarks using your own self-hosted server.**  
+No cloud service.  
+No account.  
+No tracking.  
+Your server, your data.  
+  
 [![Translate](https://translate.codeberg.org/widget/syncmarks/webapp/svg-badge.svg)](https://translate.codeberg.org/engage/syncmarks/) [![Issues](https://img.shields.io/gitea/issues/open/Offerel/SyncMarks-WebApp?gitea_url=https%3A%2F%2Fcodeberg.org%2F)](https://codeberg.org/Offerel/SyncMarks-WebApp/issues) ![License](https://img.shields.io/github/license/Offerel/SyncMarks-WebApp) 
 
 This is a backend for the SyncMarks [Browser Extension](../../../../../Offerel/SyncMarks-Extension). This WebApp can be used as central Hub for all installes SyncMarks Extensions. 
