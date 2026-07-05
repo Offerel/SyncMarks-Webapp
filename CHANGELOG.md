@@ -1,6 +1,17 @@
 # ChangeLog
 ## 2.1.1
 - Create automatic backups
+- Fixed language setup
+- Fixed ipfinfo
+- Fixed duplicated token
+- Fixed folder detection
+- Fixed ntfy
+- Fixed title detection
+- Fixed cookie parameters
+- Added useragent to debug info
+- Switched to prepared SQL statement
+- Streamlined encryption
+- Limit loglines
 
 ## 2.1.0
 - Added install wizard
