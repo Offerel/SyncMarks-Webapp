@@ -114,11 +114,11 @@ if (isset($_GET['api'])) {
 
 if(isset($_POST['action'])) {
 	$uid = $_SESSION['sud']['userID'];
-	$client = (isset($_POST['client'])) ? filter_var($_POST['client'], FILTER_SANITIZE_STRING) : '0';
-	$data = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_SANITIZE_STRING):false;
+	$client = (isset($_POST['client'])) ? sanitizeStr($_POST['client']): '0';
+	$data = isset($_POST['data']) ? sanitizeStr($_POST['data']):false;
 	$time = round(microtime(true) * 1000);
 	$ctype = getClientType($_SERVER['HTTP_USER_AGENT']);
-	$add = isset($_POST['add']) ? filter_var($_POST['add'], FILTER_SANITIZE_STRING):false;
+	$add = isset($_POST['add']) ? sanitizeStr($_POST['add']):false;
 	$action = $_POST['action'];
 
 	switch($action) {
@@ -146,7 +146,7 @@ if(isset($_POST['action'])) {
 			e_log(8,"result: ".print_r($response, true));
 			break;
 		case "arename":
-			$client = filter_var($_POST['client'], FILTER_SANITIZE_STRING);
+			$client = sanitizeStr($_POST['client']);
 			$response = clientRename($add, $data, $uid, true);
 			break;
 		case "cfolder":
@@ -154,7 +154,7 @@ if(isset($_POST['action'])) {
 			break;
 		case "rmessage":
 			$message = isset($_POST['data']) ? filter_var($_POST['data'], FILTER_VALIDATE_INT):0;
-			$loop = filter_var($_POST['add'], FILTER_SANITIZE_STRING) == 'aNoti' ? 1:0;
+			$loop = sanitizeStr($_POST['add']) == 'aNoti' ? 1:0;
 			if($message > 0) {
 				e_log(8,"Try to delete page $message");
 				$query = "DELETE FROM `pages` WHERE `userID` = ? AND `pid` = ?";
@@ -182,8 +182,8 @@ if(isset($_POST['action'])) {
 			break;
 		case "bmedt":
 			$bookmark = json_decode($_POST['data'], true);
-			$title = filter_var($bookmark['title'], FILTER_SANITIZE_STRING);
-			$id = filter_var($bookmark['id'], FILTER_SANITIZE_STRING);
+			$title = sanitizeStr($bookmark['title']);
+			$id = sanitizeStr($bookmark['id']);
 			$url = (isset($bookmark['url']) && strlen($bookmark['url']) > 4) ? validate_url($bookmark['url']):'NULL';
 			e_log(8, "Edit entry '$title'");
 			$query = "UPDATE `bookmarks` SET `bmTitle` = ?, `bmURL` = ?, `bmAdded` = ? WHERE `bmID` = ? AND `userID` = ?";
@@ -207,7 +207,7 @@ if(isset($_POST['action'])) {
 			$response = ($result !== false) ? array("id" => $add, "folder" => $data):false;
 			break;
 		case "adel":
-			$client = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$client = sanitizeStr($_POST['data']);
 			e_log(8,"Delete client $client");
 			$query = "DELETE FROM `clients` WHERE `userID` = ? AND `cid` = ?";
 			$psdata = array([$_SESSION['sud']['userID'], $client]);
@@ -241,9 +241,9 @@ if(isset($_POST['action'])) {
 			$data = json_decode($_POST['data'], true);
 
 			$variant = filter_var($data['type'], FILTER_VALIDATE_INT);
-			$password = (isset($data['p']) && $data['p'] != '') ? filter_var($data['p'], FILTER_SANITIZE_STRING):gpwd(16);
+			$password = (isset($data['p']) && $data['p'] != '') ? $data['p']:gpwd(16);
 			$userLevel = filter_var($data['userLevel'], FILTER_VALIDATE_INT);
-			$user = filter_var($data['nuser'], FILTER_SANITIZE_STRING);
+			$user = sanitizeStr($data['nuser']);
 			$mail = filter_var($user, FILTER_VALIDATE_EMAIL) ? $user:null;
 
 			switch($variant) {
@@ -391,11 +391,11 @@ if(isset($_POST['action'])) {
 			e_log(8,"ntfy: Updating ntfy information.");
 			$data = json_decode($_POST['data'], true);
 
-			$ntfyToken = edcrpt(filter_var($data['token'], FILTER_SANITIZE_STRING), 1);
+			$ntfyToken = edcrpt(sanitizeStr($data['token']), 1);
 			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
 			$oOptionsA['notifications'] = filter_var($data['active'], FILTER_VALIDATE_BOOL);
-			$oOptionsA['ntfy']['instance'] = filter_var($data['instance'], FILTER_SANITIZE_STRING);
-			$oOptionsA['ntfy']['token'] = filter_var($data['token'], FILTER_SANITIZE_STRING);
+			$oOptionsA['ntfy']['instance'] = sanitizeStr($data['instance']);
+			$oOptionsA['ntfy']['token'] = sanitizeStr($data['token']);
 
 			$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
 			$psdata = [[
@@ -423,7 +423,7 @@ if(isset($_POST['action'])) {
 
 			break;
 		case "langupdate":
-			$nlng = filter_var($_POST['data'], FILTER_SANITIZE_STRING);
+			$nlng = sanitizeStr($_POST['data']);
 			$oOptionsA = json_decode($_SESSION['sud']['uOptions'],true);
 			$oOptionsA['language'] = $nlng;
 			$query = "UPDATE `users` SET `uOptions`= ? WHERE `userID`= ?";
@@ -437,8 +437,8 @@ if(isset($_POST['action'])) {
 			break;
 		case "uupdate":
 			e_log(8,"User change: Updating user name started");
-			$opassword = filter_var($_POST['opassword'], FILTER_SANITIZE_STRING);
-			$username = filter_var($_POST['username'], FILTER_SANITIZE_STRING);
+			$opassword = $_POST['opassword'];
+			$username = sanitizeStr($_POST['username']);
 
 			if($opassword != "") {
 				if(password_verify($opassword, $_SESSION['sud']['userHash'])) {
@@ -462,7 +462,7 @@ if(isset($_POST['action'])) {
 			die(logout());
 			break;
 		case "pupdate":
-			$response = pupdate(filter_var($_POST['opassword'], FILTER_SANITIZE_STRING), filter_var($_POST['npassword'], FILTER_SANITIZE_STRING), filter_var($_POST['cpassword'], FILTER_SANITIZE_STRING));
+			$response = pupdate($_POST['opassword'], $_POST['npassword'], $_POST['cpassword']);
 			die($response);
 			break;
 		case "getUsers":
@@ -522,7 +522,7 @@ if(isset($_GET['link'])) {
 
 	$bookmark['url'] = $url;
 	$bookmark['folder'] = 'unfiled_____';
-	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '' && $_GET["title"] != '%rs_subject') ? filter_var($_GET["title"], FILTER_SANITIZE_STRING):getSiteTitle($url);;
+	$bookmark['title'] = (isset($_GET["title"]) && $_GET["title"] != '' && $_GET["title"] != '%rs_subject') ? sanitizeStr($_GET["title"]):getSiteTitle($url);;
 	$bookmark['id'] = unique_code(12);
 	$bookmark['type'] = 'bookmark';
 	$bookmark['added'] = round(microtime(true) * 1000);
@@ -559,7 +559,7 @@ if(isset($_GET['push'])) {
 	e_log(8,"Received new pushed URL from bookmarklet: ".$url);
 
 	$data['url'] = $url;
-	$data['target'] = (isset($_GET['tg'])) ? filter_var($_GET['tg'], FILTER_SANITIZE_STRING):NULL;
+	$data['target'] = (isset($_GET['tg'])) ? sanitizeStr($_GET['tg']):NULL;
 	if(ntfyNotification($data, $_SESSION['sud']['userID']) !== 0) die('Pushed');
 }
 
@@ -699,7 +699,7 @@ function logout() {
 
 function handleReset() {
 	global $lang;
-	$reset = filter_var($_GET['reset'], FILTER_SANITIZE_STRING);
+	$reset = trim($_GET['reset']);
 	$headers = [
 		"From" => "SyncMarks <".CONFIG['sender'].">",
 		"Return-Path" => CONFIG['sender'],
@@ -707,7 +707,7 @@ function handleReset() {
 
 	switch($reset) {
 		case "request":
-			$user = filter_var($_GET['u'], FILTER_SANITIZE_STRING);
+			$user = trim($_GET['u']);
 			e_log(8,"Password Reset request for '$user'");
 			$query = "SELECT `userID`, `userMail` FROM `users` WHERE `userName` = ?";
 			$psdata = [[
@@ -752,7 +752,7 @@ function handleReset() {
 
 			break;
 		case "cancel":
-			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
+			$token = sanitizeStr($_GET['t']);
 			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = ?";
 			$psdata = [[
 				$token
@@ -790,7 +790,7 @@ function handleReset() {
 			die();
 			break;
 		case "confirm":
-			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
+			$token = sanitizeStr($_GET['t']);
 			$query = "SELECT `r`.`userID`, `u`.`userName`, `u`.`userMail`, `r`.`tokenTime`, `r`.`token` FROM `reset` `r` INNER JOIN `users` `u` ON `u`.`userID` = `r`.`userID` WHERE `token` = ?";
 			$psdata = [[
 				$token
@@ -1659,7 +1659,7 @@ function validate_url($url) {
 	(\strlen($fragment) > 0 ? "#$fragment" : "")
 	;
 
-	$url = filter_var(filter_var($url, FILTER_SANITIZE_STRING), FILTER_UNSAFE_RAW);
+	$url = filter_var(sanitizeStr($url), FILTER_UNSAFE_RAW);
 	if (filter_var($url, FILTER_VALIDATE_URL)) {
 		return $url;
 	} else {
@@ -3019,8 +3019,8 @@ function checkLogin() {
 	if(count($_GET) != 0 || count($_POST) != 0) {
 		$u = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER']:false;
 		$p = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW']:false;
-		$user = (isset($_POST['username'])) ? filter_var($_POST['username'], FILTER_SANITIZE_STRING):$u;
-		$pw = (isset($_POST['password'])) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$p;
+		$user = (isset($_POST['username'])) ? sanitizeStr($_POST['username']):$u;
+		$pw = (isset($_POST['password'])) ? $_POST['password']:$p;
 
 		if($ctoken && isset($cdata)) {
 			$client = $cdata['client'];
@@ -3399,6 +3399,10 @@ function db_query($query, $data=null) {
 
 	$db = NULL;
 	return $queryData;
+}
+
+function sanitizeStr($str) {
+	return is_string($str) ? trim(strip_tags($str)):$str;
 }
 
 function checkInstall() {
