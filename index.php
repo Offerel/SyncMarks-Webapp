@@ -875,6 +875,7 @@ function getLink($type = '', $token = '') {
 				'reset' => 'cancel',
 				't' => $token
 			];
+			break;
 		default:
 			break;
 	}
