@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
  */
-const cacheName = 'SyncMarksPWA-v3';
+const cacheName = 'SyncMarksPWA-v4';
 const cacheResources = [
 	'./',
 	'./manifest.json',
@@ -65,7 +65,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-	var cacheWhitelist = ['SyncMarksPWA-v1'];
+	var cacheWhitelist = ['SyncMarksPWA-v4'];
 	clients.claim();
 	event.waitUntil(
 		caches.keys().then(function(cacheNames) {

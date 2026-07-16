@@ -713,34 +713,43 @@ function handleReset() {
 			$psdata = [[
 				$user
 			]];
+
 			$result = db_query_prep($query, $psdata)[0];
-			$uid = $result['userID'];
-			$mail = $result['userMail'];
 
-			$token = openssl_random_pseudo_bytes(16);
-			$token = bin2hex($token);
-			$time = time();
+			if($result != false) {
+				$uid = $result['userID'];
+				$mail = $result['userMail'];
 
-			$query = "DELETE FROM `reset` WHERE `userID` = ?";
-			$psdata = [[
-				$uid
-			]];
-			db_query_prep($query, $psdata);
+				$token = openssl_random_pseudo_bytes(16);
+				$token = bin2hex($token);
+				$time = time();
 
-			$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES (?,?,?)";
-			$psdata = [[
-				$uid,
-				$time,
-				$token
-			]];
-			if(db_query_prep($query, $psdata)) {
-				$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
-				if(!mail($mail, "Password request confirmation", $message, $headers)) {
-					e_log(1,"Error sending password reset request to user");
+				$query = "DELETE FROM `reset` WHERE `userID` = ?";
+				$psdata = [[
+					$uid
+				]];
+				db_query_prep($query, $psdata);
+
+				$query = "INSERT INTO `reset`(`userID`,`tokenTime`,`token`) VALUES (?,?,?)";
+
+				$psdata = [[
+					$uid,
+					$time,
+					$token
+				]];
+
+				if(db_query_prep($query, $psdata)) {
+					$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
+					if(!mail($mail, "Password request confirmation", $message, $headers)) {
+						e_log(1,"Error sending password reset request to user");
+					}
 				}
+
+				die(json_encode("1"));
+			} else {
+				die(json_encode("0"));
 			}
 
-			die(json_encode("1"));
 			break;
 		case "cancel":
 			$token = filter_var($_GET['t'], FILTER_SANITIZE_STRING);
@@ -749,27 +758,35 @@ function handleReset() {
 				$token
 			]];
 			$result = db_query_prep($query, $psdata)[0];
-			e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
-			$query = "DELETE FROM `reset` WHERE `token` = ?";
-			$psdata = [[
-				$token
-			]];
-			if(db_query_prep($query, $psdata)) {
-				e_log(8,"Request removed successful");
-				$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
-				if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
-					e_log(1,"Error sending remove cancel to ".$result['userName']);
+
+			if($result != false) {
+				e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
+				$query = "DELETE FROM `reset` WHERE `token` = ?";
+				$psdata = [[
+					$token
+				]];
+				if(db_query_prep($query, $psdata)) {
+					e_log(8,"Request removed successful");
+					$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
+					if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
+						e_log(1,"Error sending remove cancel to ".$result['userName']);
+					}
 				}
+				echo htmlHeader();
+				echo "<div id='loginbody'>
+				<div id='loginform'>
+				<div id='loginformh'>".$lang->messages->welcome."</div>
+				<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
+				<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+				</div>
+				</div>";
+				echo $htmlFooter;
+			} else {
+				echo htmlHeader();
+				echo "Error chancel";
+				echo $htmlFooter;
 			}
-			echo htmlHeader();
-			echo "<div id='loginbody'>
-			<div id='loginform'>
-			<div id='loginformh'>".$lang->messages->welcome."</div>
-			<div id='loginformt'>".$lang->messages->resetCancelHint."</div>
-			<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
-			</div>
-			</div>";
-			echo $htmlFooter;
+
 			die();
 			break;
 		case "confirm":
@@ -779,6 +796,7 @@ function handleReset() {
 				$token
 			]];
 			$result = db_query_prep($query, $psdata)[0];
+			if($result != false) die(e_log(1,"Confirm failed"));
 			e_log(8,"Password Reset confirmation for token '$token', '".$result['userName']."'");
 			$tdiff = time() - $result['tokenTime'];
 			if($tdiff <= 300) {
