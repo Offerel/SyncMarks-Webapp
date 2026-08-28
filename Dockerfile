@@ -11,3 +11,6 @@ EXPOSE 80
 
 CMD php-fpm84 -D && nginx -g "daemon off;"
 HEALTHCHECK CMD wget -q -O /dev/null http://127.0.0.1/health.txt || exit 1
+
+LABEL org.opencontainers.image.source="https://github.com/Offerel/SyncMarks-Webapp"
+LABEL org.opencontainers.image.description="SyncMarks bookmark synchronization server"

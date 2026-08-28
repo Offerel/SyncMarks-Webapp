@@ -2,7 +2,8 @@
 ## 2.2.1
 - Fixed SQL
 - Added PHPMailer
-- changed docker workflow
+- Changed Docker workflow
+- Added Docker Install instructions
 
 ## 2.2.0
 - Fixed install wizard

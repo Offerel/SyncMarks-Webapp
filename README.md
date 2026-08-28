@@ -24,3 +24,5 @@ Please use the [issue tracker](https://codeberg.org/Offerel/SyncMarks-Webapp/iss
 
 # Installation
 You will find the [installation](../../../../../Offerel/SyncMarks-Webapp/wiki/) steps in the Wiki.
+
+For a Docker based installation, please follow [these](DOCKER.md) Instructions.
