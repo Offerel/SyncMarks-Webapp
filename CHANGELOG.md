@@ -1,4 +1,8 @@
 # ChangeLog
+## 2.2.0
+- Fixed install wizard
+- Docker Image
+
 ## 2.1.1
 - Create automatic backups
 - Fixed language setup

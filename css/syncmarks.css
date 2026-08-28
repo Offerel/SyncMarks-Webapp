@@ -2,6 +2,24 @@
 #bmsearch::-webkit-search-cancel-button {
     display: none;
 }
+#smtpEncryption {
+    float: right;
+}
+.password-toggle, .enc-toggle {
+    width: 13px;
+    border-radius: 0 5px 5px 0;
+    display: flex !important;
+    background-color: lightgrey;
+    padding: 5px;
+    cursor: pointer;
+    color: darkslategray;
+    float: right;
+    margin-top: 3px;
+    border-width: 1px 1px 1px 0;
+    border-color: tan;
+    border-style: solid;
+    margin-bottom: unset !important;
+}
 #bmsearch::placeholder {
     color: lightskyblue;
     opacity: .7;
@@ -1718,7 +1736,7 @@ button.invalid {
     left: 15px;
     right: 15px;
 }
-#php_extensions span {
+#php_extensions span, #filesystem span {
     font-family: monospace;
     font-size: 1.5em;
     display: contents;

@@ -497,6 +497,8 @@ document.addEventListener("DOMContentLoaded",function() {
 			sendRequest(cfolder, document.getElementById('fname').value, document.getElementById('fbid').value);
 		});
 
+					
+
 		document.getElementById('edsave').addEventListener('click', function(e) {
 			e.preventDefault();
 			let jsonMark = JSON.stringify({
@@ -551,7 +553,6 @@ document.addEventListener("DOMContentLoaded",function() {
 				if(e.target.id === 'nextSettings') {
 					let data = {};
 					data.logfile = document.getElementById('lfpath').value;
-					data.realm = document.getElementById('realm').value;
 					data.loglevel = document.getElementById('loglevel').value;
 					data.sender = document.getElementById('sender').value;
 					data.suser = document.getElementById('suser').value;
@@ -566,6 +567,43 @@ document.addEventListener("DOMContentLoaded",function() {
 				}
 			});
 		});
+		
+		document.querySelectorAll(".password-toggle").forEach(button => {
+			button.addEventListener('click', event => {
+				const input = button.previousElementSibling;
+				input.type = input.type === 'password' ? 'text' : 'password';
+			});
+		});
+
+		let smtpEncryption = document.getElementById('smtpEncryption');
+		let smtpPort = document.getElementById('smtpport');
+		let smtpHost = document.getElementById('smtphost');
+		let smtpuser = document.getElementById('smtpuser');
+		let smtppwd = document.getElementById('smtppwd');
+		let smtpsender = document.getElementById('smtpsender');
+		let mtest = document.getElementById('mtest');
+
+
+		smtpEncryption.addEventListener('change', select => {
+			switch(smtpEncryption.value) {
+				case "starttls":
+					smtpPort.value = "587";
+					break;
+				case "smtps":
+					smtpPort.value = "465";
+					break;
+				default:
+					smtpPort.value = "25";	
+			}
+		});
+		
+		smtpEncryption.addEventListener('change', cmform);
+		smtpPort.addEventListener('change', cmform);
+		smtpHost.addEventListener('change', cmform);
+		smtpuser.addEventListener('change', cmform);
+		smtppwd.addEventListener('change', cmform);
+		smtpsender.addEventListener('change', cmform);
+		mtest.addEventListener('click', tMail);
 
 		database.addEventListener('change', () => {
 			sform.style.display = 'none';
@@ -581,20 +619,15 @@ document.addEventListener("DOMContentLoaded",function() {
 				sform.style.display = 'block';
 				dbpath.focus();
 			}
+			cform();
 		});
 
 		cdb.addEventListener('click', tDB);
 		idb.addEventListener('click', iDB);
 
-		dbhost.addEventListener('change', cform);
-		dbname.addEventListener('change', cform);
-		dbuser.addEventListener('change', cform);
-		dbpwd.addEventListener('change', cform);
-		dbpath.addEventListener('change', cform);
-
 		function cform() {
 			let valid = false;
-
+			
 			if(database.value === 'mysql') {
 				valid = (dbhost.value.length > 0 && dbname.value.length > 0 && dbuser.value.length > 0 && dbpwd.value.length > 0) ? true:false;
 			} else if (database.value === 'sqlite') {
@@ -603,6 +636,18 @@ document.addEventListener("DOMContentLoaded",function() {
 
 			cdb.disabled = (valid) ? false:true;
 		}
+		
+		function cmform() {
+			let valid = false;
+			valid = (smtpEncryption.value.length > 0 && smtpPort.value.length > 0 && smtpHost.value.length > 0 && smtpuser.value.length > 0 && smtppwd.value.length > 0 && smtpsender.value.length > 0) ? true:false;
+			mtest.disabled = (valid) ? false:true;
+		}
+
+		dbhost.addEventListener('change', cform);
+		dbname.addEventListener('change', cform);
+		dbuser.addEventListener('change', cform);
+		dbpwd.addEventListener('change', cform);
+		dbpath.addEventListener('change', cform);
 
 		function tDB() {
 			let db = {};
@@ -617,6 +662,18 @@ document.addEventListener("DOMContentLoaded",function() {
 			}
 
 			sendRequest(testDB, JSON.stringify(db));
+		}
+
+		function tMail() {
+			let smtp = {};
+			smtp.host = smtpHost.value;
+			smtp.encryption = smtpEncryption.value;
+			smtp.port = smtpPort.value;
+			smtp.user = smtpuser.value;
+			smtp.pwd = smtppwd.value;
+			smtp.sender = smtpsender.value;
+			
+			sendRequest(testMail, JSON.stringify(smtp));
 		}
 
 		function iDB() {
@@ -790,7 +847,7 @@ function sendRequest(action, data = null, addendum = null) {
 	xhr.open("POST", document.location.href, true);
 	xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 	xhr.responseType = 'json';
-
+	
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
 			if (xhr.status > 199 && xhr.status < 299) {
@@ -832,6 +889,31 @@ function gFile(response) {
 	
 	link.download = response.name;
 	link.click();
+}
+
+function testMail(response) {
+	console.log(response);
+	let mtest = document.getElementById('mtest');
+	let next = document.getElementById('nextSetup');
+	
+	switch (response.code) {
+		case 200:
+			mtest.classList.add('valid');
+			mtest.disabled = true;
+			next.disabled = false;
+			break;
+		case 250:
+			mtest.classList.add('invalid');
+			mtest.disabled = true;
+			next.disabled = true;
+			break;
+		default:
+			mtest.classList.add('invalid');
+			console.error(response.message);
+			mtest.disabled = true;
+			next.disabled = true;
+	}
+	
 }
 
 function testDB(response) {
@@ -880,7 +962,7 @@ function testDB(response) {
 
 function initDB(response) {
 	let idb = document.getElementById('idb');
-	let next = document.getElementById('nextSetup');
+	let next = document.getElementById('nextMail');
 
 	switch (response.code) {
 		case 200:
@@ -897,7 +979,6 @@ function initDB(response) {
 			idb.classList.add('invalid');
 			break;
 	}
-	
 }
 
 function saveSettings(response) {

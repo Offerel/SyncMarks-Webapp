@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `sessionID` (`sessionID`),
   KEY `i2` (`userID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
 -- Create bookmark table
-CREATE TABLE `bookmarks` (
+CREATE TABLE IF NOT EXISTS `bookmarks` (
   `bmID` varchar(15) NOT NULL,
   `bmParentID` varchar(15) DEFAULT NULL,
   `bmIndex` int(10) unsigned NOT NULL,
@@ -32,9 +33,12 @@ CREATE TABLE `bookmarks` (
   KEY `userID` (`userID`),
   KEY `bmParentID` (`bmParentID`,`userID`),
   KEY `i1` (`bmURL`(255),`bmTitle`(255)),
-  CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
-  CONSTRAINT `bookmarks_ibfk_2` FOREIGN KEY (`bmParentID`, `userID`) REFERENCES `bookmarks` (`bmID`, `userID`) ON DELETE CASCADE
+  CONSTRAINT `bookmarks_ibfk_1`
+    FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `bookmarks_ibfk_2`
+    FOREIGN KEY (`bmParentID`, `userID`) REFERENCES `bookmarks` (`bmID`, `userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
 -- Create clients table
 CREATE TABLE IF NOT EXISTS `clients` (
@@ -48,9 +52,12 @@ CREATE TABLE IF NOT EXISTS `clients` (
   UNIQUE KEY `cid` (`cid`),
   KEY `uid` (`userID`),
   KEY `i3` (`cid`),
-  CONSTRAINT `clients_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
+  CONSTRAINT `clients_ibfk_1`
+    FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
+-- Create pages table
 CREATE TABLE IF NOT EXISTS `pages` (
   `pid` int(11) NOT NULL AUTO_INCREMENT,
   `ptitle` varchar(250) NOT NULL,
@@ -63,9 +70,12 @@ CREATE TABLE IF NOT EXISTS `pages` (
   PRIMARY KEY (`pid`),
   KEY `userID` (`userID`),
   KEY `cid` (`cid`),
-  CONSTRAINT `pages_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
-  CONSTRAINT `pages_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
+  CONSTRAINT `pages_ibfk_1`
+    FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `pages_ibfk_2`
+    FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
 -- Create reset table
 CREATE TABLE IF NOT EXISTS `reset` (
@@ -77,10 +87,12 @@ CREATE TABLE IF NOT EXISTS `reset` (
   UNIQUE KEY `autoindex_reset_2` (`token`),
   UNIQUE KEY `autoindex_reset_1` (`tokenID`),
   KEY `userID` (`userID`),
-  CONSTRAINT `reset_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
+  CONSTRAINT `reset_ibfk_1`
+    FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
--- CREATE tokens table
+-- Create auth tokens table
 CREATE TABLE IF NOT EXISTS `auth_token` (
   `tID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(255) NOT NULL,
@@ -89,10 +101,13 @@ CREATE TABLE IF NOT EXISTS `auth_token` (
   `exDate` int(11) NOT NULL,
   PRIMARY KEY (`tID`),
   KEY `authtoken_fk1` (`userName`),
-  CONSTRAINT `authtoken_fk1` FOREIGN KEY (`userName`) REFERENCES `users` (`userName`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `authtoken_fk1`
+    FOREIGN KEY (`userName`) REFERENCES `users` (`userName`)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+%%%
 
--- CREATE ctokens table
+-- Create client tokens table
 CREATE TABLE IF NOT EXISTS `c_token` (
   `tID` int(11) NOT NULL AUTO_INCREMENT,
   `cid` varchar(255) DEFAULT NULL,
@@ -104,29 +119,32 @@ CREATE TABLE IF NOT EXISTS `c_token` (
   UNIQUE KEY `tID` (`tID`),
   UNIQUE KEY `cid` (`cid`),
   KEY `userID` (`userID`),
-  CONSTRAINT `c_token_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
-  CONSTRAINT `c_token_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE CASCADE
+  CONSTRAINT `c_token_ibfk_1`
+    FOREIGN KEY (`userID`) REFERENCES `users` (`userID`) ON DELETE CASCADE,
+  CONSTRAINT `c_token_ibfk_2`
+    FOREIGN KEY (`cid`) REFERENCES `clients` (`cid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Create index
-CREATE INDEX IF NOT EXISTS `i1` ON `bookmarks` (`bmURL`(255), `bmTitle`(255));
-CREATE INDEX IF NOT EXISTS `i2` ON `users` ( `userID`);
-CREATE INDEX IF NOT EXISTS `i3` ON `clients` (`cid`);
-
--- Create triggers
-@delimiter %%%;
-CREATE TRIGGER IF NOT EXISTS
-    `bookmarks`.update_tokenchange AFTER 
-UPDATE
-ON 
-    `bookmarks`.`auth_token` FOR EACH row BEGIN
-DELETE 
-FROM 
-    `auth_token` 
-WHERE 
-    `exDate` < UNIX_TIMESTAMP();
- 
-END; 
 %%%
-@delimiter ; 
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS `i1`
+  ON `bookmarks` (`bmURL`(255), `bmTitle`(255));
+%%%
+
+CREATE INDEX IF NOT EXISTS `i2`
+  ON `users` (`userID`);
+%%%
+
+CREATE INDEX IF NOT EXISTS `i3`
+  ON `clients` (`cid`);
+%%%
+
+-- Create trigger
+CREATE TRIGGER IF NOT EXISTS `update_tokenchange`
+AFTER UPDATE ON `auth_token`
+FOR EACH ROW
+BEGIN
+    DELETE FROM `auth_token`
+    WHERE `exDate` < UNIX_TIMESTAMP();
+END;
 %%%

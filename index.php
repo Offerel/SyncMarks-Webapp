@@ -2,14 +2,26 @@
 /**
  * SyncMarks
  *
- * @version 2.1.1
+ * @version 2.2.0
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
  */
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+if(!file_exists(getenv('CONF')."/config.inc.php")) {
+	$action = (isset($_POST['action'])) ? $_POST['action']:'';
+	switch($action) {
+		case "testDB": testDB($_POST['data']); break;
+		case "initDB": initDB($_POST['data']); break;
+		case "testMail": testMail($_POST['data']); break;
+		case "saveSettings": saveSettings($_POST['data']); break;
+	}
+}
+
 define("CONFIG", init());
 $lang = setLang();
-if(!isset($_POST['action'])) checkInstall();
 
 $le = "";
 saveRequest();
@@ -237,7 +249,6 @@ if(isset($_POST['action'])) {
 				die();
 			}
 			$del = false;
-			$headers = "From: SyncMarks <".CONFIG['sender'].">"."\r\n";
 			$data = json_decode($_POST['data'], true);
 
 			$variant = filter_var($data['type'], FILTER_VALIDATE_INT);
@@ -263,7 +274,14 @@ if(isset($_POST['action'])) {
 						if(filter_var($mail, FILTER_VALIDATE_EMAIL)) {
 							$response = $nuid;
 							$message = "Hello,\r\na new account with the following credentials is created for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at ".getLink();
-							if(!mail ($mail, "Account created",$message,$headers)) {
+							
+							$email['subject'] = "Account created";
+							$email['message'] = $message;
+							$email['mail'] = $mail;
+							$smtp = CONFIG["smtp"];
+							$mres = sendMail($smtp, $email);
+							
+							if($mres['code'] != 200) {
 								e_log(1,"Error sending data for created user account to user");
 								$response = "User created successful, E-Mail could not send";
 							}
@@ -302,7 +320,14 @@ if(isset($_POST['action'])) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User changed successful, Try to send E-Mail to user";
 							$message = "Hello,\r\nyour account is changed for SyncMarks. You can login at ".getLink();
-							if(!mail ($user, "Account changed",$message,$headers)) e_log(1,"Error sending email for changed user account");
+
+							$email['subject'] = "Account changed";
+							$email['message'] = $message;
+							$email['mail'] = $mail;
+							$smtp = CONFIG["smtp"];
+							$mres = sendMail($smtp, $email);					
+							if($mres != 200) e_log(1,"Error sending email for changed user account");
+							
 						} else {
 							$response = "User changed successful, No mail send to user";
 						}
@@ -318,7 +343,14 @@ if(isset($_POST['action'])) {
 						if(filter_var($user, FILTER_VALIDATE_EMAIL)) {
 							$response = "User deleted, Try to send E-Mail to user";
 							$message = "Hello,\r\nyour account '$user' and all it's data is removed from ".getlink();
-							if(!mail ($user, "Account removed",$message,$headers)) e_log(1,"Error sending data for created user account to user");
+							
+							$email['subject'] = "Account removed";
+							$email['message'] = $message;
+							$email['mail'] = $mail;
+							$smtp = CONFIG["smtp"];
+							$mres = sendMail($smtp, $email);
+
+							if($mres != 200) e_log(1,"Error sending data for created user account to user");
 						} else {
 							$response = "User deleted successful, No mail send to user";
 						}
@@ -342,7 +374,7 @@ if(isset($_POST['action'])) {
 				while (($line = fgets($file)) !== false) {
 					$lines[] = $line;
 					$lineCount++;
-					
+
 					if ($lineCount > 500) {
 						array_shift($lines);
 					}
@@ -497,20 +529,11 @@ if(isset($_POST['action'])) {
 			}
 			$response = $dubData;
 			break;
-			case "testDB":
-				$response = testDB($_POST['data']);
-				break;
-			case "initDB":
-				$response = initDB($_POST['data']);
-				break;
-			case "saveSettings":
-				$response = saveSettings($_POST['data']);
-				break;
-			case "gFile":
-				$response = gFile($_POST['data']);
-				break;
-			default:
-				die(e_log(1, "Unknown Action ".$_POST['action']));
+		case "gFile":
+			$response = gFile($_POST['data']);
+			break;
+		default:
+			die(e_log(1, "Unknown Action ".$_POST['action']));
 	}
 
 	sendJSONResponse($response, $action);
@@ -581,35 +604,7 @@ function init() {
 		'samesite' => 'Strict'
 	]);
 	session_start();
-	include_once "config.inc.php";
-
-	$version = '';
-	foreach (explode ("\n", file_get_contents(__FILE__,false,NULL,0,60)) as $line) {
-		$version = (str_contains(strtolower($line), 'version')) ? array_slice(explode(" ", $line), -1)[0]:$version;
-	}
-
-	set_error_handler("e_log");
-
-	$headers = getallheaders();
-	if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
-		header("X-SyncMarks: $version");
-		die(http_response_code(204));
-	}
-
-	$config = [
-		'db'		=> $database,
-		'logfile'	=> $logfile,
-		'realm'		=> $realm,
-		'loglevel'	=> $loglevel,
-		'sender'	=> $sender,
-		'suser'		=> $suser,
-		'spwd'		=> $spwd,
-		'enckey'	=> $enckey,
-		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
-		'version'	=> $version,
-		'backup'	=> $backup
-	];
-
+	
 	class language {
 		public $data;
 		function __construct($language) {
@@ -641,6 +636,56 @@ function init() {
 			return $this->data;
 		}
 	}
+
+	if(file_exists(getenv('CONF').'/config.inc.php')) {
+		include_once getenv('CONF')."/config.inc.php";
+	} else {
+		checkInstall();
+	}
+
+	$version = '';
+	foreach (explode ("\n", file_get_contents(__FILE__,false,NULL,0,60)) as $line) {
+		$version = (str_contains(strtolower($line), 'version')) ? array_slice(explode(" ", $line), -1)[0]:$version;
+	}
+
+	$headers = getallheaders();
+	if(isset($headers['X-Action']) && $headers['X-Action'] === 'verify') {
+		header("X-SyncMarks: $version");
+		die(http_response_code(204));
+	}
+	
+	$dbPasswordFile = getenv('DB_PASSWORD_FILE');
+	if ($dbPasswordFile && is_readable($dbPasswordFile)) {
+		$dbpwd = trim(file_get_contents($dbPasswordFile));
+	} else {
+		$dbpwd = $database['pwd'] ?? '';
+	}
+	$database['pwd'] = $dbpwd;
+	
+	$mailPasswordFile = getenv('SMTP_PASSWORD_FILE');
+    if ($mailPasswordFile && is_readable($mailPasswordFile)) {
+        $mailpwd = trim(file_get_contents($mailPasswordFile));
+    } else {
+        $mailpwd = $smtp['pwd'] ?? '';
+    }
+    $smtp['pwd'] = $mailpwd;
+    
+    $enckeyFile = getenv('ENCKEY_FILE');
+    if ($enckeyFile && is_readable($enckeyFile)) {
+        $enckey = trim(file_get_contents($enckeyFile));
+    }
+
+	$config = [
+		'db'		=> $database,
+		'smtp'		=> $smtp,
+		'logfile'	=> $logfile,
+		'loglevel'	=> $loglevel,
+		'sender'	=> $sender,
+		'enckey'	=> $enckey,
+		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
+		'version'	=> $version,
+		'backup'	=> (!isset($backup)) ? 0:$backup
+	];
 
 	return $config;
 }
@@ -700,10 +745,6 @@ function logout() {
 function handleReset() {
 	global $lang;
 	$reset = trim($_GET['reset']);
-	$headers = [
-		"From" => "SyncMarks <".CONFIG['sender'].">",
-		"Return-Path" => CONFIG['sender'],
-	];
 
 	switch($reset) {
 		case "request":
@@ -739,8 +780,13 @@ function handleReset() {
 				]];
 
 				if(db_query_prep($query, $psdata)) {
-					$message = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
-					if(!mail($mail, "Password request confirmation", $message, $headers)) {
+					$email['subject'] = "Password request confirmation";
+					$email['message'] = "Hello $user,\r\n\r\nYou requested a new password for your account. If this is correct, please open the following link, to confirm creating a new password:\r\n".getLink('confirm', $token)."\r\nIf this request is not from your side, you should click the following link to cancel the request:\r\n".getLink('cancel', $token);
+					$email['mail'] = $mail;
+					$smtp = CONFIG["smtp"];
+					$mres = sendMail($smtp, $email);
+					
+					if($response['code'] != 200) {
 						e_log(1,"Error sending password reset request to user");
 					}
 				}
@@ -765,10 +811,18 @@ function handleReset() {
 				$psdata = [[
 					$token
 				]];
+					
 				if(db_query_prep($query, $psdata)) {
 					e_log(8,"Request removed successful");
 					$message = "Hello ".$result['userName'].",\r\n\r\nYour password request is canceled, You can login with your old credentials at ".getLink().". If you want to make sure, that your account is healthy, you should change your password to a new one after logging in.";
-					if(!mail($result['userMail'], "Password request canceled", $message, $headers)) {
+					
+					$email['subject'] = "Password request canceled";
+					$email['message'] = $message;
+					$email['mail'] = $result['userMail'];
+					$smtp = CONFIG["smtp"];
+					$mres = sendMail($smtp, $email);
+					
+					if($mres != 200) {
 						e_log(1,"Error sending remove cancel to ".$result['userName']);
 					}
 				}
@@ -815,7 +869,14 @@ function handleReset() {
 					if(db_query_prep($query, $psdata)) {
 						e_log(8,"New password set successful");
 						$message = "Hello ".$result['userName'].",\r\n\r\nYour new password is set successful, please use:\r\n$npwd\r\n\r\nYou can login at:\n".getLink();
-						if(!mail($result['userMail'], "New password", $message, $headers)) {
+						
+						$email['subject'] = "New password";
+						$email['message'] = $message;
+						$email['mail'] = $result['userMail'];
+						$smtp = CONFIG["smtp"];
+						$mres = sendMail($smtp, $email);
+						
+						if($mres != 200) {
 							e_log(1,"Error sending new password to ".$result['userName']);
 						}
 					}
@@ -888,7 +949,7 @@ function getLink($type = '', $token = '') {
 function setLang() {
 	$hlang = (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) ? substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2):'en';
 	$lng = isset($_SESSION['sud']['uOptions']) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:$hlang;
-	$lng = isset($lng) ? $lng:'en';
+	$lng = isset($lng) ? $lng:'en';	
 	$language = new language($lng);
 	$lang = $language->translate();
 	return $lang;
@@ -2293,7 +2354,9 @@ function delUsermarks($uid) {
 
 function htmlHeader() {
 	global $lang;
-	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:$lang->lng;
+	if(!isset($lang)) $lang = setLang();
+
+	$lng = (isset($_SESSION['sud']['uOptions'])) ? json_decode($_SESSION['sud']['uOptions'], true)['language']:"en";
 	$js = (file_exists("js/syncmarks.min.js")) ? "<script src='js/syncmarks.min.js'></script>":"<script src='js/syncmarks.js'></script>";
 	$css = (file_exists("css/syncmarks.min.css")) ? "<link type='text/css' rel='stylesheet' href='css/syncmarks.min.css'>":"<link type='text/css' rel='stylesheet' href='css/syncmarks.css'>";
 
@@ -2310,16 +2373,16 @@ function htmlHeader() {
 	</head>
 	<body>";
 
-			$htmlHeader.= "
-			<div id='menu'>
-			<div id='hmenu'>
-			<div class='hline'></div>
-			<div class='hline'></div>
-			<div class='hline'></div>
-			</div>
-			<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value='' placeholder='".$lang->messages->searchHint."'>
-			<div id='tbar'>".$lang->messages->syncmarks."</div>
-			</div>";
+	$htmlHeader.= "
+	<div id='menu'>
+	<div id='hmenu'>
+	<div class='hline'></div>
+	<div class='hline'></div>
+	<div class='hline'></div>
+	</div>
+	<button>&#8981;</button><input type='search' name='bmsearch' id='bmsearch' value='' placeholder='".$lang->messages->searchHint."'>
+	<div id='tbar'>".$lang->messages->syncmarks."</div>
+	</div>";
 
 	return $htmlHeader;
 }
@@ -2944,7 +3007,6 @@ function checkLogin() {
 
 	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
 
-	$realm = CONFIG['realm'];
 	$tVerified = false;
 	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':edcrpt($_COOKIE['syncmarks'], 2);
 
@@ -3111,7 +3173,7 @@ function checkLogin() {
 
 			if(!isset($_POST['client'])) {
 				e_log(8,'Username and password not set. using web loginform');
-				header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
+				header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
 				http_response_code(401);
 			}
 
@@ -3190,7 +3252,7 @@ function checkLogin() {
 					session_destroy();
 
 					if(!isset($_POST['login']) || !isset($_POST['client']) ) {
-						header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
+						header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
 						http_response_code(401);
 					}
 					e_log(2,"Login failed. Password missmatch");
@@ -3212,7 +3274,7 @@ function checkLogin() {
 				session_destroy();
 
 				if(!isset($_POST['login']) || !isset($_POST['client'])) {
-					header('WWW-Authenticate: Basic realm="'.$realm.'", charset="UTF-8"');
+					header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
 					if(!isset($_POST['client'])) http_response_code(401);
 				} else {
 					echo htmlHeader();
@@ -3329,74 +3391,6 @@ function db_query_prep($query, $data=null) {
 			$queryData = $result;
 		}
 	}
-	
-	$db = NULL;
-	return $queryData;
-}
-
-function db_query($query, $data=null) {
-	e_log(9,$query);
-	$options = [
-		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-		PDO::ATTR_CASE => PDO::CASE_NATURAL,
-		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
-	];
-
-	try {
-		if(CONFIG['db']['type'] == 'mysql') {
-			$hs = (substr(CONFIG['db']['host'],0,1) === '/') ? 'unix_socket':'host';
-			$constr = CONFIG['db']['type'].':'.$hs.'='.CONFIG['db']['host'].';dbname='.CONFIG['db']['dbname'];
-			$db = new PDO($constr, CONFIG['db']['user'], CONFIG['db']['pwd'], $options);
-		} elseif(CONFIG['db']['type'] == 'sqlite') {
-			$db = new PDO(CONFIG['db']['type'].':'.CONFIG['db']['dbname'], null, null, $options);
-			$db->exec( 'PRAGMA foreign_keys = ON;' );
-		}
-	} catch (PDOException $e) {
-		e_log(1,'DB connection failed: '.$e->getMessage());
-		return false;
-	}
-
-	if(is_array($data)) {
-		$statement = $db->prepare($query);
-		$waiting = true;
-		while($waiting) {
-			try {
-				$db->beginTransaction();
-				foreach ($data as $row) $statement->execute($row);
-				$queryData = $db->commit();
-				$waiting = false;
-			} catch(PDOException $e) {
-				if(stripos($e->getMessage(), 'DATABASE IS LOCKED') !== false) {
-					$queryData = $db->commit();
-					usleep(250000);
-				} else {
-					$db->rollBack();
-					$queryData = false;
-					e_log(1,"DB transaction failed. Data is rolled back: ".$e->getMessage());
-					exit;
-				}
-			}
-		}
-	} else {
-		if(strpos($query, 'SELECT') === 0 || strpos($query, 'PRAGMA') === 0) {
-			try {
-				$statement = $db->prepare($query);
-				$statement->execute();
-			} catch(PDOException $e) {
-				e_log(1,"DB query failed: ".$e->getMessage());
-				return false;
-			}
-			$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
-		} else {
-			try {
-				$queryData = $db->exec($query);
-				if(strpos($query, 'INSERT') === 0) $queryData = $db->lastInsertId();
-			} catch(PDOException $e) {
-				e_log(1,"DB update failed: ".$e->getMessage());
-				return false;
-			}
-		}
-	}
 
 	$db = NULL;
 	return $queryData;
@@ -3408,7 +3402,8 @@ function sanitizeStr($str) {
 
 function checkInstall() {
 	global $htmlFooter, $lang;
-	if(file_exists('config.inc.php')) return false;
+	$error = 0;
+	echo htmlHeader();
 	$loaded = get_loaded_extensions();
 	$used = [
 		"date",
@@ -3416,14 +3411,13 @@ function checkInstall() {
 		"json",
 		"session",
 		"pdo_mysql",
-		"pdo_sqlite",
+   		"pdo_sqlite",
 		"curl",
 		"dom",
 		"fileinfo",
-		"readline"
+		"readline",
+		"intl"
 	];
-	$error = 0;
-	echo htmlHeader();
 
 	echo "<div id='php_extensions' class='installer' style='display: block'><h3>PHP Extensions</h3>";
 	foreach ($used as $key => $extension) {
@@ -3446,54 +3440,162 @@ function checkInstall() {
 	<option value='sqlite'>SQLite3</option>
 	</select>";
 
+	$dbhost = getenv('DB_HOST') ? :'';
+	$dbname = getenv('DB_NAME') ? :'';
+	$dbuser = getenv('DB_USER') ? :'';
+
+	$dbPasswordFile = getenv('DB_PASSWORD_FILE');
+	if ($dbPasswordFile && is_readable($dbPasswordFile)) {
+		$dbpwd = trim(file_get_contents($dbPasswordFile));
+	} else {
+		$dbpwd = getenv('DB_PASSWORD') ?: '';
+	}
+
 	$mform = "<div id='mform' class='dbsetup'>
-	<label for='dbhost'>".$lang->messages->dbHostL."</label><input type='text' name='dbhost' id='dbhost' placeholder='".$lang->messages->dbHost."' required>
-	<label for='dbname'>".$lang->messages->dbNameL."</label><input type='text' name='dbname' id='dbname' placeholder='".$lang->messages->dbName."' required>
-	<label for='dbuser'>".$lang->messages->dbUserL."</label><input type='text' name='dbuser' id='dbuser' placeholder='".$lang->messages->dbUser."' required>
-	<label for='dbpwd'>".$lang->messages->password."</label><input type='password' name='dbpwd' id='dbpwd' placeholder='".$lang->messages->dbPWD."' required>
+	<label for='dbhost'>".$lang->messages->dbHostL."</label><input type='text' name='dbhost' id='dbhost' value='$dbhost' placeholder='".$lang->messages->dbHost."' required>
+	<label for='dbname'>".$lang->messages->dbNameL."</label><input type='text' name='dbname' id='dbname' value='$dbname' placeholder='".$lang->messages->dbName."' required>
+	<label for='dbuser'>".$lang->messages->dbUserL."</label><input type='text' name='dbuser' id='dbuser' value='$dbuser' placeholder='".$lang->messages->dbUser."' required>
+	<label for='dbpwd'>".$lang->messages->password."</label><input type='password' name='dbpwd' id='dbpwd' value='$dbpwd' placeholder='".$lang->messages->dbPWD."' required style='width: 210px; border-radius: 5px 0 0 5px;'>
+		<span class='password-toggle' role='button'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z' fill='none' stroke='currentColor' stroke-width='2' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' fill='none' stroke='currentColor' stroke-width='2'/></svg></span>
 	</div>
 	";
 
 	$sform = "<div id='sform' class='dbsetup'>
-	<label for='dbpath'>".$lang->messages->dbPath."</label><input type='text' name='dbpath' id='dbpath' placeholder='".$lang->messages->dbSQlite."' required>
+	<label for='dbpath'>".$lang->messages->dbPath."</label><input type='text' name='dbpath' id='dbpath' placeholder='".$lang->messages->dbSQlite."' value='".getenv('CONF')."/syncmarks.db' required>
 	</div>
+	";
+	
+	$smtpPasswordFile = getenv('SMTP_PASSWORD_FILE');
+	if ($smtpPasswordFile && is_readable($smtpPasswordFile)) {
+		$smtppwd = trim(file_get_contents($smtpPasswordFile));
+	} else {
+		$smtppwd = getenv('SM_SMTP_PASSWORD') ?: '';
+	}
+
+	$mailform = "<div id='mailform' class='installer'><h3>Mail Setup</h3>
+	<label for='smtphost'>Host</label><input type='text' name='smtphost' id='smtphost' value='' placeholder='smtp.yourdomain.com' title='SMTP Host' required>
+	<label for='smtpEncryption'>Encryption</label>
+	<select name='smtpEncryption' id='smtpEncryption'>
+    	<option value='none'>None</option>
+    	<option value='starttls' selected>STARTTLS</option>
+    	<option value='smtps'>SSL/TLS</option>
+	</select>
+	<label for='smtpport'>Port</label><input type='number' name='smtpport' id='smtpport' value='587' placeholder='587' title='SMTP Host' required>
+	<label for='smtphost'>Username</label><input type='text' name='smtpuser' id='smtpuser' value='' placeholder='Username' title='Username' required>
+	<label for='smtppwd'>Password</label><input type='password' name='smtppwd' id='smtppwd' value='$smtppwd' placeholder='Password' title='Password' required>
+	<label for='smtpsender'>Sender</label><input type='text' name='smtpsender' id='smtpsender' placeholder='SyncMarks <syncmarks@yourdomain.com>' value='' title='Sender' required>
+	<div class='bset'><button id='mtest' disabled>Send Testmail</button></div>
 	";
 
 	echo $mform;
 	echo $sform;
+	
 
 	echo "<div class='bset'><button id='cdb' disabled>".$lang->messages->dbCPerms."</button><button id='idb' disabled>".$lang->messages->dbInit."</button></div>";
-	echo "<button id='nextSetup' disabled class='next'>".$lang->actions->settings."</button></div>";
+	echo "<button id='nextMail' disabled class='next'>Mail Setup</button></div>";
 
+	echo $mailform;
+	echo "<button id='nextSetup' disabled class='next'>".$lang->actions->settings."</button></div>";
+	
 	$seform = "<div id='seform' class='installer'><h3>".$lang->actions->settings."</h3>
-	<label for='lfpath'>".$lang->actions->logfile."</label><input type='text' name='lfpath' id='lfpath' value='".CONFIG['logfile']."' placeholder='".$lang->messages->pathLfile."' title='".$lang->messages->pathLfile."' required>
+	<label for='lfpath'>".$lang->actions->logfile."</label><input type='text' name='lfpath' id='lfpath' value='".getenv('SM_LOG')."' placeholder='".$lang->messages->pathLfile."' title='".$lang->messages->pathLfile."' required>
 	<label for='loglevel'>".$lang->messages->Loglevel."</label><select name='loglevel' id='loglevel'>
 	<option value='' disabled>".$lang->messages->chLoglevel."</option>
 	<option value='1'>Error</option>
-	<option value='2' selected>Warn</option>
-	<option value='4'>Parse</option>
+	<option value='2'>Warn</option>
+	<option value='4' selected>Info</option>
 	<option value='8'>Notice</option>
 	<option value='9'>Debug</option>
 	</select>
-	<label for='realm'>".$lang->messages->realmL."</label><input type='text' name='realm' id='realm' value='".CONFIG['realm']."' placeholder='".$lang->messages->realm."' title='".$lang->messages->realm."' required>
-	<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='".CONFIG['sender']."' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
-	<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='".CONFIG['suser']."' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
-	<label for='spwd'>".$lang->messages->password."</label><input type='text' name='spwd' id='spwd' value='".CONFIG['spwd']."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required>
-	<label for='enckey'>".$lang->messages->key."</label><input type='text' name='enckey' id='enckey' value='".unique_code(16)."' placeholder='".$lang->messages->rndKey."' title='".$lang->messages->rndKey."' required>
-	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='".CONFIG['expireDays']."' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
+	<label for='sender'>".$lang->messages->mail."</label><input type='text' name='sender' id='sender' value='syncmarks@yourdomain.com' placeholder='".$lang->messages->mailSender."' title='".$lang->messages->mailSender."' required>
+	<label for='suser'>".$lang->messages->username."</label><input type='text' name='suser' id='suser' value='admin' placeholder='".$lang->messages->admUser."' title='".$lang->messages->admUser."' required>
+	<label for='spwd'>".$lang->messages->password."</label><input type='password' name='spwd' id='spwd' value='".gpwd(16)."' placeholder='".$lang->messages->password."' title='".$lang->messages->password."' required style='width: 210px; border-radius: 5px 0 0 5px;'>
+	<span class='password-toggle' role='button'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z' fill='none' stroke='currentColor' stroke-width='2' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' fill='none' stroke='currentColor' stroke-width='2'/></svg></span>
+	<input type='hidden' name='enckey' id='enckey' value='".unique_code(16)."'>
+	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='7' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
 	<button id='nextSettings' class='next'>".$lang->actions->save."</button>
 	</div>";
 
 	echo $seform;
 	echo $htmlFooter;
 
-	$_SESSION['sauth'] = CONFIG['suser'];
 	$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
+function testMail($data) {
+	$smtp = json_decode($data, true);
+	
+	$mail['subject'] = "SyncMarks Testmail";
+	$mail['message'] = "Congratulation! Your Mailsetup is working!";
+	$mail['mail'] = $smtp['user'];
+	
+	$mres = sendMail($smtp, $mail);
+
+	if($mres['code'] === 200) {
+		$conf = file_get_contents(getenv('CONF')."/config.tmp.php");
+		$conf.= "\n".'$smtp = '.var_export($smtp, true).";\n";
+		file_put_contents(getenv('CONF')."/config.tmp.php", $conf);
+	}
+
+	header('Content-Type: application/json; charset=utf-8');
+	http_response_code($mres['code']);
+	die(json_encode($mres, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
+}
+
+function sendMail($smtp, $email) {
+	require_once __DIR__ . '/lib/PHPMailer/Exception.php';
+	require_once __DIR__ . '/lib/PHPMailer/PHPMailer.php';
+	require_once __DIR__ . '/lib/PHPMailer/SMTP.php';
+
+	$mail = new PHPMailer(true);
+	
+	try {
+		$mail->isSMTP();
+		$mail->Host = $smtp['host'];
+		$mail->Port = $smtp['port'];
+		$mail->SMTPAuth = true;
+		$mail->Username = $smtp['user'];
+		$mail->Password = $smtp['pwd'];
+		$mail->addAddress($email['mail']);
+		
+		if (preg_match('/^(.*?)\s*[<(]\s*([^)>]+@[^)>]+)\s*[>)]\s*$/', $smtp["sender"], $matches)) {
+			$name = trim($matches[1]);
+			$address = trim($matches[2]);
+
+			if (!filter_var($address, FILTER_VALIDATE_EMAIL)) {
+				error_log("Invalid Mailadress for sender");
+			}
+		} else {
+			error_log("Wrong Sender");
+		}
+		
+		$mail->setFrom($address, $name);
+		
+		switch("encryption") {
+			case "starttls": $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; break;
+			case "smtps": $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; break;
+		}
+		
+		$mail->Subject = $email['subject'];
+		$mail->Body = $email['message'];
+		$mail->send();
+		
+		$message = 'OK';
+		$code = 200;
+	} catch (Exception $e) {
+		$message = "Error: {$mail->ErrorInfo}";
+		$code = 500;
+	}
+	
+	$response['code'] = $code;
+	$response['message'] = $message;
+	
+	return $response;
+}
+
 function testDB($data) {
-	e_log(8, "Check database");
+	file_put_contents('php://stdout', "data: " . $data . PHP_EOL);
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
@@ -3523,7 +3625,7 @@ function testDB($data) {
 		$code = 200;
 	} catch (PDOException $e) {
 		$message = 'DB connection failed: '.$e->getMessage();
-		e_log(1, $message);
+		error_log($message);
 		$code = 250;
 		$perms = null;
 	}
@@ -3539,10 +3641,10 @@ function testDB($data) {
 		$data.= "\t\"type\"\t => '$type',\n";
 		$data.= "\t\"host\"\t => $host,\n";
 		$data.= "\t\"dbname\" => '$name',\n";
-		$data.= "\t\"user\"\t => $host,\n";
-		$data.= "\t\"pwd\"\t => $host,\n];";
+		$data.= "\t\"user\"\t => $user,\n";
+		$data.= "\t\"pwd\"\t => $pwd,\n];";
 
-		file_put_contents('config.tmp.php', $data);
+		file_put_contents(getenv('CONF')."/config.tmp.php", $data);
 	}
 
 	$response = [
@@ -3551,12 +3653,13 @@ function testDB($data) {
 		'permissions' => $perms
 	];
 
-	return $response;
+	header('Content-Type: application/json; charset=utf-8');
+	http_response_code($code);
+	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
 
 function initDB($data) {
-	e_log(8, "Init database");
-	include_once "config.tmp.php";
+	include_once getenv('CONF')."/config.tmp.php";
 
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -3577,20 +3680,28 @@ function initDB($data) {
 		$message = "DB Connected";
 	} catch (PDOException $e) {
 		$message = 'DB init connection failed: '.$e->getMessage();
-		e_log(1, $message);
+		error_log($message);
 		$code = 500;
 	}
 
 	if($code === 200) {
-		$query = file_get_contents("./sql/".$database['type']."_init.sql");
-
 		try {
-			$queryData = $db->exec($query);
+			$query = file_get_contents("./sql/".$database['type']."_init.sql");
+			$statements = preg_split('/%%%/', $query);
+
+			foreach ($statements as $statement) {
+				$statement = trim($statement);
+				if ($statement === '') {
+					continue;
+				}
+				$db->exec($statement);
+			}
+
 			$code = 200;
 			$message = "DB init finished";
-		} catch(PDOException $e) {
-			$message = "DB init failed: ".$e->getMessage();
-			e_log(1, $message);
+		} catch (PDOException $e) {
+			$message = "DB init failed: " . $e->getMessage();
+			error_log($message);
 			$code = 250;
 		}
 	}
@@ -3600,24 +3711,30 @@ function initDB($data) {
 		"message" => $message
 	];
 
-	return $response;
+	header('Content-Type: application/json; charset=utf-8');
+	http_response_code($code);
+	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
 }
 
 function saveSettings($data) {
 	$settings = json_decode($data, true);
-	$conf = implode('', array_slice(file('config.tmp.php'),0,8))."\n";
+	$conf = implode('', array_slice(file(getenv('CONF')."/config.tmp.php"),0))."\n";
 
 	foreach ($settings as $key => $value) {
+		if (in_array($key, ['suser', 'spwd'])) {
+			continue;
+		}
 		$value = (is_numeric($value)) ? $value:'\''.$value.'\'';
 		$ctext = "\$$key = $value;\n";
 		$conf.= $ctext;
 	}
 	$conf.= "?>";
-	file_put_contents('config.tmp.php', $conf);
-	die();
+	file_put_contents(getenv('CONF')."/config.tmp.php", $conf);
+
 	$bmAdded = round(microtime(true) * 1000);
 	$userPWD = password_hash($settings['spwd'], PASSWORD_DEFAULT);
-	include_once "config.tmp.php";
+	include_once getenv('CONF')."/config.tmp.php";
+
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 		PDO::ATTR_CASE => PDO::CASE_NATURAL,
@@ -3633,25 +3750,69 @@ function saveSettings($data) {
 			$db = new PDO($database['type'].':'.$database['dbname'], null, null, $options);
 		}
 
-		$query = "INSERT INTO `users` (userName,userType,userHash) VALUES ('".$settings['suser']."',2,'$userPWD');";
-		$res = $db->exec($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`, `bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', '0', 1);";
-		$db->exec($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ".$bmAdded.", 1)";
-		$db->exec($query);
-		$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'GitHub Repository', 'bookmark', 'https://codeberg.org/Offerel/SyncMarks-Webapp', ".$bmAdded.", 1)";
-		$db->exec($query);
+		$db->beginTransaction();
+		
+		$stmt = $db->prepare("INSERT INTO `users` (userName, userType, userHash) VALUES (:userName, 2, :userHash)");
+		$stmt->execute([
+						':userName' => $settings['suser'],
+						':userHash' => $userPWD
+					]);
 
+		$userID = (int)$db->lastInsertId();
+		
+		$stmt = $db->prepare("INSERT INTO `bookmarks` (bmID, bmIndex, bmType, bmAdded, userID) VALUES (:bmID, :bmIndex, :bmType, :bmAdded, :userID)");
+		$stmt->execute([
+						':bmID' => 'root________',
+						':bmIndex' => 0,
+						':bmType' => 'folder',
+						':bmAdded' => '0',
+						':userID' => $userID
+					]);
+
+		$stmt = $db->prepare("INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES (:bmID, :bmParentID, :bmIndex, :bmTitle, :bmType, NULL, :bmAdded, :userID)");
+		$stmt->execute([
+						':bmID' => 'unfiled_____',
+						':bmParentID' => 'root________',
+						':bmIndex' => 0,
+						':bmTitle' => 'Other Bookmarks',
+						':bmType' => 'folder',
+						':bmAdded' => $bmAdded,
+						':userID' => $userID
+					]);
+
+		$stmt = $db->prepare("INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES (:bmID, :bmParentID, :bmIndex, :bmTitle, :bmType, :bmURL, :bmAdded, :userID)");
+		$stmt->execute([
+						':bmID' => unique_code(12),
+						':bmParentID' => 'unfiled_____',
+						':bmIndex' => 0,
+						':bmTitle' => 'Git Repository',
+						':bmType' => 'bookmark',
+						':bmURL' => 'https://codeberg.org/Offerel/SyncMarks-Webapp',
+						':bmAdded' => $bmAdded,
+						':userID' => $userID
+					]);
+
+		$db->commit();
 	} catch (PDOException $e) {
-		$message = 'DB connection failed: '.$e->getMessage();
-		e_log(1, $message);
+		$db->rollBack();
+		$message = $e->getMessage();
+		error_log($message);
 	}
 
-	if (!file_exists('config.inc.php')) {
-		rename('config.tmp.php', 'config.inc.php');
+	if (!file_exists(getenv('CONF')."/config.inc.php")) {
+		$config = loadConfig(getenv('CONF')."/config.tmp.php");
+		$output = "<?php\n";
+
+		foreach ($config as $key => $value) {
+			$output .= '$' . $key . ' = ' . var_export($value, true) . ";\n";
+		}
+
+		$output .= "?>";
+
+		file_put_contents(getenv('CONF')."/config.inc.php", $output);
+		unlink(getenv('CONF')."/config.tmp.php");
 		$message = 'Config file saved as \'config.inc.php\'';
 		$code = 200;
-		logout();
 	} else {
 		$message = 'Config exists already. Saved as \'config.tmp.php\'';
 		$code = 250;
@@ -3662,7 +3823,28 @@ function saveSettings($data) {
 		"message" => $message
 	];
 
-	return $response;
+	header('Content-Type: application/json; charset=utf-8');
+	http_response_code($code);
+	die(json_encode($response, JSON_NUMERIC_CHECK | JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_UNICODE));
+}
+
+function loadConfig($file) {
+    include $file;
+    
+    if(getenv('DB_PASSWORD_FILE') !== false) {
+		unset($database['pwd']);
+		unset($smtp['pwd']);
+	}
+
+	return [
+        'database' => $database ?? null,
+        'smtp'     => $smtp ?? null,
+        'logfile'  => $logfile ?? null,
+        'loglevel' => $loglevel ?? null,
+        'sender'   => $sender ?? null,
+        'enckey'   => $enckey ?? null,
+        'expireDays' => $expireDays ?? null,
+    ];
 }
 
 function htmlFooter() {
