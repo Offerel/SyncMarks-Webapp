@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `clients` (
   `userID` int(11) NOT NULL,
   `lastseen` text NOT NULL DEFAULT 0,
   `fs` int(11) NOT NULL DEFAULT 0,
+  `cOptions` text DEFAULT NULL,
   PRIMARY KEY (`cid`),
   UNIQUE KEY `cid` (`cid`),
   KEY `uid` (`userID`),
