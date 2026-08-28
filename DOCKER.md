@@ -48,7 +48,7 @@ Example:
 ```yaml
 services:
   syncmarks:
-    image: ghcr.io/offerel/syncmarks-webapp:latest
+    image: ghcr.io/offerel/syncmarks:latest
     container_name: syncmarks
     restart: unless-stopped
 
@@ -70,6 +70,7 @@ services:
       ENCKEY_FILE: /run/secrets/enckey
       SM_LOG: /var/log/syncmarks/syncmarks.log
       CONF: /var/lib/syncmarks
+      BASE_URL: https://YOURDOMAIN.COM/DIR/
 
     secrets:
       - source: db_password

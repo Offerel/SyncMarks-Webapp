@@ -1,4 +1,9 @@
 # ChangeLog
+## 2.2.2
+- Fix broken link builder
+- Added ENV Variable for BASE_URL
+- Changed build for docker image
+
 ## 2.2.1
 - Fixed SQL
 - Added PHPMailer

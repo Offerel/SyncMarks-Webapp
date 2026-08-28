@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.1
+ * @version 2.2.2
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -919,9 +919,20 @@ function handleReset() {
 }
 
 function getLink($type = '', $token = '') {
-	$current_url = $_SERVER['REQUEST_SCHEME']."://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-	$parse_url = parse_url($current_url);
-	$base_url = $parse_url['scheme'].'://'.$parse_url['host'].$parse_url['path'];
+	$base_url = getenv('BASE_URL');
+	if (!$base_url) {
+    	$scheme = $_SERVER['HTTP_X_FORWARDED_PROTO']
+        	?? $_SERVER['REQUEST_SCHEME']
+        	?? 'http';
+
+    	$host = $_SERVER['HTTP_X_FORWARDED_HOST']
+        	?? $_SERVER['HTTP_HOST']
+        	?? $_SERVER['SERVER_NAME'];
+
+    	$base_url = $scheme . '://' . $host;
+	}
+	$base_url = rtrim($base_url, '/');
+
 	$parameters = [];
 
 	switch ($type) {
