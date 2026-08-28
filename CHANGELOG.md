@@ -1,4 +1,9 @@
 # ChangeLog
+## 2.2.1
+- Fixed SQL
+- Added PHPMailer
+- changed docker workflow
+
 ## 2.2.0
 - Fixed install wizard
 - Docker Image
