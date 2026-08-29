@@ -1,4 +1,9 @@
 # ChangeLog
+## 2.2.3
+- Added user self register
+- Fixed user creation
+- Fixed SQL
+
 ## 2.2.2
 - Fix broken link builder
 - Added ENV Variable for BASE_URL

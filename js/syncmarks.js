@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.2
+ * @version 2.2.3
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -49,8 +49,6 @@ document.addEventListener("DOMContentLoaded",function() {
 
 		if (event.data.clientOffline) {
 			if(document.getElementById('db-spinner')) document.getElementById('db-spinner').remove();
-			console.warn(event.data.clientOffline);
-			//pwaMessage(event.data.clientOffline, 'warn');
 			let openDBRequest = indexedDB.open(dbName);
 			openDBRequest.onsuccess = (event) => {
 				let db = event.target.result;
@@ -534,6 +532,35 @@ document.addEventListener("DOMContentLoaded",function() {
 		});
 	}
 
+	if(document.getElementById('newacc')) document.getElementById('newacc').addEventListener('click', function(e) {
+		e.preventDefault();
+		let loginformb = document.getElementById('loginformb');
+		let newaccbody = document.getElementById('newaccbody');
+		let loginformt = document.getElementById('loginformt');
+		loginformb.style.display = 'none';
+		newaccbody.style.display = 'block';
+		loginformt.innerText = 'Enter your E-Mail Address to create a account for SyncMarks. If the entered E-Mail is valid, we will send you a confirmation.';
+		return false;
+	});
+
+	if(document.getElementById('nacc_mail')) document.getElementById('nacc_mail').addEventListener('input', function(e) {
+		let button = document.getElementById('nacc_signup');
+		if(e.target.validity.valid) {
+			button.disabled = false;
+		} else {
+			button.disabled = true;
+			
+		}
+	});
+
+	if(document.getElementById('nacc_signup')) document.getElementById('nacc_signup').addEventListener('click', function(e) {
+		e.preventDefault();
+		let data = {};
+		data.mail = document.getElementById('nacc_mail').value;
+		sendRequest(check_nacc, JSON.stringify(data));
+		return false;
+	});
+
 	if(document.getElementById('sdatabase')) {
 		let database = document.getElementById('sdatabase');
 		let mform = document.getElementById('mform');
@@ -559,6 +586,8 @@ document.addEventListener("DOMContentLoaded",function() {
 					data.spwd = document.getElementById('spwd').value;
 					data.enckey = document.getElementById('enckey').value;
 					data.expireDays = document.getElementById('expireDays').value;
+					data.backup = Number(document.getElementById('backup').checked);
+					data.selfreg = Number(document.getElementById('expireDays').checked);
 
 					sendRequest(saveSettings, JSON.stringify(data));
 				} else {
@@ -781,7 +810,7 @@ async function setLanguage(lang) {
 }
 
 function wsize() {
-	document.getElementById('footer').innerText = (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) ? ' + ':translation.actions.addBookmark;
+	if(document.getElementById('footer')) document.getElementById('footer').innerText = (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) ? ' + ':translation.actions.addBookmark;
 }
 
 function clicCheck(e) {
@@ -881,6 +910,14 @@ function pwaMessage(message, state) {
 	return false;
 }
 
+function check_nacc(response) {
+	if(response.code < 300) {
+		document.getElementById('newaccbody').style.display = 'none';
+		document.getElementById('loginformb').style.display = 'block';
+		document.getElementById('loginformt').innerText = "Please check your Inbox and maybe SPAM folder, to confirm Account creation.";
+	}
+}
+
 function gFile(response) {
 	let link = document.createElement('a');
 	
@@ -892,7 +929,6 @@ function gFile(response) {
 }
 
 function testMail(response) {
-	console.log(response);
 	let mtest = document.getElementById('mtest');
 	let next = document.getElementById('nextSetup');
 	

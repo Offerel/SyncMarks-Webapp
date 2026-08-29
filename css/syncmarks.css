@@ -5,6 +5,9 @@
 #smtpEncryption {
     float: right;
 }
+#newaccbody {
+    display: none;
+}
 .password-toggle, .enc-toggle {
     width: 13px;
     border-radius: 0 5px 5px 0;
@@ -1474,9 +1477,13 @@ input:checked + .slider:before {
 .abtn:hover {
 	background-color: #0879d9;
 }
-#loginformb {
-	padding: 5px 20px 20px;
-	text-align: right;
+#loginformb, #newaccbody {
+    padding: 5px 20px 20px;
+    text-align: right;
+}
+#loginform button:disabled, #loginform button:hover:disabled  {
+    background-color: darkgray;
+    cursor: not-allowed;
 }
 #loginform input {
 	width: 100%;

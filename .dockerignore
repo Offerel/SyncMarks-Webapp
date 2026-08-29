@@ -8,6 +8,7 @@ logs
 *.bak
 *.tar
 *.json
+!manifest.json
 .env*
 !.env.example
 config.inc.php

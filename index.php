@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.2
+ * @version 2.2.3
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -27,6 +27,8 @@ $le = "";
 saveRequest();
 
 if(isset($_GET['reset'])) handleReset();
+if(isset($_GET['nacc'])) createAcc();
+if(isset($_POST['action']) && $_POST['action'] === 'check_nacc') handleNewAcc();
 if(!isset($_SESSION['sauth'])) checkLogin();
 
 $lang = setLang();
@@ -261,48 +263,28 @@ if(isset($_POST['action'])) {
 				case 1:
 					$pwd = password_hash($password,PASSWORD_DEFAULT);
 					e_log(8,"Try to add new user $user");
-					$query = "INSERT INTO `users` (`userName`,`userMail`,`userType`,`userHash`) VALUES (?, NULLIF(?,''), ?, ?)";
-					$psdata = [[
-						$user,
-						$mail,
-						$userLevel,
-						$pwd
-					]];
-					
-					$nuid = db_query_prep($query, $psdata);
-					if($nuid > 0) {
-						if(filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-							$response = $nuid;
-							$message = "Hello,\r\na new account with the following credentials is created for SyncMarks:\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at ".getLink();
-							
-							$email['subject'] = "Account created";
-							$email['message'] = $message;
-							$email['mail'] = $mail;
-							$smtp = CONFIG["smtp"];
-							$mres = sendMail($smtp, $email);
-							
-							if($mres['code'] != 200) {
-								e_log(1,"Error sending data for created user account to user");
-								$response = "User created successful, E-Mail could not send";
-							}
-						} else {
-							$response = $nuid;
+
+					$data['name'] = $user;
+					$data['mail'] = $mail;
+					$data['lvel'] = $userLevel;
+					$data['pswd'] = $pwd;
+
+					if($response = cacc($data)) {
+						$message = "Hello,\r\n\r\na new account with the following credentials is created for SyncMarks:\r\n\r\nUsername: $user\r\nPassword: $password\r\n\r\nYou can login at ".getLink();
+						$email['subject'] = "Account created";
+						$email['message'] = $message;
+						$email['mail'] = $mail;
+						$smtp = CONFIG["smtp"];
+						$mres = sendMail($smtp, $email);
+
+						if($mres['code'] != 200) {
+							e_log(1,"Error sending data for created user account to user");
+							$response = "User created successful, E-Mail could not send";
 						}
-
-						$psdata = [[
-							round(microtime(true) * 1000),
-							$nuid
-						]];
-
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmIndex`, `bmType`, `bmAdded`, `userID`) VALUES ('root________', 0, 'folder', ?, ?";
-						db_query_prep($query, $psdata);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ?, ?)";
-						db_query_prep($query, $psdata);
-						$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', ?, ?)";
-						db_query_prep($query, $psdata);
 					} else {
 						$response = "User creation failed";
 					}
+
 					break;
 				case 2:
 					e_log(8,"Updating user $user");
@@ -326,7 +308,7 @@ if(isset($_POST['action'])) {
 							$email['mail'] = $mail;
 							$smtp = CONFIG["smtp"];
 							$mres = sendMail($smtp, $email);					
-							if($mres != 200) e_log(1,"Error sending email for changed user account");
+							if($mres['code'] != 200) e_log(1,"Error sending email for changed user account");
 							
 						} else {
 							$response = "User changed successful, No mail send to user";
@@ -350,7 +332,7 @@ if(isset($_POST['action'])) {
 							$smtp = CONFIG["smtp"];
 							$mres = sendMail($smtp, $email);
 
-							if($mres != 200) e_log(1,"Error sending data for created user account to user");
+							if($mres['code'] != 200) e_log(1,"Error sending data for created user account to user");
 						} else {
 							$response = "User deleted successful, No mail send to user";
 						}
@@ -588,6 +570,32 @@ if(isset($_GET['push'])) {
 
 showApp();
 
+function cacc($data) {
+	$query = "INSERT INTO `users` (`userName`,`userMail`,`userType`,`userHash`) VALUES (?, ?, ?, ?)";
+	$qdata = [[
+		$data['name'],
+		$data['mail'],
+		$data['lvel'],
+		$data['pswd'],
+	]];
+
+	$uid = db_query_prep($query, $qdata);
+
+	$bdata = [[
+		round(microtime(true) * 1000),
+		$uid
+	]];
+
+	$query = "INSERT INTO `bookmarks` (bmID, bmIndex, bmType, bmAdded, userID) VALUES ('root________', 0, 'folder', ?, ?)";
+	db_query_prep($query, $bdata);
+	$query = "INSERT INTO `bookmarks` (bmID,bmParentID,bmIndex,bmTitle,bmType,bmURL,bmAdded,userID) VALUES ('unfiled_____', 'root________', 0, 'Other Bookmarks', 'folder', NULL, ?, ?)";
+	db_query_prep($query, $bdata);
+	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`userID`) VALUES ('".unique_code(12)."', 'unfiled_____', 0, 'Git Repository', 'bookmark', 'https://codeberg.org/Offerel', ?, ?)";
+	db_query_prep($query, $bdata);
+
+	return $uid;
+}
+
 function gFile($data) {
 	$dir = 'backups/'.$_SESSION['sud']['userID'];
 	$response = [
@@ -684,7 +692,8 @@ function init() {
 		'enckey'	=> $enckey,
 		'expireDays'=> (!isset($expireDays)) ? 7:$expireDays,
 		'version'	=> $version,
-		'backup'	=> (!isset($backup)) ? 0:$backup
+		'backup'	=> (!isset($backup)) ? 0:$backup,
+		'selfreg'	=> (!isset($selfreg)) ? 0:$selfreg
 	];
 
 	return $config;
@@ -742,6 +751,76 @@ function logout() {
 	return $html;
 }
 
+function handleNewAcc() {
+	if(CONFIG["selfreg"] == false) return false;
+	$email = json_decode($_POST['data'],true)['mail'];
+
+	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+		$message = "Mail invalid";
+		$code = 444;
+	}
+
+	if(checkdnsrr(substr(strrchr($email, '@'), 1), 'MX')) {
+		$query = "SELECT count(*) as count FROM `users` WHERE `userMail` = ?";
+		$data = [[
+			$email
+		]];
+
+		$result = intval(db_query_prep($query, $data)[0]['count']);
+
+		if($result !== 0) {
+			$message = "Account exists already";
+			$code = 205;
+		} else {
+			$mail['subject'] = "New Account";
+			$mail['message'] = "Hello,\r\n\r\nYou requested a new SyncMarks account.\r\n\r\nIf this is not correct, simply ignore this mail.\r\n\r\nOtherwise open the following link to confirm activating the account:\r\n\r\n".getLink('nacc', $email);
+			$mail['mail'] = $email;
+			$smtp = CONFIG["smtp"];
+			$mres = sendMail($smtp, $mail);
+
+			if($mres['code'] != 200) {
+				$message = "Error sending data for created user account to user";
+				$code = 304;
+			}
+
+			$code = 200;
+			$message = "Mail send to address";
+		}
+	} else {
+		$message = "No MX Record";
+		$code = 205;
+	}
+
+	http_response_code($code);
+	e_log(2, "New Account: ".$message);
+
+	$response['code'] = $code;
+	$response['message'] = $message;
+
+	die(json_encode($response, true));
+}
+
+function createAcc() {
+	if(CONFIG["selfreg"] == false) return false;
+	$pwd = gpwd(22);
+	$data['name'] = $_GET['nacc'];
+	$data['mail'] = $_GET['nacc'];
+	$data['lvel'] = 1;
+	$data['pswd'] = password_hash($pwd,PASSWORD_DEFAULT);
+
+	if(cacc($data)) {
+		$mail['subject'] = "Account activated";
+		$mail['message'] = "Hello,\r\n\r\nYour SyncMarks account is now active.\r\n\r\nUsername: ".$data['name']."\r\nTemporary Password: $pwd\r\n\r\nYou can login at: ".getLink();
+		$mail['mail'] = $data['mail'];
+		$smtp = CONFIG["smtp"];
+		$mres = sendMail($smtp, $mail);
+	}
+
+	http_response_code(200);
+	$location = "location: ".getenv('BASE_URL');
+	die(header($location));
+}
+
 function handleReset() {
 	global $lang;
 	$reset = trim($_GET['reset']);
@@ -786,7 +865,7 @@ function handleReset() {
 					$smtp = CONFIG["smtp"];
 					$mres = sendMail($smtp, $email);
 					
-					if($response['code'] != 200) {
+					if($mres['code'] != 200) {
 						e_log(1,"Error sending password reset request to user");
 					}
 				}
@@ -822,7 +901,7 @@ function handleReset() {
 					$smtp = CONFIG["smtp"];
 					$mres = sendMail($smtp, $email);
 					
-					if($mres != 200) {
+					if($mres['code'] != 200) {
 						e_log(1,"Error sending remove cancel to ".$result['userName']);
 					}
 				}
@@ -876,7 +955,7 @@ function handleReset() {
 						$smtp = CONFIG["smtp"];
 						$mres = sendMail($smtp, $email);
 						
-						if($mres != 200) {
+						if($mres['code'] != 200) {
 							e_log(1,"Error sending new password to ".$result['userName']);
 						}
 					}
@@ -946,6 +1025,12 @@ function getLink($type = '', $token = '') {
 			$parameters = [
 				'reset' => 'cancel',
 				't' => $token
+			];
+			break;
+		case 'nacc':
+			$parameters = [
+				'nacc' => $token,
+				'token' => unique_code(24)
 			];
 			break;
 		default:
@@ -1234,11 +1319,12 @@ function bookmarkExport($ctype, $ctime, $format, $client) {
 			break;
 		case "json":
 			e_log(8,"Exporting in JSON format");
-			$bookmarks = backupBookmarks(1, $client);
+			backupBookmarks(1, $client);
+			$bookmarks = getBookmarks();
 			saveDebugJSON("export", $bookmarks);
 
 			if($client != "0") {
-				$bcount = count($bookmarks);
+				$bcount = is_array($bookmarks) ? count($bookmarks):0;
 				e_log(8,"Send $bcount bookmarks to '$client'");
 				updateClient($client, $ctype, $ctime);
 			} else {
@@ -3304,18 +3390,29 @@ function checkLogin() {
 		}
 	} else {
 		echo htmlHeader();
+
+		if(CONFIG['selfreg'] != false) {
+			$sr_button = "<button name='newacc' id='newacc' value='newacc'>Sign up</button>";
+			$sr_div = "<div id='newaccbody'><input type='email' id='nacc_mail' autocomplete='username' name='nacc_mail' placeholder='".$lang->messages->mail."'><button name='nacc_signup' disabled='true' id='nacc_signup' value='nacc_signup'>Sign up</button></div>";
+		} else {
+			$sr_button = "";
+			$sr_div = "";
+		}
+
 		echo "<div id='loginbody'>
 		<form method='POST' id='lform'>
 		<div id='loginform'>
 		<div id='loginformh'>".$lang->messages->welcome."</div>
 		<div id='loginformt'>".$lang->messages->welcomeHint."</div>
 		<div id='loginformb'>
-		<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
-		<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
-		<input name='client' type='hidden' value='0'>
-		<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
-		<button name='login' value='login'>".$lang->actions->login."</button>
+			<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
+			<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
+			<input name='client' type='hidden' value='0'>
+			<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
+			<button name='login' value='login'>".$lang->actions->login."</button>
+			$sr_button
 		</div>
+			$sr_div
 		</div>
 		</form>
 		</div>";
@@ -3398,6 +3495,8 @@ function db_query_prep($query, $data=null) {
 
 		if(strpos($query, 'SELECT') === 0 || strpos($query, 'PRAGMA') === 0) {
 			$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
+		} elseif(strpos($query, 'INSERT') === 0) {
+			$queryData = (int)$db->lastInsertId();
 		} else {
 			$queryData = $result;
 		}
@@ -3524,6 +3623,8 @@ function checkInstall() {
 	<span class='password-toggle' role='button'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z' fill='none' stroke='currentColor' stroke-width='2' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' fill='none' stroke='currentColor' stroke-width='2'/></svg></span>
 	<input type='hidden' name='enckey' id='enckey' value='".unique_code(16)."'>
 	<label for='expireDays'>".$lang->messages->expire."</label><input type='text' name='expireDays' id='expireDays' value='7' placeholder='".$lang->messages->futDays."' title='".$lang->messages->futDays."' required>
+	<label for='backup'>Backup</label><input type='checkbox' name='backup' id='backup' value='0' title='Backup' required>
+	<label for='selfreg'>Allow Register</label><input type='checkbox' name='selfreg' id='selfreg' value='0' title='Allow Register' required>
 	<button id='nextSettings' class='next'>".$lang->actions->save."</button>
 	</div>";
 
@@ -3601,6 +3702,8 @@ function sendMail($smtp, $email) {
 	
 	$response['code'] = $code;
 	$response['message'] = $message;
+
+	if($code != 200) error_log($message);
 	
 	return $response;
 }
