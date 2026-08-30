@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.3
+ * @version 2.2.4
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -10,7 +10,10 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-if(!file_exists(getenv('CONF')."/config.inc.php")) {
+$confDir = getenv('CONF') ?: __DIR__;
+$configFile = $confDir . '/config.inc.php';
+
+if(!file_exists($configFile)) {
 	$action = (isset($_POST['action'])) ? $_POST['action']:'';
 	switch($action) {
 		case "testDB": testDB($_POST['data']); break;
@@ -606,6 +609,7 @@ function gFile($data) {
 }
 
 function init() {
+	global $configFile;
 	session_set_cookie_params([
 		'httponly' => true,
 		'secure' => true,
@@ -645,8 +649,8 @@ function init() {
 		}
 	}
 
-	if(file_exists(getenv('CONF').'/config.inc.php')) {
-		include_once getenv('CONF')."/config.inc.php";
+	if(file_exists($configFile)) {
+		include_once $configFile;
 	} else {
 		checkInstall();
 	}
@@ -928,8 +932,9 @@ function handleReset() {
 			$psdata = [[
 				$token
 			]];
+			
 			$result = db_query_prep($query, $psdata)[0];
-			if($result != false) die(e_log(1,"Confirm failed"));
+			if (!isset($result['userID'])) die(e_log(1,"Confirm failed"));
 			e_log(8,"Password Reset confirmation for token '$token', '".$result['userName']."'");
 			$tdiff = time() - $result['tokenTime'];
 			if($tdiff <= 300) {
@@ -3511,7 +3516,7 @@ function sanitizeStr($str) {
 }
 
 function checkInstall() {
-	global $htmlFooter, $lang;
+	global $htmlFooter, $lang, $configFile;
 	$error = 0;
 	echo htmlHeader();
 	$loaded = get_loaded_extensions();
@@ -3571,7 +3576,7 @@ function checkInstall() {
 	";
 
 	$sform = "<div id='sform' class='dbsetup'>
-	<label for='dbpath'>".$lang->messages->dbPath."</label><input type='text' name='dbpath' id='dbpath' placeholder='".$lang->messages->dbSQlite."' value='".getenv('CONF')."/syncmarks.db' required>
+	<label for='dbpath'>".$lang->messages->dbPath."</label><input type='text' name='dbpath' id='dbpath' placeholder='".$lang->messages->dbSQlite."' value='".dirname($configFile)."/syncmarks.db' required>
 	</div>
 	";
 	
@@ -3636,6 +3641,7 @@ function checkInstall() {
 }
 
 function testMail($data) {
+	global $configFile;
 	$smtp = json_decode($data, true);
 	
 	$mail['subject'] = "SyncMarks Testmail";
@@ -3645,9 +3651,9 @@ function testMail($data) {
 	$mres = sendMail($smtp, $mail);
 
 	if($mres['code'] === 200) {
-		$conf = file_get_contents(getenv('CONF')."/config.tmp.php");
+		$conf = file_get_contents(dirname($configFile)."/config.tmp.php");
 		$conf.= "\n".'$smtp = '.var_export($smtp, true).";\n";
-		file_put_contents(getenv('CONF')."/config.tmp.php", $conf);
+		file_put_contents(dirname($configFile)."/config.tmp.php", $conf);
 	}
 
 	header('Content-Type: application/json; charset=utf-8');
@@ -3709,6 +3715,7 @@ function sendMail($smtp, $email) {
 }
 
 function testDB($data) {
+	global $configFile;
 	file_put_contents('php://stdout', "data: " . $data . PHP_EOL);
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -3758,7 +3765,7 @@ function testDB($data) {
 		$data.= "\t\"user\"\t => $user,\n";
 		$data.= "\t\"pwd\"\t => $pwd,\n];";
 
-		file_put_contents(getenv('CONF')."/config.tmp.php", $data);
+		file_put_contents(dirname($configFile)."/config.tmp.php", $data);
 	}
 
 	$response = [
@@ -3773,7 +3780,8 @@ function testDB($data) {
 }
 
 function initDB($data) {
-	include_once getenv('CONF')."/config.tmp.php";
+	global $configFile;
+	include_once dirname($configFile)."/config.tmp.php";
 
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -3831,8 +3839,10 @@ function initDB($data) {
 }
 
 function saveSettings($data) {
+	global $configFile;
+	
 	$settings = json_decode($data, true);
-	$conf = implode('', array_slice(file(getenv('CONF')."/config.tmp.php"),0))."\n";
+	$conf = implode('', array_slice(file(dirname($configFile)."/config.tmp.php"),0))."\n";
 
 	foreach ($settings as $key => $value) {
 		if (in_array($key, ['suser', 'spwd'])) {
@@ -3843,11 +3853,11 @@ function saveSettings($data) {
 		$conf.= $ctext;
 	}
 	$conf.= "?>";
-	file_put_contents(getenv('CONF')."/config.tmp.php", $conf);
+	file_put_contents(dirname($configFile)."/config.tmp.php", $conf);
 
 	$bmAdded = round(microtime(true) * 1000);
 	$userPWD = password_hash($settings['spwd'], PASSWORD_DEFAULT);
-	include_once getenv('CONF')."/config.tmp.php";
+	include_once dirname($configFile)."/config.tmp.php";
 
 	$options = [
 		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -3913,8 +3923,8 @@ function saveSettings($data) {
 		error_log($message);
 	}
 
-	if (!file_exists(getenv('CONF')."/config.inc.php")) {
-		$config = loadConfig(getenv('CONF')."/config.tmp.php");
+	if (!file_exists($configFile)) {
+		$config = loadConfig(dirname($configFile)."/config.tmp.php");
 		$output = "<?php\n";
 
 		foreach ($config as $key => $value) {
@@ -3923,8 +3933,8 @@ function saveSettings($data) {
 
 		$output .= "?>";
 
-		file_put_contents(getenv('CONF')."/config.inc.php", $output);
-		unlink(getenv('CONF')."/config.tmp.php");
+		file_put_contents($configFile, $output);
+		unlink(dirname($configFile)."/config.tmp.php");
 		$message = 'Config file saved as \'config.inc.php\'';
 		$code = 200;
 	} else {

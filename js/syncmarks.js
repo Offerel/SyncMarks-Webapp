@@ -1,7 +1,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.3
+ * @version 2.2.4
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded",function() {
 
 		document.querySelectorAll('.tablinks').forEach(tab => tab.addEventListener('click',openMessages, false));
 		document.querySelectorAll('.NotiTableCell .fa-trash').forEach(message => message.addEventListener('click',delMessage, false));
-		document.querySelector('#cnoti').addEventListener('change',eNoti,false);
+		document.getElementById('cnoti').addEventListener('change', eNoti);
 
 		if(sessionStorage.getItem('gNoti') != 1) sendRequest(gurls);
 

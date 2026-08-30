@@ -1,4 +1,9 @@
 # ChangeLog
+## 2.2.4
+- Added security settings to nginx.conf
+- Fixed Reset password feature
+- Fixed config file location for filesysrem install
+
 ## 2.2.3
 - Added user self register
 - Fixed user creation
