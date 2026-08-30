@@ -139,13 +139,3 @@ CREATE INDEX IF NOT EXISTS `i2`
 CREATE INDEX IF NOT EXISTS `i3`
   ON `clients` (`cid`);
 %%%
-
--- Create trigger
-CREATE TRIGGER IF NOT EXISTS `update_tokenchange`
-AFTER UPDATE ON `auth_token`
-FOR EACH ROW
-BEGIN
-    DELETE FROM `auth_token`
-    WHERE `exDate` < UNIX_TIMESTAMP();
-END;
-%%%

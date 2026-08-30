@@ -2,7 +2,7 @@
 /**
  * SyncMarks
  *
- * @version 2.2.4
+ * @version 2.2.5
  * @author Offerel
  * @copyright Copyright (c) 2026, Offerel
  * @license GNU General Public License, version 3
@@ -3156,6 +3156,10 @@ function checkLogin() {
 			setcookie('syncmarks', $cookieData, $cOptions);
 			e_log(8,"New cookie refreshed");
 			$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
+
+			$query = "DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP()";
+			$psdata = [[]];
+			db_query_prep($query, $psdata);
 
 			$query = "UPDATE `auth_token` SET `tHash` = ?, `exDate` = ? WHERE `tID` = ?";
 			$psdata = [[

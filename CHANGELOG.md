@@ -1,4 +1,7 @@
 # ChangeLog
+## 2.2.5
+- Removed useless trigger from SQL
+
 ## 2.2.4
 - Added security settings to nginx.conf
 - Fixed Reset password feature
