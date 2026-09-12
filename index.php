@@ -2931,8 +2931,8 @@ function importMarks($bookmarks, $uid) {
 
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query_prep($query, $data2);
-
-	if($response != false) {
+	
+	if($response === 0) {
 		$response = [
 			"message" => "Bookmark import successful",
 			"code" => 200,
@@ -2977,7 +2977,7 @@ function bimport($data, $uid) {
 	$query = "INSERT INTO `bookmarks` (`bmID`,`bmParentID`,`bmIndex`,`bmTitle`,`bmType`,`bmURL`,`bmAdded`,`bmModified`,`userID`,`bmSort`) VALUES (?,?,?,?,?,?,?,?,?,?)";
 	$response = db_query_prep($query, $data);
 
-	if($response != false) {
+	if($response === 0) {
 		$response = [
 			"message" => "Bookmark import successful",
 			"code" => 200,
