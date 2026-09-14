@@ -840,7 +840,7 @@ function handleReset() {
 
 			$result = db_query_prep($query, $psdata)[0];
 
-			if($result != false) {
+			if($result !== false) {
 				$uid = $result['userID'];
 				$mail = $result['userMail'];
 
@@ -888,7 +888,7 @@ function handleReset() {
 			]];
 			$result = db_query_prep($query, $psdata)[0];
 
-			if($result != false) {
+			if($result !== false) {
 				e_log(8,"Password Reset cancel for token '$token', '".$result['userName']."'");
 				$query = "DELETE FROM `reset` WHERE `token` = ?";
 				$psdata = [[
@@ -1181,7 +1181,7 @@ function durl($pid, $uid) {
 		$uid
 	]];
 
-	if(db_query_prep($query, $psdata) != false) {
+	if(db_query_prep($query, $psdata) !== false) {
 		$response['message'] = "Notification is now hidden";
 		$response['code'] = 200;
 	} else {
@@ -2299,7 +2299,7 @@ function updateClient($cl, $ct, $time) {
 			$uid
 		]];
 		$res = db_query_prep($query, $psdata);
-		$message = ($res != false) ? "Client registered":"Failed to register client";
+		$message = ($res !== false) ? "Client registered":"Failed to register client";
 	}
 
 	e_log(8, $message);
@@ -3403,7 +3403,7 @@ function checkLogin() {
 	} else {
 		echo htmlHeader();
 
-		if(CONFIG['selfreg'] != false) {
+		if(CONFIG['selfreg'] !== false) {
 			$sr_button = "<button name='newacc' id='newacc' value='newacc'>Sign up</button>";
 			$sr_div = "<div id='newaccbody'><input type='email' id='nacc_mail' autocomplete='username' name='nacc_mail' placeholder='".$lang->messages->mail."'><button name='nacc_signup' disabled='true' id='nacc_signup' value='nacc_signup'>Sign up</button></div>";
 		} else {
