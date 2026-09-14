@@ -160,7 +160,6 @@ if(isset($_POST['action'])) {
 			$page = filter_var($_POST['data'], FILTER_VALIDATE_INT);
 			$query = "UPDATE pages SET nloop=0, ntime=? WHERE pid=? AND userID=?";
 			$response = db_query_prep($query, array(array(time(), $page, $uid)));
-			e_log(8,"result: ".print_r($response, true));
 			break;
 		case "arename":
 			$client = sanitizeStr($_POST['client']);
@@ -1492,8 +1491,8 @@ function bookmarkDel($bookmark, $user) {
 
 	$response['message'] = $message;
 	$response['code'] = $code;
-
-	e_log(8, print_r($response, true));
+	
+	e_log(8, $response['message']);
 
 	return $response;
 }
