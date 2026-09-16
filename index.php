@@ -3101,26 +3101,10 @@ function loginUser($user, $password) {
 	if(count($udata) === 1) {
 		if(password_verify($password, $udata[0]['userHash'])) {
 			e_log(8,"Login successful");
-			$seid = session_id();
-			$oTime = $udata[0]['userLastLogin'];
-			$uid = $udata[0]['userID'];
+			
 			$_SESSION['sauth'] = $udata[0]['userName'];
-			getUserdata($_SESSION['sauth']);
 			$_SESSION['auth_method'] = 'password';
-
-			if($seid != $udata[0]['sessionID']) {
-				e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
-				$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userID` = ?";
-				$psdata = [[
-					time(),
-					$seid,
-					$oTime,
-					$uid
-				]];
-
-				db_query_prep($query, $psdata);
-			}
-
+			getUserdata($_SESSION['sauth']);
 			return true;
 		} else {
 			e_log(2,"Password missmatch");
@@ -3236,19 +3220,6 @@ function renewCookie($user) {
 		$expireTime
 	]];
 	$erg = db_query_prep($query, $psdata);
-	/*
-	$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userName` = ?";
-	$psdata = [[
-		$aTime,
-		$seid,
-		$oTime,
-		$cookieArr['user']
-	]];
-
-	$erg = db_query_prep($query, $psdata);
-	//header("location: ?");
-	//die();
-	*/
 }
 
 function loginCookie() {
@@ -3352,6 +3323,17 @@ function checkLogin2() {
 	} else {
 		loginForm();
 	}
+
+	e_log(8,"Save session to database");
+	$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userID` = ?";
+	$psdata = [[
+		time(),
+		session_id(),
+		$_SESSION['sud']['userLastLogin'],
+		$_SESSION['sud']['userID']
+	]];
+
+	db_query_prep($query, $psdata);
 }
 
 function checkLogin1() {
@@ -3811,8 +3793,6 @@ function checkInstall() {
 
 	echo $seform;
 	echo $htmlFooter;
-
-	//$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
