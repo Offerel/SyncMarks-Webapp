@@ -1502,7 +1502,7 @@ function clientCheck($client, $ctime, $type, $userID) {
 
 	$cOptions = db_query_prep($query, $psdata);
 	$tResponse['cOptions'] = $cOptions;
-	//
+
 	e_log(8, "Send clientinfo to $client");
 
 	$tResponse['code'] = 200;
