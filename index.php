@@ -3106,6 +3106,7 @@ function loginUser($user, $password) {
 			$uid = $udata[0]['userID'];
 			$_SESSION['sauth'] = $udata[0]['userName'];
 			getUserdata($_SESSION['sauth']);
+			$_SESSION['auth_method'] = 'password';
 
 			if($seid != $udata[0]['sessionID']) {
 				e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
@@ -3155,7 +3156,7 @@ function loginBasicAuth() {
 	header("Pragma: no-cache");
 
 	$user = $_SERVER['PHP_AUTH_USER'] ?? false;
-	$password   = $_SERVER['PHP_AUTH_PW'] ?? false;
+	$password = $_SERVER['PHP_AUTH_PW'] ?? false;
 
 	if (empty($user) || empty($password)) {
 		header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
@@ -3171,6 +3172,34 @@ function loginBasicAuth() {
 		http_response_code(401);
 		exit;
 	}
+}
+
+function loginAuthelia() {
+	e_log(8, "Try Authelia login");
+	$user = $_SERVER['HTTP_X_SYNCMARKS_USER'] ?? '';
+
+	if(empty($user)) {
+		e_log(8, "No Authelia user found");
+		return false;
+	}
+
+	$query = "SELECT * FROM `users` WHERE `userName`= ?";
+	$psdata = [[
+		$user
+	]];
+	$udata = db_query_prep($query, $psdata);
+
+	if(count($udata) !== 1) {
+		e_log(2, "Authelia user not found: ".$user);
+		return false;
+	}
+
+	$_SESSION['sauth'] = $udata[0]['userName'];
+	getUserdata($_SESSION['sauth']);
+
+	e_log(8, "Authelia login successful");
+	$_SESSION['auth_method'] = 'authelia';
+	return true;
 }
 
 function renewCookie($user) {
@@ -3248,6 +3277,7 @@ function loginCookie() {
 			$_SESSION['sauth'] = $cookieArr['user'];
 			getUserdata($cookieArr['user']);
 			renewCookie($cookieArr['user']);
+			$_SESSION['auth_method'] = 'cookie';
 			return true;
 		} else {
 			e_log(8,"Cookie not valid, using standard login now");
@@ -3308,7 +3338,7 @@ function checkLogin2() {
 	e_log(8,"Check login");
 	$isBasicAuthRequest = count($_GET) > 0 || count($_POST) > 0;
 	$isLoggedIn = isset($_SESSION['sauth']) && strlen($_SESSION['sauth']) > 0;
-	$isAuthelia = false;
+	$isAuthelia = isset($_SERVER['HTTP_X_SYNCMARKS_USER']) && strlen($_SERVER['HTTP_X_SYNCMARKS_USER']) > 0;
 
 	if($isLoggedIn) {
 		e_log(8,"Already logged in");
