@@ -877,6 +877,14 @@ input[type="submit"]:disabled {
 	border-top: 0;
 	margin-top: -13px;
 }
+#preset {
+    display: block;
+    left: 20px;
+    position: absolute;
+    font-family: FontAwesome,Roboto,Arial,Helvetica,sans-serif;
+    font-size: smaller;
+    text-decoration: none;
+}
 #logfile {
 	position: absolute;
 	right: 0;

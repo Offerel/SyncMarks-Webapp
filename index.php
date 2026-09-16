@@ -32,7 +32,7 @@ saveRequest();
 if(isset($_GET['reset'])) handleReset();
 if(isset($_GET['nacc'])) createAcc();
 if(isset($_POST['action']) && $_POST['action'] === 'check_nacc') handleNewAcc();
-if(!isset($_SESSION['sauth'])) checkLogin1();
+if(!isset($_SESSION['sauth'])) checkLogin2();
 
 $lang = setLang();
 backupBookmarks(0);
@@ -3087,16 +3087,9 @@ function clearAuthCookie() {
 	}
 }
 
-function loginBasicAuth() {
-	e_log(8,"Try basic login $client");
-	header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
-	header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
-	header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-	header("Cache-Control: post-check=0, pre-check=0", false);
-	header("Pragma: no-cache");
-
-	$user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER']:false;
-	$pw = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW']:false;
+function loginUser($user, $password) {
+	e_log(8, "Logging in user");
+	$user = sanitizeStr($user);
 
 	$query = "SELECT * FROM `users` WHERE `userName`= ?";
 	$psdata = [[
@@ -3106,7 +3099,7 @@ function loginBasicAuth() {
 	$udata = db_query_prep($query, $psdata);
 
 	if(count($udata) === 1) {
-		if(password_verify($pw, $udata[0]['userHash'])) {
+		if(password_verify($password, $udata[0]['userHash'])) {
 			e_log(8,"Login successful");
 			$seid = session_id();
 			$oTime = $udata[0]['userLastLogin'];
@@ -3118,7 +3111,7 @@ function loginBasicAuth() {
 				e_log(8,"Save session to database. $seid | ".$udata[0]['sessionID']);
 				$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userID` = ?";
 				$psdata = [[
-					$aTime,
+					time(),
 					$seid,
 					$oTime,
 					$uid
@@ -3126,27 +3119,115 @@ function loginBasicAuth() {
 
 				db_query_prep($query, $psdata);
 			}
+
+			return true;
 		} else {
-			unset($_SESSION['sauth']);
-			session_destroy();
-
-			header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
-			http_response_code(401);
-
-			e_log(2,"Login failed. Password missmatch");
-			exit;
+			e_log(2,"Password missmatch");
 		}
+	} else {
+		e_log(2,"User not found");
+	}
+
+	return false;
+}
+
+function loginBasicAuth() {
+	if(isset($_POST['username']) && isset($_POST['password']) && isset($_POST['login'])) {
+		$user = $_POST['username'];
+		if(!loginUser($user, $_POST['password'])) {
+			e_log(2,"Login failed");
+			unset($_SESSION['sauth']);
+			$_SESSION['login_failed'] = $user;
+			header("location: ?");
+			exit;
+		} else {
+			if (isset($_POST['remember'])) {
+				renewCookie($user);
+			}
+		}
+		return true;
+	}
+
+	e_log(8,"Try basic auth");
+	header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+	header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
+	header("Cache-Control: post-check=0, pre-check=0", false);
+	header("Pragma: no-cache");
+
+	$user = $_SERVER['PHP_AUTH_USER'] ?? false;
+	$password   = $_SERVER['PHP_AUTH_PW'] ?? false;
+
+	if (empty($user) || empty($password)) {
+		header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
+		http_response_code(401);
+		exit;
+	}
+
+	if(!loginUser($user, $password)) {
+		e_log(2,"Login failed");
+		unset($_SESSION['sauth']);
+		session_destroy();
+		header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
+		http_response_code(401);
+		exit;
 	}
 }
 
+function renewCookie($user) {
+	e_log(8,"Renew cookie");
+	$expireTime = time()+60*60*24*CONFIG['expireDays'];
+	$rtkn = unique_code(32);
+
+	$cOptions = array (
+		'expires' => $expireTime,
+		'path' => null,
+		'domain' => null,
+		'secure' => true,
+		'httponly' => false,
+		'samesite' => 'Strict'
+	);
+
+	$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
+	$cookieData = edcrpt(json_encode(array('rtkn' => $rtkn, 'user' => $user, 'token' => $dtoken)), 1);
+
+	setcookie('syncmarks', $cookieData, $cOptions);
+	e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
+
+	$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
+
+	$query = "DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP()";
+	$psdata = [[]];
+	db_query_prep($query, $psdata);
+
+	$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES (?, ?, ?, ?)";
+	$psdata = [[
+		$user,
+		$dtoken,
+		$rtknh,
+		$expireTime
+	]];
+	$erg = db_query_prep($query, $psdata);
+	/*
+	$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userName` = ?";
+	$psdata = [[
+		$aTime,
+		$seid,
+		$oTime,
+		$cookieArr['user']
+	]];
+
+	$erg = db_query_prep($query, $psdata);
+	//header("location: ?");
+	//die();
+	*/
+}
+
 function loginCookie() {
-	e_log(8,'Cookie is available');
 	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':edcrpt($_COOKIE['syncmarks'], 2);
 	$cookieArr = json_decode($cookieStr, true);
 	$tVerified = false;
-	$aTime = time();
 
-	if(isset($cookieArr) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0) {
+	if(isset($cookieArr['user'], $cookieArr['rtkn']) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0) {
 		e_log(8,"Cookie found. Try to login...");
 		$query = "SELECT t.*, u.userLastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = ? ORDER BY t.exDate DESC";
 		$psdata = [[
@@ -3163,80 +3244,74 @@ function loginCookie() {
 		}
 
 		if($tVerified) {
-			e_log(8,"Cookie Login successful. Renew cookie");
-			$seid = session_id();
-			$oTime = $tkdata[0]['userLastLogin'];
-			$_SESSION['sauth'] = $tkdata[0]['userName'];
-			getUserdata($_SESSION['sauth']);
-
-			$expireTime = time()+60*60*24*CONFIG['expireDays'];
-			$rtkn = unique_code(32);
-
-			$cOptions = array (
-				'expires' => $expireTime,
-				'path' => null,
-				'domain' => null,
-				'secure' => true,
-				'httponly' => false,
-				'samesite' => 'Strict'
-			);
-
-			$cookieData = edcrpt(json_encode(array('rtkn' => $rtkn, 'user' => $tkdata[0]['userName'], 'token' => $cookieArr['rtkn'])), 1);
-
-			setcookie('syncmarks', $cookieData, $cOptions);
-			e_log(8,"New cookie refreshed");
-			$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
-
-			$query = "DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP()";
-			$psdata = [[]];
-			db_query_prep($query, $psdata);
-
-			$query = "UPDATE `auth_token` SET `tHash` = ?, `exDate` = ? WHERE `tID` = ?";
-			$psdata = [[
-				$rtknh,
-				$expireTime,
-				$tVerified
-			]];
-			$erg = db_query_prep($query, $psdata);
-
-			$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userName` = ?";
-			$psdata = [[
-				$aTime,
-				$seid,
-				$oTime,
-				$cookieArr['user']
-			]];
-			$erg = db_query_prep($query, $psdata);
-			header("location: ?");
-			die();
+			e_log(8,"Cookie Login successful");
+			$_SESSION['sauth'] = $cookieArr['user'];
+			getUserdata($cookieArr['user']);
+			renewCookie($cookieArr['user']);
+			return true;
 		} else {
 			e_log(8,"Cookie not valid, using standard login now");
 			clearAuthCookie();
 			showLoginForm();
+			return false;
 		}
 	}
 }
 
 function loginForm() {
 	global $htmlFooter, $lang;
+	e_log(8,'Using Loginform');
 	echo htmlHeader();
+
+	if(CONFIG['selfreg'] !== false) {
+		$sr_button = "<button name='newacc' id='newacc' value='newacc'>Sign up</button>";
+		$sr_div = "<div id='newaccbody'><input type='email' id='nacc_mail' autocomplete='username' name='nacc_mail' placeholder='".$lang->messages->mail."'><button name='nacc_signup' disabled='true' id='nacc_signup' value='nacc_signup'>Sign up</button></div>";
+	} else {
+		$sr_button = "";
+		$sr_div = "";
+	}
+
+	if(empty($_SESSION['login_failed'])) {
+		$t1 = $lang->messages->welcome;
+		$t2 = $lang->messages->welcomeHint;
+		$reset = "";
+	} else {
+		$t1 = $lang->messages->loginFailed;
+		$t2 = $lang->messages->loginFailedHint;
+		$user = $_SESSION['login_failed'];
+		$reset = "<a data-reset='$user' id='preset' href=''>".$lang->messages->forgetPassword."</a>";
+	}
+
 	echo "<div id='loginbody'>
+	<form method='POST' id='lform'>
 	<div id='loginform'>
-	<div id='loginformh'>".$lang->messages->accessDenied."</div>
-	<div id='loginformt'>".$lang->messages->accessDeniedHint."</div>
-	<div id='loginformf'><a class='abtn' href='?'>".$lang->actions->login."</a></div>
+	<div id='loginformh'>$t1</div>
+	<div id='loginformt'>$t2</div>
+	<div id='loginformb'>
+		<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
+		<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
+		<input name='client' type='hidden' value='0'>$reset
+		<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
+		<button name='login' value='login'>".$lang->actions->login."</button>
+		$sr_button
 	</div>
+		$sr_div
+	</div>
+	</form>
 	</div>";
 	echo $htmlFooter;
+	unset($_SESSION['login_failed']);
+	exit;
 }
 
 function checkLogin2() {
-	e_log(8,"Check login...");
+	e_log(8,"Check login");
 	$isBasicAuthRequest = count($_GET) > 0 || count($_POST) > 0;
 	$isLoggedIn = isset($_SESSION['sauth']) && strlen($_SESSION['sauth']) > 0;
 	$isAuthelia = false;
 
 	if($isLoggedIn) {
+		e_log(8,"Already logged in");
 		return true;
 	} elseif($isBasicAuthRequest) {
 		loginBasicAuth();
@@ -3252,7 +3327,7 @@ function checkLogin2() {
 function checkLogin1() {
 	global $htmlFooter, $lang;
 	e_log(8,"Check login...");
-
+			
 	if(isset($_COOKIE['syncmarks']))
 		e_log(8,'Cookie is available');
 	else
@@ -3707,7 +3782,7 @@ function checkInstall() {
 	echo $seform;
 	echo $htmlFooter;
 
-	$_SESSION['sud']['userID'] = 1;
+	//$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
