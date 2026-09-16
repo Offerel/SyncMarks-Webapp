@@ -68,15 +68,6 @@ if (isset($_GET['api'])) {
 				case "clientList":
 					$response = clientList($client, $uid);
 					break;
-				case "clientRemove":
-					$response = clientRemove($client, $data);
-					break;
-				case "clientSendOptions":
-					$response = clientSaveOptions($client, $data, $uid);
-					break;
-				case "clientGetOptions":
-					$response = clientGetOptions($client, $uid);
-					break;
 				case "pushURL":
 					$response = ntfyNotification($data, $uid);
 					break;
@@ -1118,46 +1109,6 @@ function backupBookmarks($mode, $c = 0) {
 	}
 }
 
-function clientGetOptions($client, $uid) {
-	e_log(8, "Request of client settings");
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL AND `cid` != ?";
-	$psdata = [[
-		$uid,
-		$client
-	]];
-	$cOptions = db_query_prep($query, $psdata);
-
-	$response['cOptions'] = $cOptions;
-	$response['code'] = 200;
-	return $response;
-}
-
-function clientRemove($client, $data) {
-	$old = $data['old'];
-	$new = $data['new'];
-	$res = 0;
-
-	e_log(8, "A client has been restored from the server configuration. This new client requested to remove the old client '$old'");
-	$query = "DELETE FROM `clients` WHERE `cid` = ?";
-	$psdata = [[
-		$old
-	]];
-	$res = db_query_prep($query, $psdata);
-
-	if($res !== false) {
-		$response['message'] = "Old client removed";
-		$response['code'] = 200;
-		$res = 8;
-	} else {
-		$response['message'] = "Could not remove old client";
-		$response['code'] = 500;
-		$res = 1;
-	}
-
-	e_log($res, $response['message']);
-	return $response;
-}
-
 function tabsGet($user) {
 	e_log(8, "Request tabs for user '$user'");
 	$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = ?";
@@ -1221,31 +1172,6 @@ function pushGet($client, $uid) {
 		e_log(8,'Cookie is available');
 	else
 		e_log(8,'Cookie is not set');
-
-	return $response;
-}
-
-function clientSaveOptions($client, $cOptions) {
-	e_log(8,"Save client options to database");
-	$jOptions = json_encode($cOptions);
-	$name = $cOptions['name'];
-	$query = "UPDATE `clients` SET `cOptions` = ?, `cname` = ? WHERE `cid` = ?";
-	$psdata = [[
-		$jOptions,
-		$name,
-		$client
-	]];
-	$result = db_query_prep($query, $psdata);
-
-	if($result == 1) {
-		$response['message'] = "Client settings saved";
-		$response['code'] = 200;
-		$lvl = 8;
-	} else {
-		$response['message'] = "No client data changed";
-		$response['code'] = 200;
-		$lvl = 1;
-	}
 
 	return $response;
 }
@@ -1546,47 +1472,38 @@ function clientRename($client, $data, $uid, $add = null) {
 }
 
 function clientCheck($client, $ctime, $type, $userID) {
-	e_log(8, "Token request from client '$client'");
+	e_log(8, "clientCheck request from client '$client'");
+
 	$tResponse['message'] = updateClient($client, $type, $ctime);
 	$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = ? AND `c_token`.`userID` = ?";
 	$psdata = [[
 		$client,
 		$userID
 	]];
+
 	$tData = db_query_prep($query, $psdata);
-	$expireTime = time()+60*60*24*CONFIG['expireDays'];
-	$token = bin2hex(openssl_random_pseudo_bytes(32));
-	$thash = password_hash($token, PASSWORD_DEFAULT);
+
 	if(count($tData) > 0) {
-		$query = "UPDATE `c_token` SET `tHash` = ?, `exDate` = ? WHERE `cid` = ? AND `userID` = ?";
-		$psdata = [[
-			$thash,
-			$expireTime,
-			$client,
-			$userID
-		]];
 		$tResponse['cname'] = $tData[0]['cname'];
 	} else {
-		$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES (?, ?, ?, ?);";
+		$query = "INSERT INTO `c_token` (`cid`, `userID`) VALUES (?, ?);";
 		$psdata = [[
 			$client,
-			$thash,
-			$expireTime,
 			$userID
 		]];
 		$tResponse['cname'] = '';
 	}
 	db_query_prep($query, $psdata);
 
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL";
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL";
 	$psdata = [[
 		$userID
 	]];
+
 	$cOptions = db_query_prep($query, $psdata);
 	$tResponse['cOptions'] = $cOptions;
-	$tResponse['token'] = $token;
-
-	e_log(8, "Send new token to $client");
+	
+	e_log(8, "Send clientinfo to $client");
 
 	$tResponse['code'] = 200;
 	e_log(8, "Logout $client");
