@@ -1433,7 +1433,7 @@ function bookmarkMove($bookmark, $client, $ctime, $ctype) {
 
 function clientInfo($client, $uid) {
 	e_log(8,"Request client info");
-	$query = "SELECT `cname`, `ctype`, `lastseen`, `cinfo` FROM `clients` INNER JOIN `c_token`  WHERE `clients`.`cid` = `c_token`.`cid` AND `clients`.`cid` = ? AND `clients`.`userID` = ?";
+	$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = ? AND `userID` = ?";
 	$psdata = [[
 		$client,
 		$uid
@@ -1442,10 +1442,6 @@ function clientInfo($client, $uid) {
 	if(count($clientData) > 0) {
 		e_log(8,"Send client info to '$client'");
 		$clientData['code'] = 200;
-
-		if(isset($clientData['cinfo'])) {
-			$clientData['cinfo'] = json_decode($clientData['cinfo'], true);
-		}
 	} else {
 		e_log(2,"Client not found.");
 		$clientData['lastseen'] = 0;
@@ -1475,7 +1471,8 @@ function clientCheck($client, $ctime, $type, $userID) {
 	e_log(8, "clientCheck request from client '$client'");
 
 	$tResponse['message'] = updateClient($client, $type, $ctime);
-	$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = ? AND `c_token`.`userID` = ?";
+
+	$query = "SELECT * FROM `clients` WHERE `cid` = ? AND `userID` = ?";
 	$psdata = [[
 		$client,
 		$userID
@@ -1486,14 +1483,8 @@ function clientCheck($client, $ctime, $type, $userID) {
 	if(count($tData) > 0) {
 		$tResponse['cname'] = $tData[0]['cname'];
 	} else {
-		$query = "INSERT INTO `c_token` (`cid`, `userID`) VALUES (?, ?);";
-		$psdata = [[
-			$client,
-			$userID
-		]];
 		$tResponse['cname'] = '';
 	}
-	db_query_prep($query, $psdata);
 
 	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL";
 	$psdata = [[
