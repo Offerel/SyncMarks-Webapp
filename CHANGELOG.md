@@ -1,6 +1,12 @@
 # ChangeLog
 ## 2.2.5
 - Removed useless trigger from SQL
+- Removed dead code
+- Removed Server restore
+- Changed Token behavior
+- Fix broken Selects
+- Added Support for Authelia SSO authentication
+- Fix PHP2Shell
 
 ## 2.2.4
 - Added security settings to nginx.conf

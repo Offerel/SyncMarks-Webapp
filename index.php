@@ -32,7 +32,7 @@ saveRequest();
 if(isset($_GET['reset'])) handleReset();
 if(isset($_GET['nacc'])) createAcc();
 if(isset($_POST['action']) && $_POST['action'] === 'check_nacc') handleNewAcc();
-if(!isset($_SESSION['sauth'])) checkLogin();
+if(!isset($_SESSION['sauth'])) checkLogin2();
 
 $lang = setLang();
 backupBookmarks(0);
@@ -67,15 +67,6 @@ if (isset($_GET['api'])) {
 					break;
 				case "clientList":
 					$response = clientList($client, $uid);
-					break;
-				case "clientRemove":
-					$response = clientRemove($client, $data);
-					break;
-				case "clientSendOptions":
-					$response = clientSaveOptions($client, $data, $uid);
-					break;
-				case "clientGetOptions":
-					$response = clientGetOptions($client, $uid);
 					break;
 				case "pushURL":
 					$response = ntfyNotification($data, $uid);
@@ -665,26 +656,23 @@ function init() {
 		die(http_response_code(204));
 	}
 	
-	$dbPasswordFile = getenv('DB_PASSWORD_FILE');
-	if ($dbPasswordFile && is_readable($dbPasswordFile)) {
-		$dbpwd = trim(file_get_contents($dbPasswordFile));
+	$dbPassword = getenv('DB_PASSWORD');
+	if ($dbPassword !== false) {
+		$dbpwd = $dbPassword;
 	} else {
 		$dbpwd = $database['pwd'] ?? '';
 	}
 	$database['pwd'] = $dbpwd;
 	
-	$mailPasswordFile = getenv('SMTP_PASSWORD_FILE');
-    if ($mailPasswordFile && is_readable($mailPasswordFile)) {
-        $mailpwd = trim(file_get_contents($mailPasswordFile));
+	$mailPassword = getenv('SMTP_PASSWORD');
+    if ($mailPassword !== false) {
+        $mailpwd = $mailPassword;
     } else {
         $mailpwd = $smtp['pwd'] ?? '';
     }
     $smtp['pwd'] = $mailpwd;
     
-    $enckeyFile = getenv('ENCKEY_FILE');
-    if ($enckeyFile && is_readable($enckeyFile)) {
-        $enckey = trim(file_get_contents($enckeyFile));
-    }
+    $enckey = getenv('ENCKEY');
 
 	$config = [
 		'db'		=> $database,
@@ -1118,46 +1106,6 @@ function backupBookmarks($mode, $c = 0) {
 	}
 }
 
-function clientGetOptions($client, $uid) {
-	e_log(8, "Request of client settings");
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL AND `cid` != ?";
-	$psdata = [[
-		$uid,
-		$client
-	]];
-	$cOptions = db_query_prep($query, $psdata);
-
-	$response['cOptions'] = $cOptions;
-	$response['code'] = 200;
-	return $response;
-}
-
-function clientRemove($client, $data) {
-	$old = $data['old'];
-	$new = $data['new'];
-	$res = 0;
-
-	e_log(8, "A client has been restored from the server configuration. This new client requested to remove the old client '$old'");
-	$query = "DELETE FROM `clients` WHERE `cid` = ?";
-	$psdata = [[
-		$old
-	]];
-	$res = db_query_prep($query, $psdata);
-
-	if($res !== false) {
-		$response['message'] = "Old client removed";
-		$response['code'] = 200;
-		$res = 8;
-	} else {
-		$response['message'] = "Could not remove old client";
-		$response['code'] = 500;
-		$res = 1;
-	}
-
-	e_log($res, $response['message']);
-	return $response;
-}
-
 function tabsGet($user) {
 	e_log(8, "Request tabs for user '$user'");
 	$query = "SELECT * FROM `bookmarks` WHERE `bmType` = 'tab' AND `userID` = ?";
@@ -1221,31 +1169,6 @@ function pushGet($client, $uid) {
 		e_log(8,'Cookie is available');
 	else
 		e_log(8,'Cookie is not set');
-
-	return $response;
-}
-
-function clientSaveOptions($client, $cOptions) {
-	e_log(8,"Save client options to database");
-	$jOptions = json_encode($cOptions);
-	$name = $cOptions['name'];
-	$query = "UPDATE `clients` SET `cOptions` = ?, `cname` = ? WHERE `cid` = ?";
-	$psdata = [[
-		$jOptions,
-		$name,
-		$client
-	]];
-	$result = db_query_prep($query, $psdata);
-
-	if($result == 1) {
-		$response['message'] = "Client settings saved";
-		$response['code'] = 200;
-		$lvl = 8;
-	} else {
-		$response['message'] = "No client data changed";
-		$response['code'] = 200;
-		$lvl = 1;
-	}
 
 	return $response;
 }
@@ -1507,7 +1430,7 @@ function bookmarkMove($bookmark, $client, $ctime, $ctype) {
 
 function clientInfo($client, $uid) {
 	e_log(8,"Request client info");
-	$query = "SELECT `cname`, `ctype`, `lastseen`, `cinfo` FROM `clients` INNER JOIN `c_token`  WHERE `clients`.`cid` = `c_token`.`cid` AND `clients`.`cid` = ? AND `clients`.`userID` = ?";
+	$query = "SELECT `cname`, `ctype`, `lastseen` FROM `clients` WHERE `cid` = ? AND `userID` = ?";
 	$psdata = [[
 		$client,
 		$uid
@@ -1516,10 +1439,6 @@ function clientInfo($client, $uid) {
 	if(count($clientData) > 0) {
 		e_log(8,"Send client info to '$client'");
 		$clientData['code'] = 200;
-
-		if(isset($clientData['cinfo'])) {
-			$clientData['cinfo'] = json_decode($clientData['cinfo'], true);
-		}
 	} else {
 		e_log(2,"Client not found.");
 		$clientData['lastseen'] = 0;
@@ -1546,47 +1465,33 @@ function clientRename($client, $data, $uid, $add = null) {
 }
 
 function clientCheck($client, $ctime, $type, $userID) {
-	e_log(8, "Token request from client '$client'");
+	e_log(8, "clientCheck request from client '$client'");
+
 	$tResponse['message'] = updateClient($client, $type, $ctime);
-	$query = "SELECT `c_token`.*, `clients`.`cname` FROM `c_token` INNER JOIN `clients` ON `clients`.`cid` = `c_token`.`cid` WHERE `c_token`.`cid` = ? AND `c_token`.`userID` = ?";
+
+	$query = "SELECT * FROM `clients` WHERE `cid` = ? AND `userID` = ?";
 	$psdata = [[
 		$client,
 		$userID
 	]];
+
 	$tData = db_query_prep($query, $psdata);
-	$expireTime = time()+60*60*24*CONFIG['expireDays'];
-	$token = bin2hex(openssl_random_pseudo_bytes(32));
-	$thash = password_hash($token, PASSWORD_DEFAULT);
+
 	if(count($tData) > 0) {
-		$query = "UPDATE `c_token` SET `tHash` = ?, `exDate` = ? WHERE `cid` = ? AND `userID` = ?";
-		$psdata = [[
-			$thash,
-			$expireTime,
-			$client,
-			$userID
-		]];
 		$tResponse['cname'] = $tData[0]['cname'];
 	} else {
-		$query = "INSERT INTO `c_token` (`cid`, `tHash`, `exDate`, `userID`) VALUES (?, ?, ?, ?);";
-		$psdata = [[
-			$client,
-			$thash,
-			$expireTime,
-			$userID
-		]];
 		$tResponse['cname'] = '';
 	}
-	db_query_prep($query, $psdata);
 
-	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname`, `cOptions` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL";
+	$query = "SELECT `cid`, IFNULL(`cname`, `cid`) AS `cname` FROM `clients` WHERE `userID` = ? AND `cOptions` IS NOT NULL";
 	$psdata = [[
 		$userID
 	]];
+
 	$cOptions = db_query_prep($query, $psdata);
 	$tResponse['cOptions'] = $cOptions;
-	$tResponse['token'] = $token;
 
-	e_log(8, "Send new token to $client");
+	e_log(8, "Send clientinfo to $client");
 
 	$tResponse['code'] = 200;
 	e_log(8, "Logout $client");
@@ -3087,30 +2992,265 @@ function clearAuthCookie() {
 	}
 }
 
-function checkLogin() {
+function loginUser($user, $password) {
+	e_log(8, "Logging in user");
+	$user = sanitizeStr($user);
+
+	$query = "SELECT * FROM `users` WHERE `userName`= ?";
+	$psdata = [[
+		$user
+	]];
+
+	$udata = db_query_prep($query, $psdata);
+
+	if(count($udata) === 1) {
+		if(password_verify($password, $udata[0]['userHash'])) {
+			e_log(8,"Login successful");
+			
+			$_SESSION['sauth'] = $udata[0]['userName'];
+			$_SESSION['auth_method'] = 'password';
+			getUserdata($_SESSION['sauth']);
+			return true;
+		} else {
+			e_log(2,"Password missmatch");
+		}
+	} else {
+		e_log(2,"User not found");
+	}
+
+	return false;
+}
+
+function loginBasicAuth() {
+	if(isset($_POST['username']) && isset($_POST['password']) && isset($_POST['login'])) {
+		$user = $_POST['username'];
+		if(!loginUser($user, $_POST['password'])) {
+			e_log(2,"Login failed");
+			unset($_SESSION['sauth']);
+			$_SESSION['login_failed'] = $user;
+			header("location: ?");
+			exit;
+		} else {
+			if (isset($_POST['remember'])) {
+				renewCookie($user);
+			}
+		}
+		return true;
+	}
+
+	e_log(8,"Try basic auth");
+	header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+	header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
+	header("Cache-Control: post-check=0, pre-check=0", false);
+	header("Pragma: no-cache");
+
+	$user = $_SERVER['PHP_AUTH_USER'] ?? false;
+	$password = $_SERVER['PHP_AUTH_PW'] ?? false;
+
+	if (empty($user) || empty($password)) {
+		header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
+		http_response_code(401);
+		exit;
+	}
+
+	if(!loginUser($user, $password)) {
+		e_log(2,"Login failed");
+		unset($_SESSION['sauth']);
+		session_destroy();
+		header('WWW-Authenticate: Basic realm="SyncMarks", charset="UTF-8"');
+		http_response_code(401);
+		exit;
+	}
+}
+
+function loginAuthelia() {
+	e_log(8, "Try Authelia login");
+	$user = $_SERVER['HTTP_X_SYNCMARKS_USER'] ?? '';
+
+	if(empty($user)) {
+		e_log(8, "No Authelia user found");
+		return false;
+	}
+
+	$query = "SELECT * FROM `users` WHERE `userName`= ?";
+	$psdata = [[
+		$user
+	]];
+	$udata = db_query_prep($query, $psdata);
+
+	if(count($udata) !== 1) {
+		e_log(2, "Authelia user not found: ".$user);
+		return false;
+	}
+
+	$_SESSION['sauth'] = $udata[0]['userName'];
+	getUserdata($_SESSION['sauth']);
+
+	e_log(8, "Authelia login successful");
+	$_SESSION['auth_method'] = 'authelia';
+	return true;
+}
+
+function renewCookie($user) {
+	e_log(8,"Renew cookie");
+	$expireTime = time()+60*60*24*CONFIG['expireDays'];
+	$rtkn = unique_code(32);
+
+	$cOptions = array (
+		'expires' => $expireTime,
+		'path' => null,
+		'domain' => null,
+		'secure' => true,
+		'httponly' => false,
+		'samesite' => 'Strict'
+	);
+
+	$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
+	$cookieData = edcrpt(json_encode(array('rtkn' => $rtkn, 'user' => $user, 'token' => $dtoken)), 1);
+
+	setcookie('syncmarks', $cookieData, $cOptions);
+	e_log(8,"Cookie saved. Valid until ".date('r', $expireTime));
+
+	$rtknh = password_hash($rtkn, PASSWORD_DEFAULT);
+
+	$query = "DELETE FROM `auth_token` WHERE `exDate` < UNIX_TIMESTAMP()";
+	$psdata = [[]];
+	db_query_prep($query, $psdata);
+
+	$query = "INSERT INTO `auth_token` (`userName`,`pHash`, `tHash`,`exDate`) VALUES (?, ?, ?, ?)";
+	$psdata = [[
+		$user,
+		$dtoken,
+		$rtknh,
+		$expireTime
+	]];
+	$erg = db_query_prep($query, $psdata);
+}
+
+function loginCookie() {
+	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':edcrpt($_COOKIE['syncmarks'], 2);
+	$cookieArr = json_decode($cookieStr, true);
+	$tVerified = false;
+
+	if(isset($cookieArr['user'], $cookieArr['rtkn']) && strlen($cookieArr['user']) > 0 && strlen($cookieArr['rtkn']) > 0) {
+		e_log(8,"Cookie found. Try to login...");
+		$query = "SELECT t.*, u.userLastLogin, u.sessionID FROM `auth_token` t INNER JOIN `users` u ON u.userName = t.userName WHERE t.userName = ? ORDER BY t.exDate DESC";
+		$psdata = [[
+			$cookieArr['user']
+
+		]];
+		$tkdata = db_query_prep($query, $psdata);
+
+		foreach($tkdata as $key => $token) {
+			if(password_verify($cookieArr['rtkn'], $token['tHash'])) {
+				$tVerified = $token['tID'];
+				break;
+			}
+		}
+
+		if($tVerified) {
+			e_log(8,"Cookie Login successful");
+			$_SESSION['sauth'] = $cookieArr['user'];
+			getUserdata($cookieArr['user']);
+			renewCookie($cookieArr['user']);
+			$_SESSION['auth_method'] = 'cookie';
+			return true;
+		} else {
+			e_log(8,"Cookie not valid, using standard login now");
+			clearAuthCookie();
+			showLoginForm();
+			return false;
+		}
+	}
+}
+
+function loginForm() {
+	global $htmlFooter, $lang;
+	e_log(8,'Using Loginform');
+	echo htmlHeader();
+
+	if(CONFIG['selfreg'] !== false) {
+		$sr_button = "<button name='newacc' id='newacc' value='newacc'>Sign up</button>";
+		$sr_div = "<div id='newaccbody'><input type='email' id='nacc_mail' autocomplete='username' name='nacc_mail' placeholder='".$lang->messages->mail."'><button name='nacc_signup' disabled='true' id='nacc_signup' value='nacc_signup'>Sign up</button></div>";
+	} else {
+		$sr_button = "";
+		$sr_div = "";
+	}
+
+	if(empty($_SESSION['login_failed'])) {
+		$t1 = $lang->messages->welcome;
+		$t2 = $lang->messages->welcomeHint;
+		$reset = "";
+	} else {
+		$t1 = $lang->messages->loginFailed;
+		$t2 = $lang->messages->loginFailedHint;
+		$user = $_SESSION['login_failed'];
+		$reset = "<a data-reset='$user' id='preset' href=''>".$lang->messages->forgetPassword."</a>";
+	}
+
+	echo "<div id='loginbody'>
+	<form method='POST' id='lform'>
+	<div id='loginform'>
+	<div id='loginformh'>$t1</div>
+	<div id='loginformt'>$t2</div>
+	<div id='loginformb'>
+		<input type='text' id='uf' autocomplete='username' name='username' placeholder='".$lang->messages->username."'>
+		<input type='password' autocomplete='current-password' name='password' placeholder='".$lang->messages->password."'>
+		<input name='client' type='hidden' value='0'>$reset
+		<label for='remember'><input type='checkbox' id='remember' name='remember'>".$lang->messages->stay."</label>
+		<button name='login' value='login'>".$lang->actions->login."</button>
+		$sr_button
+	</div>
+		$sr_div
+	</div>
+	</form>
+	</div>";
+	echo $htmlFooter;
+	unset($_SESSION['login_failed']);
+	exit;
+}
+
+function checkLogin2() {
+	e_log(8,"Check login");
+	$isBasicAuthRequest = count($_GET) > 0 || count($_POST) > 0;
+	$isLoggedIn = isset($_SESSION['sauth']) && strlen($_SESSION['sauth']) > 0;
+	$isAuthelia = isset($_SERVER['HTTP_X_SYNCMARKS_USER']) && strlen($_SERVER['HTTP_X_SYNCMARKS_USER']) > 0;
+
+	if($isLoggedIn) {
+		e_log(8,"Already logged in");
+		return true;
+	} elseif($isBasicAuthRequest) {
+		loginBasicAuth();
+	} elseif($isAuthelia) {
+		loginAuthelia();
+	} elseif(isset($_COOKIE['syncmarks'])) {
+		loginCookie();
+	} else {
+		loginForm();
+	}
+
+	e_log(8,"Save session to database");
+	$query = "UPDATE `users` SET `userLastLogin` = ?, `sessionID` = ?, `userOldLogin` = ? WHERE `userID` = ?";
+	$psdata = [[
+		time(),
+		session_id(),
+		$_SESSION['sud']['userLastLogin'],
+		$_SESSION['sud']['userID']
+	]];
+
+	db_query_prep($query, $psdata);
+}
+
+function checkLogin1() {
 	global $htmlFooter, $lang;
 	e_log(8,"Check login...");
-
+			
 	if(isset($_COOKIE['syncmarks']))
 		e_log(8,'Cookie is available');
 	else
 		e_log(8,'Cookie is not set');
 
-	$headers = null;
-	if (isset($_SERVER['Authorization'])) {
-		$headers = trim($_SERVER["Authorization"]);
-	} else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-		$headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
-	}
-
-	$ctarr = explode(' ', $headers);
-	$ctoken = ($ctarr[0] === 'Bearer') ? $ctarr[1]:false;
-
-	$cdata = ($ctoken) ? json_decode(urldecode(base64_decode($ctoken)), true):false;
-
-	$tVerified = false;
 	$cookieStr = (!isset($_COOKIE['syncmarks'])) ? '':edcrpt($_COOKIE['syncmarks'], 2);
-
 	$cookieArr = json_decode($cookieStr, true);
 
 	$aTime = time();
@@ -3190,89 +3330,7 @@ function checkLogin() {
 		$user = (isset($_POST['username'])) ? sanitizeStr($_POST['username']):$u;
 		$pw = (isset($_POST['password'])) ? $_POST['password']:$p;
 
-		if($ctoken && isset($cdata)) {
-			$client = $cdata['client'];
-			e_log(8,"Try token login $client");
-			$query = "SELECT `c`.*, `u`.`userName` FROM `c_token` `c` INNER JOIN `users` `u` ON `u`.`userID` = `c`.`userID` WHERE `cid` = ?";
-			$psdata = [[
-				$client
-			]];
-			$dbdata = db_query_prep($query, $psdata);
-
-			if(count($dbdata) === 1) {
-				$otoken = (isset($cdata['token'])) ? $cdata['token']:0;
-				$pverify = (password_verify($otoken, $dbdata[0]['tHash'])) ? "true":"false";
-				if(password_verify($otoken, $dbdata[0]['tHash'])) {
-					e_log(8,"$client token is valid. Checking time.");
-					if($dbdata[0]['exDate'] > time()) {
-						e_log(8,"$client login successful");
-						$_SESSION['sauth'] = $dbdata[0]['userName'];
-						getUserdata($_SESSION['sauth']);
-						if(!isset($_GET['t'])) {
-							$expireTime = time()+60*60*24*CONFIG['expireDays'];
-							$token = bin2hex(openssl_random_pseudo_bytes(32));
-							$thash = password_hash($token, PASSWORD_DEFAULT);
-							$ipjson = json_encode(ip_info());
-							$query = "UPDATE `c_token` SET `tHash` = ?, `exDate` = ?, `cInfo` = ? WHERE `cid` = ?";
-							$psdata = [[
-								$thash,
-								$expireTime,
-								$ipjson,
-								$client
-							]];
-							db_query_prep($query, $psdata);
-							header("X-Request-Info: $token");
-							e_log(8,"New token send to $client and saved in DB, set new expireTime");
-						}
-					} else {
-						e_log(2,"$client login failed, expireTime reached");
-						$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = ?";
-						$psdata = [[
-							$client
-						]];
-						$cInfo = db_query_prep($query, $psdata)[0];
-						$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = ?";
-						db_query_prep($query, $psdata);
-						e_log(2,"Removed token for client $client");
-						unset($_SESSION['sauth']);
-						session_destroy();
-						header("X-Request-Info: 0");
-						http_response_code(400);
-						e_log(8,"New token set to 0 for $client");
-						header("Content-Type: application/json");
-						$cInfo['task'] = 'cInfo';
-						die(json_encode($cInfo));
-					}
-				} else {
-					e_log(2,"$client login failed, token invalid");
-					$psdata = [[
-						$client
-					]];
-					$query = "SELECT `cInfo` FROM `c_token` WHERE `cid` = ?";
-					$cInfo = db_query_prep($query, $psdata)[0];
-					$cInfo['task'] = 'cInfo';
-					$query = "UPDATE `c_token` SET `tHash` = '' WHERE `cid` = ?";
-					db_query_prep($query, $psdata);
-					e_log(2,"Removed token for client $client");
-					unset($_SESSION['sauth']);
-					session_destroy();
-					header("X-Request-Info: 0");
-					http_response_code(400);
-					e_log(8,"New token set to 0 for $client");
-					header("Content-Type: application/json");
-					die(json_encode($cInfo));
-				}
-			} else {
-				e_log(2,"Client not registered");
-				unset($_SESSION['sauth']);
-				session_destroy();
-				header("X-Request-Info: 0");
-				http_response_code(400);
-				e_log(8,"New token set to 0 for $client");
-				header("Content-Type: application/json");
-				die(json_encode(""));
-			}
-		} else if(!$user || !$pw) {
+		if(!$user || !$pw) {
 			header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
 			header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
 			header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -3295,8 +3353,7 @@ function checkLogin() {
 			</div>";
 			echo $htmlFooter;
 			exit;
-		} else {
-			$client = isset($cdata['client']) ? $cdata['client']:'';
+		} else {			
 			e_log(8,"Try basic login $client");
 			$query = "SELECT * FROM `users` WHERE `userName`= ?";
 			$psdata = [[
@@ -3534,10 +3591,8 @@ function checkInstall() {
 		"pdo_mysql",
    		"pdo_sqlite",
 		"curl",
-		"dom",
-		"fileinfo",
-		"readline",
-		"intl"
+		"intl",
+		"mbstring"
 	];
 
 	echo "<div id='php_extensions' class='installer' style='display: block'><h3>PHP Extensions</h3>";
@@ -3565,9 +3620,9 @@ function checkInstall() {
 	$dbname = getenv('DB_NAME') ? :'';
 	$dbuser = getenv('DB_USER') ? :'';
 
-	$dbPasswordFile = getenv('DB_PASSWORD_FILE');
-	if ($dbPasswordFile && is_readable($dbPasswordFile)) {
-		$dbpwd = trim(file_get_contents($dbPasswordFile));
+	$dbPassword = getenv('DB_PASSWORD');
+	if ($dbPassword !== false) {
+		$dbpwd = $dbPassword;
 	} else {
 		$dbpwd = getenv('DB_PASSWORD') ?: '';
 	}
@@ -3586,11 +3641,11 @@ function checkInstall() {
 	</div>
 	";
 	
-	$smtpPasswordFile = getenv('SMTP_PASSWORD_FILE');
-	if ($smtpPasswordFile && is_readable($smtpPasswordFile)) {
-		$smtppwd = trim(file_get_contents($smtpPasswordFile));
+	$smtpPassword = getenv('SMTP_PASSWORD');
+	if ($smtpPassword !== false) {
+		$smtppwd = $smtpPassword;
 	} else {
-		$smtppwd = getenv('SM_SMTP_PASSWORD') ?: '';
+		$smtppwd = getenv('SMTP_PASSWORD') ?: '';
 	}
 
 	$mailform = "<div id='mailform' class='installer'><h3>Mail Setup</h3>
@@ -3641,8 +3696,6 @@ function checkInstall() {
 
 	echo $seform;
 	echo $htmlFooter;
-
-	$_SESSION['sud']['userID'] = 1;
 	die();
 }
 
@@ -3961,7 +4014,7 @@ function saveSettings($data) {
 function loadConfig($file) {
     include $file;
     
-    if(getenv('DB_PASSWORD_FILE') !== false) {
+    if(getenv('DB_PASSWORD') !== false) {
 		unset($database['pwd']);
 		unset($smtp['pwd']);
 	}
