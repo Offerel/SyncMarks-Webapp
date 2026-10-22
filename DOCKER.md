@@ -27,15 +27,24 @@ SyncMarks does **not** require a local mail server inside the container.
 ---
 
 # 1. Create the installation directory
-
 For example:
 
 ```bash
-mkdir -p /opt/docker/syncmarks
+mkdir -p /opt/docker/test{/config,/data/db,/logs/nginx,/logs/syncmarks}
 cd /opt/docker/syncmarks
 ```
 
 The location can be changed if required.
+
+The `config` directory must be writable by the PHP process.
+
+PHP-FPM runs as UID/GID `65534` (`nobody`) inside the SyncMarks container.
+
+Therefore:
+
+```bash
+chown 65534:65534 config
+```
 
 ---
 
@@ -59,56 +68,38 @@ services:
       - ./config:/var/lib/syncmarks
       - ./logs/nginx:/var/log/nginx
       - ./logs/syncmarks:/var/log/syncmarks
+      - ./backup:/db_backup
 
     environment:
       TZ: Europe/Amsterdam
       DB_HOST: mariadb
       DB_USER: syncmarks
       DB_NAME: syncmarks
-      DB_PASSWORD_FILE: /run/secrets/db_password
-      SMTP_PASSWORD_FILE: /run/secrets/mail_password
-      ENCKEY_FILE: /run/secrets/enckey
+      DB_PASSWORD: ${SM_DB_PASSWORD}
+      SMTP_PASSWORD: ${SM_SMTP_PASSWORD}
+      ENCKEY: ${SM_ENCKEY}
       SM_LOG: /var/log/syncmarks/syncmarks.log
       CONF: /var/lib/syncmarks
-      BASE_URL: https://YOURDOMAIN.COM/DIR/
-
-    secrets:
-      - source: db_password
-        target: /run/secrets/db_password
-        uid: "65534"
-        gid: "65534"
-        mode: 0400
-
-      - source: mail_password
-        target: /run/secrets/mail_password
-        uid: "65534"
-        gid: "65534"
-        mode: 0400
-
-      - source: enckey
-        target: /run/secrets/enckey
-        uid: "65534"
-        gid: "65534"
-        mode: 0400
+      BASE_URL: https://YOURDOMAIN.COM/syncmarks/
+      DB_BACKUP_SCHEDULE: "0 3 * * *"
+      DB_BACKUP_RETENTION: "7"
+      DB_BACKUP_PATH: "/db_backup"
+      AUTHELIA_LOGOUT_URL: "https://auth.YOURDOMAIN.COM/logout?rd=https://YOURDOMAIN.COM/syncmarks/"
 
     depends_on:
       mariadb:
         condition: service_healthy
 
   mariadb:
-    image: mariadb:11.8
+    image: mariadb:13.0
     container_name: syncmarks-db
     restart: unless-stopped
 
     environment:
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
       MARIADB_DATABASE: syncmarks
       MARIADB_USER: syncmarks
-      MARIADB_PASSWORD_FILE: /run/secrets/db_password
-
-    secrets:
-      - db_root_password
-      - db_password
+      MARIADB_ROOT_PASSWORD: ${SM_DB_ROOT_PASSWORD}
+      MARIADB_PASSWORD: ${SM_DB_PASSWORD}
 
     volumes:
       - ./data/db:/var/lib/mysql
@@ -118,49 +109,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-secrets:
-  db_password:
-    environment: SM_DB_PASSWORD
-
-  db_root_password:
-    environment: SM_DB_ROOT_PASSWORD
-
-  mail_password:
-    environment: SM_SMTP_PASSWORD
-
-  enckey:
-    environment: SM_ENCKEY
 ```
 
 ---
 
-# 3. Create the required directories
+# 3. Configure the secrets
 
-In the installation directory, create the directories used by Docker Compose:
-
-```bash
-mkdir -p config
-mkdir -p logs/nginx
-mkdir -p logs/syncmarks
-mkdir -p data/db
-```
-
-The `config` directory must be writable by the PHP process.
-
-PHP-FPM runs as UID/GID `65534` (`nobody`) inside the SyncMarks container.
-
-Therefore:
-
-```bash
-chown 65534:65534 config
-```
-
----
-
-# 4. Configure the secrets
-
-SyncMarks uses Docker Secrets for sensitive data.
+SyncMarks uses a .env for sensitive data.
 
 The following secrets are required:
 
@@ -194,7 +149,7 @@ The `.env` file must **never be published or committed to a Git repository**.
 
 ---
 
-# 5. Generate the encryption key
+# 4. Generate the encryption key
 
 `SM_ENCKEY` must contain a cryptographically secure random key.
 
@@ -216,18 +171,18 @@ The encryption key must be kept permanently.
 
 The other secrets can be generated a similar way:
 
-`openssl rand -base64 32 > secrets/db_root_password`  
-`openssl rand -base64 32 > secrets/db_password`
+`openssl rand -base64 32` for SM_DB_ROOT_PASSWORD  
+`openssl rand -base64 32` for SM_DB_PASSWORD
 
-The password for the used SMTP Account can be saved in `/run/secrets/mail_password`
+The password for the used SMTP Account can be saved in `.env` as SM_SMTP_PASSWORD
 
-Remember to chmod these files with `chmod 600`
+Remember to chmod the file with `chmod 600`
 
 ---
 
-# 6. Configure SMTP
+# 5. Configure SMTP
 
-SyncMarks send Mails on in some use cases. For this SyncMarks uses PHPMailer. TO make PHPMailer work, we save a setup, including secrets. SMTP credentials are entered during the initial SyncMarks setup.
+SyncMarks send Mails on in some use cases. For this SyncMarks uses PHPMailer. To make PHPMailer work, we save a setup, including secrets. SMTP credentials are entered during the initial SyncMarks setup.
 
 The following information is required:
 
@@ -260,7 +215,7 @@ A local mail server on the Docker host is not required.
 
 ---
 
-# 7. Start the containers
+# 6. Start the containers
 
 After creating the `.env` file:
 
@@ -283,7 +238,7 @@ syncmarks-db
 
 ---
 
-# 8. Access SyncMarks
+# 7. Access SyncMarks
 
 By default, SyncMarks is only bound to localhost:
 
@@ -309,7 +264,7 @@ HTTPS should be terminated at the reverse proxy. A reverse proxy to a subdirecto
 
 ---
 
-# 9. Initial setup
+# 8. Initial setup
 
 After starting the container, open the SyncMarks URL in your browser.
 
@@ -325,7 +280,7 @@ After the installation has been completed, the configuration is stored in the pe
 
 ---
 
-# 10. Persistent data
+# 9. Persistent data
 
 The following data is stored outside the SyncMarks application container:
 
@@ -351,7 +306,7 @@ docker compose up -d
 
 ---
 
-# 11. Backups
+# 10. Backups
 
 For a complete backup, at least the following data should be backed up:
 
@@ -368,7 +323,7 @@ A backup without the corresponding encryption key may not be sufficient to resto
 
 ---
 
-# 12. Uninstallation
+# 11. Uninstallation
 
 The containers can be stopped and removed with:
 
@@ -397,7 +352,7 @@ rm -rf config data/db logs
 
 ---
 
-# 13. Troubleshooting
+# 12. Troubleshooting
 
 ### Check container status
 
